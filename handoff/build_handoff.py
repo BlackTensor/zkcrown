@@ -12,7 +12,10 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
+import subprocess
 import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,6 +33,31 @@ def _should_include(path: Path) -> bool:
     if any(part in EXCLUDE_PARTS for part in path.parts):
         return False
     return path.suffix not in EXCLUDE_SUFFIXES
+
+
+def _git(*args: str) -> str | None:
+    try:
+        completed = subprocess.run(
+            ["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=15
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return completed.stdout.strip() if completed.returncode == 0 else None
+
+
+def build_info() -> dict:
+    """The commit the zip is built from.
+
+    Shipped as BUILD_INFO.json so a result written on Colab, where the unpacked
+    zip is not a repository, still names the code that produced it.
+    """
+    porcelain = _git("status", "--porcelain")
+    return {
+        "commit": _git("rev-parse", "HEAD"),
+        "branch": _git("rev-parse", "--abbrev-ref", "HEAD"),
+        "dirty": None if porcelain is None else bool(porcelain),
+        "built_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
 
 
 def build(task_id: str, out_dir: Path | None = None) -> Path:
@@ -61,15 +89,24 @@ def build(task_id: str, out_dir: Path | None = None) -> Path:
     members.append((notebook, f"notebooks/{notebook.name}"))
     members.append((instructions, f"handoff/{instructions.name}"))
 
+    info = build_info()
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for path, arcname in members:
             zf.write(path, arcname)
+        zf.writestr("BUILD_INFO.json", json.dumps(info, indent=2) + "\n")
 
     digest = hashlib.sha256(zip_path.read_bytes()).hexdigest()
     size_kb = zip_path.stat().st_size / 1024
 
-    print(f"{zip_path}  ({size_kb:.1f} KB, {len(members)} files)")
+    print(f"{zip_path}  ({size_kb:.1f} KB, {len(members) + 1} files)")
     print(f"sha256: {digest}")
+    print(f"commit: {info['commit']}  dirty={info['dirty']}")
+    if info["dirty"] is not False:
+        print(
+            "WARNING: built from a working tree that is dirty or not a git checkout. "
+            "Results from this zip will not be reproducible from the recorded commit. "
+            "Commit first, then rebuild."
+        )
     print("\ncontents:")
     for _, arcname in members:
         print(f"  {arcname}")

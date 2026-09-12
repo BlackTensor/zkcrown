@@ -17,7 +17,9 @@ epoch rather than the run (CLAUDE.md 2.1).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 from pathlib import Path
 
 import _bootstrap  # noqa: F401  -- puts the repo root on sys.path
@@ -68,16 +70,50 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+COLAB_DRIVE_MOUNT = Path("/content/drive")
+
+
+def _require_mounted_drive(root: Path) -> None:
+    """Fail if `root` points into Colab's Drive mount point but Drive is not mounted.
+
+    `mkdir(parents=True)` would otherwise create /content/drive/MyDrive/... on
+    the ephemeral local disk, and every checkpoint would be written there and
+    lost with the session, with nothing printed to say so.
+    """
+    if root.as_posix().startswith(COLAB_DRIVE_MOUNT.as_posix() + "/") and not os.path.ismount(
+        COLAB_DRIVE_MOUNT
+    ):
+        raise RuntimeError(
+            f"--drive-root {root} is under {COLAB_DRIVE_MOUNT}, but Drive is not mounted. "
+            "Run the notebook's Drive mount cell first; otherwise checkpoints go to "
+            "local disk and vanish with the session."
+        )
+
+
+def _save_weights(model: torch.nn.Module, path: Path) -> str:
+    """Write `model`'s state_dict atomically. Returns the file's SHA-256."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    torch.save(model.state_dict(), tmp)
+    os.replace(tmp, path)
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def main(argv: list[str] | None = None) -> dict:
     args = build_parser().parse_args(argv)
+
+    root = Path(args.drive_root) if args.drive_root else Path(__file__).resolve().parents[1]
+    _require_mounted_drive(root)
 
     backends = set_seed(args.seed)
     device = resolve_device(args.device)
 
-    root = Path(args.drive_root) if args.drive_root else Path(__file__).resolve().parents[1]
     run_name = "p0.5_smoke" if args.smoke else "p0.5_clean_baseline"
     checkpoint_dir = root / "checkpoints" / run_name
     results_out = root / "results"
+    # The final-epoch weights. This, not best.pt, is `W`: best.pt is chosen by
+    # test accuracy, and a baseline picked on the test set overstates itself.
+    weights_path = root / "models" / f"{run_name}_W.pt"
 
     if args.smoke:
         epochs, max_minutes, num_workers = 2, 5.0, 0
@@ -135,6 +171,9 @@ def main(argv: list[str] | None = None) -> dict:
     # split behaved as intended.
     holdout_metrics = evaluate(model, loaders["holdout"], device)
 
+    # Only a finished run is `W`. An early-stopped one is mid-schedule.
+    weights_sha256 = None if summary["stopped_early"] else _save_weights(model, weights_path)
+
     notes = (
         "SMOKE RUN on synthetic random data. Accuracy is meaningless by "
         "construction and must not be recorded in the Results Ledger."
@@ -175,6 +214,11 @@ def main(argv: list[str] | None = None) -> dict:
             "epochs_completed": summary["epochs_completed"],
             "epochs_planned": epochs,
             "stopped_early": summary["stopped_early"],
+            # duration_seconds covers only this session; a resumed run spans
+            # several. This sums every epoch that went into the weights.
+            "total_epoch_seconds": round(sum(h["epoch_seconds"] for h in summary["history"]), 2),
+            "weights_file": str(weights_path) if weights_sha256 else None,
+            "weights_sha256": weights_sha256,
             "history": summary["history"],
         },
         seeded_backends=backends,
@@ -192,6 +236,7 @@ def main(argv: list[str] | None = None) -> dict:
     print(f"best test accuracy: {summary['best']['accuracy'] * 100:.2f}% (epoch {summary['best']['epoch'] + 1})")
     print(f"holdout accuracy  : {holdout_metrics['accuracy'] * 100:.2f}%  (sanity check)")
     print(f"result            : {path}")
+    print(f"weights (W)       : {weights_path if weights_sha256 else 'not written, run incomplete'}")
     print(f"checkpoints       : {checkpoint_dir}")
     print("=" * 68)
 

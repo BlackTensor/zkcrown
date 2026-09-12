@@ -72,20 +72,48 @@ def _run_git(*args: str) -> str | None:
     return completed.stdout.strip()
 
 
+BUILD_INFO_NAME = "BUILD_INFO.json"
+"""Written into every handoff zip by `handoff/build_handoff.py`."""
+
+
+def _build_info() -> dict[str, Any] | None:
+    path = repo_root() / BUILD_INFO_NAME
+    try:
+        info = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return info if isinstance(info, dict) else None
+
+
 def git_info() -> dict[str, Any]:
-    """Commit, branch and dirty flag, or nulls if git is unavailable.
+    """Commit, branch and dirty flag, and where they came from.
 
     `dirty` True means the code that produced the result does not match the
     recorded commit. Treat such a result as provisional.
+
+    `source` is `"git"` when read from a live checkout, `"handoff"` when read
+    from the `BUILD_INFO.json` a handoff zip carries (an unpacked zip on Colab
+    is not a repository, and without this the result would name no commit at
+    all), or None when neither is available. `available` stays True only for a
+    live checkout.
     """
     commit = _run_git("rev-parse", "HEAD")
     if commit is None:
-        return {"commit": None, "branch": None, "dirty": None, "available": False}
+        build = _build_info()
+        if build is not None and build.get("commit"):
+            return {
+                "commit": build["commit"],
+                "branch": build.get("branch"),
+                "dirty": build.get("dirty"),
+                "available": False,
+                "source": "handoff",
+            }
+        return {"commit": None, "branch": None, "dirty": None, "available": False, "source": None}
 
     porcelain = _run_git("status", "--porcelain")
     dirty = None if porcelain is None else bool(porcelain)
     branch = _run_git("rev-parse", "--abbrev-ref", "HEAD")
-    return {"commit": commit, "branch": branch, "dirty": dirty, "available": True}
+    return {"commit": commit, "branch": branch, "dirty": dirty, "available": True, "source": "git"}
 
 
 def _optional_version(module_name: str) -> str | None:

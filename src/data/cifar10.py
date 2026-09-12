@@ -28,7 +28,7 @@ from typing import Any
 import torch
 from torch.utils.data import DataLoader, Dataset, Subset, TensorDataset
 
-from src.utils.seeding import seed_worker, torch_generator
+from src.utils.seeding import DEFAULT_SEED, seed_worker, torch_generator
 
 # Per-channel statistics of the CIFAR-10 training set.
 CIFAR10_MEAN = (0.4914, 0.4822, 0.4465)
@@ -125,7 +125,7 @@ def cifar10_datasets(
     augment: bool = True,
     download: bool = True,
     smoke: bool = False,
-    seed: int = SPLIT_SEED,
+    seed: int = DEFAULT_SEED,
 ) -> dict[str, Dataset]:
     """Return the `train`, `holdout` and `test` datasets.
 
@@ -160,14 +160,23 @@ def cifar10_loaders(
     augment: bool = True,
     download: bool = True,
     smoke: bool = False,
-    seed: int = SPLIT_SEED,
+    seed: int = DEFAULT_SEED,
     pin_memory: bool | None = None,
 ) -> dict[str, DataLoader]:
     """DataLoaders for `train`, `holdout` and `test`.
 
+    `seed` is the run seed: it drives shuffling, worker seeds and the smoke
+    data. It has no effect on the train/holdout split, which is fixed by
+    `SPLIT_SEED`.
+
     Shuffling uses an explicitly seeded generator and workers are seeded via
     `seed_worker`, so epoch order is reproducible rather than dependent on
     whatever else consumed the global RNG first.
+
+    Workers are deliberately not persistent. `fit` reseeds the shuffle
+    generator each epoch so a resumed run matches an uninterrupted one, and
+    workers only pick up a new base seed when they are re-created. The cost is
+    re-spawning two workers per epoch, which is small next to a CIFAR-10 epoch.
     """
     datasets = cifar10_datasets(
         root, augment=augment, download=download, smoke=smoke, seed=seed
@@ -179,7 +188,6 @@ def cifar10_loaders(
     shared: dict[str, Any] = {
         "num_workers": num_workers,
         "pin_memory": pin_memory,
-        "persistent_workers": num_workers > 0,
     }
 
     return {

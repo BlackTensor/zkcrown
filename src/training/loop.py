@@ -21,7 +21,55 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 
-from src.training.checkpoint import load_latest, restore, save_checkpoint
+from src.training.checkpoint import clear_checkpoints, load_latest, restore, save_checkpoint
+
+# TrainConfig fields that only control how the run is babysat, not what it
+# computes. Everything else must match the checkpoint for a resume to be valid.
+_RESUME_IGNORED_FIELDS = frozenset({"max_minutes", "log_every"})
+
+
+def _check_resume_config(checkpoint: dict[str, Any], config: "TrainConfig", seed: int | None) -> None:
+    """Refuse to resume under different hyperparameters or a different seed.
+
+    Otherwise the mismatch is silent: `restore` overwrites the new optimizer's
+    lr and the scheduler's `T_max` with the checkpoint's, so `--epochs 80` on a
+    60-epoch checkpoint would train 80 epochs on a 60-epoch cosine curve. A
+    different seed would change the remaining epochs' data order.
+    """
+    saved = checkpoint.get("config") or {}
+    current = config.as_dict()
+    mismatched = {
+        key: (saved.get(key), current[key])
+        for key in current
+        if saved and key not in _RESUME_IGNORED_FIELDS and saved.get(key) != current[key]
+    }
+    if checkpoint.get("seed") != seed:
+        mismatched["seed"] = (checkpoint.get("seed"), seed)
+    if mismatched:
+        details = ", ".join(f"{k}: checkpoint={a!r} now={b!r}" for k, (a, b) in mismatched.items())
+        raise ValueError(
+            f"refusing to resume with different hyperparameters ({details}). "
+            "Restore the original settings, or start over with resume=False."
+        )
+
+
+def _reseed_shuffle(loader: Any, seed: int | None, epoch: int) -> None:
+    """Make epoch `epoch`'s data order a function of (seed, epoch) alone.
+
+    The loader's generator is created fresh from `seed` each time the process
+    starts, and the checkpoint does not carry its state. Without this, a run
+    resumed at epoch k replays epoch 0's shuffle order and worker seeds, so it
+    is not the run that would have happened uninterrupted.
+
+    Reseeding per epoch covers both draws the DataLoader takes from this
+    generator when an epoch's iterator is created: the sampler permutation and
+    the base seed handed to workers. The latter only helps if workers are
+    re-created each epoch, which is why the CIFAR-10 loaders do not use
+    persistent workers.
+    """
+    generator = getattr(loader, "generator", None)
+    if generator is not None and seed is not None:
+        generator.manual_seed(seed + epoch)
 
 
 @dataclass
@@ -126,7 +174,13 @@ def fit(
     """Train `model`, checkpointing every epoch. Returns a summary dict.
 
     Resumes from `checkpoint_dir` if a usable checkpoint is there, so
-    re-running after a Colab timeout continues rather than restarting.
+    re-running after a Colab timeout continues rather than restarting. Given
+    the same `seed`, a resumed run reproduces the uninterrupted one (tested
+    bit-for-bit on CPU). Resuming under different hyperparameters raises.
+
+    `resume=False` deletes any checkpoint already in `checkpoint_dir` before
+    training, so a stale slot from an earlier run can never be picked up by a
+    later resume.
 
     Returns:
         `{"history": [...], "best": {...}, "final": {...}, "epochs_completed":
@@ -155,9 +209,18 @@ def fit(
     history: list[dict[str, Any]] = []
     best: dict[str, Any] = {"accuracy": -1.0, "epoch": -1}
 
-    if resume:
-        checkpoint = load_latest(checkpoint_dir, map_location=str(device))
+    if not resume:
+        removed = clear_checkpoints(checkpoint_dir)
+        if removed:
+            print(f"resume=False: removed stale checkpoint files {removed}")
+    else:
+        # Loaded onto the CPU on purpose. load_state_dict moves weights and
+        # optimizer state onto the model's device anyway, and the saved RNG
+        # states must stay CPU ByteTensors: mapped to CUDA, set_rng_state_all
+        # rejects them.
+        checkpoint = load_latest(checkpoint_dir)
         if checkpoint is not None:
+            _check_resume_config(checkpoint, config, seed)
             last_epoch = restore(checkpoint, model, optimizer, scheduler)
             start_epoch = last_epoch + 1
             history = list(checkpoint.get("history") or [])
@@ -183,6 +246,9 @@ def fit(
 
     for epoch in range(start_epoch, config.epochs):
         epoch_started = time.monotonic()
+        # Read before scheduler.step(), which sets the LR for the *next* epoch.
+        epoch_lr = optimizer.param_groups[0]["lr"]
+        _reseed_shuffle(train_loader, seed, epoch)
         train_metrics = train_one_epoch(
             model, train_loader, optimizer, criterion, device, grad_clip=config.grad_clip
         )
@@ -191,7 +257,7 @@ def fit(
 
         record = {
             "epoch": epoch,
-            "lr": optimizer.param_groups[0]["lr"],
+            "lr": epoch_lr,
             "train_loss": train_metrics["loss"],
             "train_accuracy": train_metrics["accuracy"],
             "eval_loss": eval_metrics["loss"],

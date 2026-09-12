@@ -16,8 +16,11 @@ Two things make this harder than `torch.save(model.state_dict(), path)`:
 
 2. **Resuming is not just weights.** Optimizer momentum, the LR schedule
    position and the RNG states all have to come back, or a resumed run is not
-   the run that would have happened without the interruption. RNG states are
-   saved too, so data order and augmentation continue rather than restart.
+   the run that would have happened without the interruption. The global RNG
+   states are saved too (dropout, and augmentation when it runs in the main
+   process). The DataLoader's shuffle generator is not in the checkpoint;
+   `fit` reseeds it per epoch from the run seed, which is what makes data
+   order and worker augmentation continue rather than restart.
 """
 
 from __future__ import annotations
@@ -162,6 +165,26 @@ def load_latest(directory: Path | str, map_location: str = "cpu") -> dict[str, A
         except Exception as exc:  # noqa: BLE001 - any failure means "try the other slot"
             print(f"checkpoint {path.name} is unusable ({exc}); trying the next slot")
     return None
+
+
+def clear_checkpoints(directory: Path | str) -> list[str]:
+    """Delete the slots, manifest and best checkpoint in `directory`.
+
+    For starting a run over. Leaving an old slot in place is not harmless: if
+    the new run's first save is interrupted, `load_latest` falls back to that
+    slot and a later resume silently continues the *old* run. Returns the names
+    removed. Other files in the directory are left alone.
+    """
+    directory = Path(directory)
+    if not directory.is_dir():
+        return []
+    removed = []
+    for name in (*SLOT_NAMES, MANIFEST_NAME, BEST_NAME):
+        for path in (directory / name, directory / (name + ".tmp")):
+            if path.is_file():
+                path.unlink()
+                removed.append(path.name)
+    return removed
 
 
 def restore(

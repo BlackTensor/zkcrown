@@ -18,7 +18,15 @@ from src.data.cifar10 import (  # noqa: E402
     denormalize,
 )
 from src.models import main_model  # noqa: E402
-from src.training import TrainConfig, evaluate, fit, load_latest, restore, save_checkpoint  # noqa: E402
+from src.training import (  # noqa: E402
+    TrainConfig,
+    clear_checkpoints,
+    evaluate,
+    fit,
+    load_latest,
+    restore,
+    save_checkpoint,
+)
 from src.training.checkpoint import MANIFEST_NAME  # noqa: E402
 from src.utils.seeding import set_seed  # noqa: E402
 
@@ -143,11 +151,12 @@ def test_no_temp_files_survive_a_save(tmp_path):
 # --- the loop ---------------------------------------------------------------
 
 
-def _smoke_fit(tmp_path, epochs, **kwargs):
-    set_seed(11)
-    loaders = cifar10_loaders(batch_size=64, num_workers=0, smoke=True)
+def _smoke_fit(tmp_path, epochs, *, max_minutes=None, resume=True, seed=11, **kwargs):
+    """A fresh process's worth of setup, as a Colab re-run would do it."""
+    set_seed(seed)
+    loaders = cifar10_loaders(batch_size=64, num_workers=0, smoke=True, seed=11)
     model = main_model(width=4)
-    config = TrainConfig(epochs=epochs, max_minutes=None, log_every=0, **kwargs)
+    config = TrainConfig(epochs=epochs, max_minutes=max_minutes, log_every=0, **kwargs)
     return model, fit(
         model,
         loaders["train"],
@@ -155,8 +164,13 @@ def _smoke_fit(tmp_path, epochs, **kwargs):
         config,
         checkpoint_dir=tmp_path,
         device=torch.device("cpu"),
-        seed=11,
+        seed=seed,
+        resume=resume,
     )
+
+
+def _without_timing(history):
+    return [{k: v for k, v in h.items() if k != "epoch_seconds"} for h in history]
 
 
 def test_fit_runs_and_checkpoints_every_epoch(tmp_path):
@@ -168,14 +182,73 @@ def test_fit_runs_and_checkpoints_every_epoch(tmp_path):
     assert load_latest(tmp_path)["epoch"] == 1
 
 
-def test_fit_resumes_instead_of_restarting(tmp_path):
-    _, first = _smoke_fit(tmp_path, epochs=2)
-    assert first["epochs_completed"] == 2
+def test_interrupted_run_matches_uninterrupted_run(tmp_path):
+    """The resume guarantee, tested rather than assumed.
 
-    _, second = _smoke_fit(tmp_path, epochs=4)
-    assert second["epochs_completed"] == 4
-    # History carried across the restart rather than starting from zero.
-    assert [h["epoch"] for h in second["history"]] == [0, 1, 2, 3]
+    One run goes straight through. The other is cut off by the time budget
+    after every single epoch and restarted from scratch each time, the way a
+    Colab re-run would. They must end with identical weights, optimizer state
+    and per-epoch metrics. This caught a real bug: without per-epoch shuffle
+    reseeding, every resumed epoch replayed epoch 0's data order.
+    """
+    epochs = 4
+    reference_model, reference = _smoke_fit(tmp_path / "straight", epochs)
+
+    for _ in range(epochs):
+        model, summary = _smoke_fit(tmp_path / "interrupted", epochs, max_minutes=0.0)
+    assert summary["epochs_completed"] == epochs and not summary["stopped_early"]
+
+    assert [h["epoch"] for h in summary["history"]] == list(range(epochs))
+    assert _without_timing(summary["history"]) == _without_timing(reference["history"])
+    for (name, a), b in zip(reference_model.state_dict().items(), model.state_dict().values()):
+        assert torch.equal(a, b), f"{name} diverged after resuming"
+
+    straight_opt = load_latest(tmp_path / "straight")["optimizer"]["state"]
+    interrupted_opt = load_latest(tmp_path / "interrupted")["optimizer"]["state"]
+    for key, state in straight_opt.items():
+        assert torch.equal(state["momentum_buffer"], interrupted_opt[key]["momentum_buffer"])
+
+
+def test_history_records_the_lr_each_epoch_actually_used(tmp_path):
+    _, summary = _smoke_fit(tmp_path, epochs=4, lr=0.1)
+    lrs = [h["lr"] for h in summary["history"]]
+    assert lrs[0] == pytest.approx(0.1), "epoch 0 trains at the initial LR"
+    assert lrs == sorted(lrs, reverse=True)
+
+
+def test_resuming_with_different_hyperparameters_is_refused(tmp_path):
+    """restore() would silently keep the checkpoint's LR and T_max."""
+    _smoke_fit(tmp_path, epochs=2, max_minutes=0.0)
+    with pytest.raises(ValueError, match="epochs"):
+        _smoke_fit(tmp_path, epochs=4)
+    with pytest.raises(ValueError, match="lr"):
+        _smoke_fit(tmp_path, epochs=2, lr=0.05)
+    with pytest.raises(ValueError, match="seed"):
+        _smoke_fit(tmp_path, epochs=2, seed=12)
+
+
+def test_changing_only_the_time_budget_still_resumes(tmp_path):
+    _smoke_fit(tmp_path, epochs=2, max_minutes=0.0)
+    _, summary = _smoke_fit(tmp_path, epochs=2, max_minutes=500.0)
+    assert summary["epochs_completed"] == 2
+
+
+def test_starting_over_removes_stale_checkpoints(tmp_path):
+    """A leftover slot from an old run must not be resumable into a new one."""
+    _smoke_fit(tmp_path, epochs=3)
+    _smoke_fit(tmp_path, epochs=3, max_minutes=0.0, resume=False)
+    # The restarted run wrote only epoch 0, into ckpt_a. The old run's ckpt_b
+    # (epoch 1) must be gone, or a corrupt ckpt_a would fall back to it.
+    assert not (tmp_path / "ckpt_b.pt").exists()
+    assert load_latest(tmp_path)["epoch"] == 0
+
+
+def test_clear_checkpoints_leaves_other_files_alone(tmp_path):
+    model, _ = _tiny_setup()
+    save_checkpoint(tmp_path, epoch=0, model=model, is_best=True)
+    (tmp_path / "notes.txt").write_text("keep me")
+    assert sorted(clear_checkpoints(tmp_path)) == ["best.pt", "ckpt_a.pt", "manifest.json"]
+    assert [p.name for p in tmp_path.iterdir()] == ["notes.txt"]
 
 
 def test_fit_on_an_already_finished_run_only_evaluates(tmp_path):
@@ -211,3 +284,44 @@ def test_evaluate_rejects_an_empty_loader():
     empty = DataLoader(TensorDataset(torch.zeros(0, 3, 32, 32), torch.zeros(0, dtype=torch.long)))
     with pytest.raises(ValueError):
         evaluate(main_model(width=4), empty, torch.device("cpu"))
+
+
+# --- the entry point --------------------------------------------------------
+
+
+def _p0_5_script(monkeypatch):
+    import importlib
+    from pathlib import Path
+
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "experiments"))
+    return importlib.import_module("p0_5_train_clean")
+
+
+def test_entry_point_smoke_run_writes_result_and_weights(tmp_path, monkeypatch):
+    """The exact command the notebook's pre-flight cell runs, end to end."""
+    import hashlib
+
+    script = _p0_5_script(monkeypatch)
+    record = script.main(["--smoke", "--drive-root", str(tmp_path), "--device", "cpu"])
+
+    metrics = record["metrics"]
+    assert metrics["epochs_completed"] == 2 and not metrics["stopped_early"]
+    weights = tmp_path / "models" / "p0.5_smoke_W.pt"
+    assert hashlib.sha256(weights.read_bytes()).hexdigest() == metrics["weights_sha256"]
+    assert metrics["total_epoch_seconds"] >= 0
+
+    # A re-run after completion resumes, trains nothing, and the weights it
+    # re-exports are the same model.
+    again = script.main(["--smoke", "--drive-root", str(tmp_path), "--device", "cpu"])
+    assert again["metrics"]["test_accuracy"] == metrics["test_accuracy"]
+    exported = torch.load(weights, map_location="cpu")
+    final_checkpoint = load_latest(tmp_path / "checkpoints" / "p0.5_smoke")["model"]
+    assert exported.keys() == final_checkpoint.keys()
+    assert all(torch.equal(v, final_checkpoint[k]) for k, v in exported.items())
+
+
+def test_entry_point_refuses_an_unmounted_drive_path(monkeypatch):
+    script = _p0_5_script(monkeypatch)
+    monkeypatch.setattr(script.os.path, "ismount", lambda p: False)
+    with pytest.raises(RuntimeError, match="not mounted"):
+        script.main(["--smoke", "--drive-root", "/content/drive/MyDrive/zk-crown"])

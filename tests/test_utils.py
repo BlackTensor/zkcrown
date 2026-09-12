@@ -73,27 +73,46 @@ def test_git_info_has_a_consistent_shape():
     run. So: assert the shape always, and the commit only when git can answer.
     """
     info = git_info()
-    assert set(info) == {"commit", "branch", "dirty", "available"}
+    assert set(info) == {"commit", "branch", "dirty", "available", "source"}
 
     if info["available"]:
+        assert info["source"] == "git"
         assert len(info["commit"]) == 40
         assert isinstance(info["dirty"], bool)
     else:
-        assert info["commit"] is None
-        assert info["dirty"] is None
+        assert info["source"] in {"handoff", None}
 
 
 def test_records_are_writable_without_git(tmp_path, monkeypatch):
     """No git binary must not stop a result from being saved."""
     monkeypatch.setattr("src.utils.results._run_git", lambda *a: None)
+    monkeypatch.setattr("src.utils.results.repo_root", lambda: tmp_path / "no-build-info")
     record = read_result(write_result("nogit", seed=1, metrics={"a": 1}, out_dir=tmp_path))
     assert record["git"] == {
         "commit": None,
         "branch": None,
         "dirty": None,
         "available": False,
+        "source": None,
     }
     assert record["metrics"]["a"] == 1
+
+
+def test_unpacked_handoff_zip_still_records_its_commit(tmp_path, monkeypatch):
+    """On Colab the code is an unpacked zip, not a checkout. The result must
+    still name the commit the zip was built from."""
+    (tmp_path / "BUILD_INFO.json").write_text(
+        json.dumps({"commit": "a" * 40, "branch": "master", "dirty": False}), encoding="utf-8"
+    )
+    monkeypatch.setattr("src.utils.results._run_git", lambda *a: None)
+    monkeypatch.setattr("src.utils.results.repo_root", lambda: tmp_path)
+    assert git_info() == {
+        "commit": "a" * 40,
+        "branch": "master",
+        "dirty": False,
+        "available": False,
+        "source": "handoff",
+    }
 
 
 def test_write_and_read_round_trip(tmp_path):
