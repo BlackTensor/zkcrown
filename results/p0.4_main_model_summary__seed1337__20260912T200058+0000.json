@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "name": "p0.4_main_model_summary",
+  "task": "P0.4",
+  "timestamp_utc": "2026-09-12T20:00:58+00:00",
+  "git": {
+    "commit": "ac9abc0eea7ed734f622f4fc99300d60d9288c05",
+    "branch": "master",
+    "dirty": true,
+    "available": true
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "architecture": "MainModel",
+    "width": 32,
+    "student_width": 16,
+    "dataset": "CIFAR-10",
+    "input_shape": [
+      3,
+      32,
+      32
+    ],
+    "num_classes": 10,
+    "layer_shapes": {
+      "features.0.weight": [
+        32,
+        3,
+        3,
+        3
+      ],
+      "features.1.weight": [
+        32
+      ],
+      "features.1.bias": [
+        32
+      ],
+      "features.3.weight": [
+        32,
+        32,
+        3,
+        3
+      ],
+      "features.4.weight": [
+        32
+      ],
+      "features.4.bias": [
+        32
+      ],
+      "features.7.weight": [
+        64,
+        32,
+        3,
+        3
+      ],
+      "features.8.weight": [
+        64
+      ],
+      "features.8.bias": [
+        64
+      ],
+      "features.10.weight": [
+        64,
+        64,
+        3,
+        3
+      ],
+      "features.11.weight": [
+        64
+      ],
+      "features.11.bias": [
+        64
+      ],
+      "features.14.weight": [
+        128,
+        64,
+        3,
+        3
+      ],
+      "features.15.weight": [
+        128
+      ],
+      "features.15.bias": [
+        128
+      ],
+      "features.17.weight": [
+        128,
+        128,
+        3,
+        3
+      ],
+      "features.18.weight": [
+        128
+      ],
+      "features.18.bias": [
+        128
+      ],
+      "classifier.2.weight": [
+        10,
+        2048
+      ],
+      "classifier.2.bias": [
+        10
+      ]
+    }
+  },
+  "metrics": {
+    "total_params": 307946,
+    "trainable_params": 307946,
+    "conv_and_linear_weights": 307040,
+    "student_total_params": 82554,
+    "output_shape": [
+      2,
+      10
+    ],
+    "state_dict_entries": 38
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null
+  },
+  "duration_seconds": null,
+  "notes": "Architecture only. No training, no dataset, no accuracy measured."
+}

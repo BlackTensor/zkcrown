@@ -182,7 +182,7 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
 - [x] **P0.2** Write `src/utils/seeding.py` with a global seed helper, and `src/utils/results.py` that writes a standard JSON result record (name, timestamp, git hash, seed, params, metrics).
 - [x] **P0.3** Write `notebooks/00_setup.ipynb`: Drive mount, `nvidia-smi`, dependency install, repo clone, smoke test.
   - Notebook written and validated; its logic was executed locally (Colab-only paths fall through their guards). The section 8.1 environment rows stay `TBD` until it is actually run on Colab, since those are measured numbers.
-- [ ] **P0.4** Implement `main_model` (small CNN) in `src/models/` for CIFAR-10.
+- [x] **P0.4** Implement `main_model` (small CNN) in `src/models/` for CIFAR-10.
 - [ ] **P0.5** `[GPU]` Train clean `W` to a reasonable baseline. Checkpoint per epoch to Drive.
 - [ ] **P0.6** Record baseline clean accuracy in the Results Ledger. This is the number every later accuracy drop is measured against.
 - [ ] **P0.7** `[GPU]` Implement `zk_model` (minimal MNIST CNN, target under 10K params), train it, record its accuracy and exact parameter count.
@@ -339,9 +339,14 @@ Fill in as tasks complete. `TBD` until measured.
 
 | Model | Dataset | Params | Clean accuracy |
 |---|---|---|---|
-| `main_model` clean `W` | CIFAR-10 | TBD | TBD |
+| `main_model` clean `W` | CIFAR-10 | 307,946 | TBD |
 | `main_model` watermarked `W*` | CIFAR-10 | TBD | TBD |
 | `zk_model` | MNIST | TBD | TBD |
+
+`main_model` parameter count from `experiments/p0_4_model_summary.py` (P0.4).
+307,040 of the 307,946 (99.7%) are conv/linear weights, which is the pool the
+weight watermark spreads into (P3.2). The `width=16` distillation student for
+P4.7 is 82,554. Accuracy is `TBD` until P0.5/P0.6.
 
 ## 8.3 Watermark baseline
 
@@ -401,3 +406,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-09-13: P0.1. Repo skeleton created per Section 3, `.gitignore` written, git repo initialised, `CLAUDE.md` moved out of `.venv/` to the repo root so it is actually tracked. No experiments run, no numbers produced.
 - 2026-09-13: P0.2. `src/utils/seeding.py` and `src/utils/results.py` written; 16 tests in `tests/test_utils.py` pass. Result records carry a dirty-tree flag and warn when set. No numbers produced.
 - 2026-09-13: P0.3. `notebooks/00_setup.ipynb` written (20 cells), nbformat-valid, logic executed locally. Supports both source routes (git clone and 0.5 handoff zip). Not yet run on Colab, so section 8.1 is still `TBD`.
+- 2026-09-13: P0.4. `main_model` implemented, 307,946 params, 34 tests pass. CPU-only torch installed locally, so watermark/crypto/auditor logic can now be tested off-Colab. Section 8.2 params filled; accuracy still `TBD`.

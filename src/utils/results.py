@@ -259,6 +259,13 @@ def write_result(
     Warns:
         UserWarning: if the git working tree is dirty, since the result is then
             not reproducible from the recorded commit.
+
+    Note:
+        A result committed alongside the code that produced it will always read
+        `dirty: true`, because the commit containing the file cannot exist when
+        the file is written. Read such a record as "based on <commit>, plus the
+        uncommitted change that became the next commit". The flag matters when
+        it appears on a result committed *later* than the code it describes.
     """
     record = build_record(
         name,
