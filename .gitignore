@@ -7,6 +7,10 @@ secrets/*
 # --- Datasets ----------------------------------------------------------------
 data/
 
+# --- Notebook scratch --------------------------------------------------------
+# 00_setup.ipynb writes here when run outside Colab, standing in for Drive.
+_local_drive/
+
 # --- Model weights and checkpoints -------------------------------------------
 *.pth
 *.pt
