@@ -1,0 +1,37 @@
+# --- Secrets -----------------------------------------------------------------
+# The real master key K is never committed (CLAUDE.md 0.3). Demo keys only,
+# clearly labelled, live elsewhere.
+secrets/*
+!secrets/.gitkeep
+
+# --- Datasets ----------------------------------------------------------------
+data/
+
+# --- Model weights and checkpoints -------------------------------------------
+*.pth
+*.pt
+*.ckpt
+
+# --- Zero-knowledge artifacts (large binaries) -------------------------------
+*.ptau
+*.zkey
+*.r1cs
+*.wtns
+*.sym
+
+# --- Colab handoff packages --------------------------------------------------
+handoff/*.zip
+
+# --- Python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- OS / editor -------------------------------------------------------------
+.DS_Store
+Thumbs.db

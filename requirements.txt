@@ -1,0 +1,30 @@
+# zk-Crown dependencies.
+#
+# Versions are intentionally unpinned here for now. Per CLAUDE.md 2.4, each
+# tool gets pinned to an exact version the first time it is confirmed working
+# on Colab free tier, and that version is recorded in section 8.1.
+# ezkl in particular is beta software whose API changes between releases.
+
+# --- Machine learning --------------------------------------------------------
+torch
+torchvision
+numpy
+matplotlib
+
+# --- ONNX (zk_model export, Track B) -----------------------------------------
+onnx
+onnxruntime
+
+# --- Cryptography ------------------------------------------------------------
+# hashlib is stdlib. `cryptography` provides the provenance-record keypair.
+cryptography
+
+# --- Zero-knowledge, Track B (zkML) ------------------------------------------
+# Track A (circom / snarkjs / circomlib) is npm-installed, not pip. See P7.2.
+ezkl
+
+# --- Interface ---------------------------------------------------------------
+streamlit
+
+# --- Testing -----------------------------------------------------------------
+pytest
