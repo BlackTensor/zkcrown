@@ -5,7 +5,9 @@ secrets/*
 !secrets/.gitkeep
 
 # --- Datasets ----------------------------------------------------------------
-data/
+# Leading slash matters: a bare `data/` also matches src/data/, which is source
+# code, and silently kept the CIFAR-10 pipeline out of the repo.
+/data/
 
 # --- Notebook scratch --------------------------------------------------------
 # 00_setup.ipynb writes here when run outside Colab, standing in for Drive.
@@ -15,6 +17,8 @@ _local_drive/
 *.pth
 *.pt
 *.ckpt
+# Checkpoints live on Drive during a GPU run; a local copy is scratch.
+checkpoints/
 
 # --- Zero-knowledge artifacts (large binaries) -------------------------------
 *.ptau

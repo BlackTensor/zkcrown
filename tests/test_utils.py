@@ -64,10 +64,36 @@ def test_record_has_the_required_fields():
     assert record["metrics"]["acc"] == 0.5
 
 
-def test_record_carries_a_git_commit_in_this_repo():
+def test_git_info_has_a_consistent_shape():
+    """Must not require a git checkout.
+
+    A handoff zip unpacked on Colab is not a repository (CLAUDE.md 0.5), and
+    the notebook runs this suite as a pre-flight check before spending GPU
+    time. A test that assumed `.git` was present would abort a perfectly good
+    run. So: assert the shape always, and the commit only when git can answer.
+    """
     info = git_info()
-    assert info["available"] is True, "expected to be running inside the git repo"
-    assert len(info["commit"]) == 40
+    assert set(info) == {"commit", "branch", "dirty", "available"}
+
+    if info["available"]:
+        assert len(info["commit"]) == 40
+        assert isinstance(info["dirty"], bool)
+    else:
+        assert info["commit"] is None
+        assert info["dirty"] is None
+
+
+def test_records_are_writable_without_git(tmp_path, monkeypatch):
+    """No git binary must not stop a result from being saved."""
+    monkeypatch.setattr("src.utils.results._run_git", lambda *a: None)
+    record = read_result(write_result("nogit", seed=1, metrics={"a": 1}, out_dir=tmp_path))
+    assert record["git"] == {
+        "commit": None,
+        "branch": None,
+        "dirty": None,
+        "available": False,
+    }
+    assert record["metrics"]["a"] == 1
 
 
 def test_write_and_read_round_trip(tmp_path):
