@@ -187,7 +187,8 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
   - Run on Colab T4, 60/60 epochs, not stopped early. Test accuracy 91.20%. `W` SHA-256 `54f112f4…22fdcf` matches the result JSON. The weights file is gitignored (`*.pt`) and lives locally at `results/p0.5_clean_baseline_W.pt` and on Drive.
 - [x] **P0.6** Record baseline clean accuracy in the Results Ledger. This is the number every later accuracy drop is measured against.
   - Baseline is 91.20% top-1 on the CIFAR-10 test set, recorded in section 8.2 from the verified P0.5 result JSON.
-- [ ] **P0.7** `[GPU]` Implement `zk_model` (minimal MNIST CNN, target under 10K params), train it, record its accuracy and exact parameter count.
+- [x] **P0.7** `[GPU]` Implement `zk_model` (minimal MNIST CNN, target under 10K params), train it, record its accuracy and exact parameter count.
+  - Run on Colab T4, 20/20 epochs, not stopped early. 6,138 params, 98.96% test accuracy. Weights SHA-256 `6bc298d0…9ddec4` matches the JSON. Re-evaluating the saved file on CPU gives exactly the final epoch's numbers (9,896/10,000, loss 0.033630), not the best epoch's 99.02%, so these are final-epoch weights.
 
 ## Phase 1: Triggers
 
@@ -332,7 +333,7 @@ Fill in as tasks complete. `TBD` until measured.
 | Item | Value |
 |---|---|
 | Accelerator assigned | Tesla T4 (P0.5 run) |
-| System RAM available | TBD |
+| System RAM available | 12.67 GiB total (P0.7 run) |
 | torch version | 2.11.0+cu128 |
 | ezkl version (pinned) | TBD |
 | circom / snarkjs / circomlib versions | TBD |
@@ -340,9 +341,13 @@ Fill in as tasks complete. `TBD` until measured.
 The values above come from the `environment` block of
 `results/p0.5_clean_baseline__seed1337__20260913T071152+0000.json`. That block
 also records Python 3.13.15, CUDA 12.8, numpy 2.1.3, and
-`Linux-6.6.122+-x86_64-with-glibc2.39`. It does not record system RAM, so that
-row stays `TBD`. The accelerator is what that one session got; section 2.1
-says a T4 is not guaranteed.
+`Linux-6.6.122+-x86_64-with-glibc2.39`. It does not record system RAM. The RAM
+row is `MemTotal` from the P0.7 result
+(`results/p0.7_zk_model__seed1337__20260913T075832+0000.json`,
+`environment.system_ram_gb`). That run was on the same T4, torch, CUDA and
+Python versions. The RAM figure is total memory, not free memory. The
+accelerator is what those sessions got; section 2.1 says a T4 is not
+guaranteed.
 
 ## 8.2 Models
 
@@ -350,7 +355,7 @@ says a T4 is not guaranteed.
 |---|---|---|---|
 | `main_model` clean `W` | CIFAR-10 | 307,946 | 91.20% |
 | `main_model` watermarked `W*` | CIFAR-10 | TBD | TBD |
-| `zk_model` | MNIST | TBD | TBD |
+| `zk_model` | MNIST | 6,138 | 98.96% |
 
 `main_model` parameter count from `experiments/p0_4_model_summary.py` (P0.4).
 307,040 of the 307,946 (99.7%) are conv/linear weights, which is the pool the
@@ -366,6 +371,17 @@ to coincide (epoch index 59). Accuracy on the 5,000-image attacker holdout is
 90.88%. Trained on 45,000 images. Weights SHA-256
 `54f112f4d7edc2ddacc181f8f4db25da27874e7e65aaf9407778a3ce5122fdcf`, checked
 against the local file, which loads strictly into `MainModel(width=32)`.
+
+`zk_model` numbers from `experiments/p0_7_train_zk_model.py` (P0.7), result
+file `results/p0.7_zk_model__seed1337__20260913T075832+0000.json`: 6,138
+parameters (budget 10,000), 2,608 ReLU output elements per input, widths
+8/16/16. Top-1 accuracy is 98.96% on the official 10,000-image MNIST test set
+(test loss 0.0336) after the 20th of 20 epochs, seed 1337, Tesla T4, commit
+`ca412fb`. The best epoch was index 17 at 99.02%. The reported figure and the
+saved weights are from the final epoch, confirmed by re-evaluating the local
+weights file on CPU (9,896/10,000). Trained on all 60,000 training images in
+276.65 s of epoch time. Weights SHA-256
+`6bc298d04edfe5af136349904c53ccc9a82e80dfb03729f616e552a3df9ddec4`.
 
 ## 8.3 Watermark baseline
 
@@ -432,3 +448,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-09-13: P0.5 DONE. Second Colab run (commit `55f2607`, T4) finished 60/60 epochs in 1,235 s. Test accuracy 91.20%, holdout 90.88%. I checked the returned result JSON: it is internally consistent (history, best epoch, timing, split, seed) and the local weights file's SHA-256 matches the recorded hash. The weights load strictly with 307,946 params. Nothing was retrained. Section 8.2 filled. P0.6 left unticked.
 - 2026-09-13: P0.6 ticked; the baseline was already in 8.2. Section 8.1 filled from the P0.5 JSON's `environment` block (T4, torch 2.11.0+cu128). System RAM stays `TBD` because the JSON does not record it.
 - 2026-09-13: P0.7 HANDED OFF, not done. `zk_model` implemented (`src/models/zk_model.py`): three 3x3 stride-2 conv+ReLU layers (8/16/16) and a linear classifier, 6,138 params (budget 10K), 2,608 ReLU elements per input. No BatchNorm, dropout or pooling, to keep the Phase 8 circuit simple. Also added: MNIST pipeline, entry point `experiments/p0_7_train_zk_model.py` using the P0.5 loop, notebook, instructions and `handoff/P0.7_colab.zip`. Decisions: `zk_model` trains on all 60,000 MNIST images, with no holdout since it is never attacked; lr 0.05, 20 epochs, 1-epoch warmup. Before choosing the LR I ran one CPU epoch per candidate on the training set only, to rule out a P0.5-style collapse; no test evaluation, nothing recorded. Result records now include `environment.system_ram_gb`, for section 8.1. 80 tests pass. Checkbox stays `[ ]`.
+- 2026-09-13: P0.7 DONE. Colab run (commit `ca412fb`, T4) finished 20/20 epochs with 276.65 s of epoch time. Test accuracy 98.96%; the best epoch (index 17) reached 99.02% but was not selected. Checks: the JSON is internally consistent, the local weights file's SHA-256 matches, and the weights load strictly with 6,138 params. CPU inference on the MNIST test set reproduces the final epoch's accuracy and loss exactly, which proves these are final-epoch weights. Peak allocated VRAM was 25 MB. Section 8.2 `zk_model` row filled; section 8.1 system RAM filled with 12.67 GiB. Nothing was retrained.
