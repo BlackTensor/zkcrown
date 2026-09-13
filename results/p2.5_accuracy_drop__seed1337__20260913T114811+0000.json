@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "name": "p2.5_accuracy_drop",
+  "task": "P2.5",
+  "timestamp_utc": "2026-09-13T11:48:11+00:00",
+  "git": {
+    "commit": "1eb857b30903784cd627fe39c99914fef54cd6be",
+    "branch": "master",
+    "dirty": true,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "baseline": {
+      "task": "P0.5/P0.6",
+      "result": "results/p0.5_clean_baseline__seed1337__20260913T071152+0000.json",
+      "weights_sha256": "54f112f4d7edc2ddacc181f8f4db25da27874e7e65aaf9407778a3ce5122fdcf"
+    },
+    "watermarked": {
+      "task": "P2.3",
+      "result": "results/p2.3_behavioral_wm__seed1337__20260913T112054+0000.json",
+      "weights_sha256": "be00f2b556979457b045b9a4925dd3e547ee586f984b6969b9266e61a7197222"
+    },
+    "primary_split": "official CIFAR-10 test set, 10,000 images",
+    "secondary_split": "5,000-image attacker holdout, SPLIT_SEED split",
+    "drop_definition": "acc(W) - acc(W*), positive means W* is less accurate",
+    "paired_statistics": "exact two-sided McNemar; 95% normal interval on per-image differences",
+    "device": "cpu"
+  },
+  "metrics": {
+    "w_star_test_accuracy": 0.9073,
+    "baseline_test_accuracy": 0.912,
+    "accuracy_drop_pp": 0.47,
+    "accuracy_drop_relative": 0.005153508771929825,
+    "drop_ci95_pp": [
+      -0.0398842068,
+      0.9798842068
+    ],
+    "mcnemar_exact_p": 0.07699629402538403,
+    "models": {
+      "W_clean": {
+        "test_accuracy": 0.912,
+        "test_loss": 0.30873691141605375,
+        "test_correct": 9120,
+        "holdout_accuracy": 0.9088,
+        "holdout_correct": 4544,
+        "recorded_test_accuracy": 0.912,
+        "recorded_holdout_accuracy": 0.9088,
+        "matches_recorded": true
+      },
+      "W_star": {
+        "test_accuracy": 0.9073,
+        "test_loss": 0.308929106593132,
+        "test_correct": 9073,
+        "holdout_accuracy": 0.9114,
+        "holdout_correct": 4557,
+        "recorded_test_accuracy": 0.9073,
+        "recorded_holdout_accuracy": 0.9114,
+        "matches_recorded": true
+      }
+    },
+    "paired": {
+      "test": {
+        "n": 10000,
+        "reference_correct": 9120,
+        "other_correct": 9073,
+        "reference_accuracy": 0.912,
+        "other_accuracy": 0.9073,
+        "drop": 0.0047,
+        "both_right": 8758,
+        "reference_only_right": 362,
+        "other_only_right": 315,
+        "both_wrong": 565,
+        "drop_se": 0.002601497837784994,
+        "drop_ci_low": -0.0003988420679174121,
+        "drop_ci_high": 0.009798842067917413,
+        "ci_z": 1.959963984540054,
+        "mcnemar_exact_p": 0.07699629402538403
+      },
+      "holdout": {
+        "n": 5000,
+        "reference_correct": 4544,
+        "other_correct": 4557,
+        "reference_accuracy": 0.9088,
+        "other_accuracy": 0.9114,
+        "drop": -0.0026,
+        "both_right": 4366,
+        "reference_only_right": 178,
+        "other_only_right": 191,
+        "both_wrong": 265,
+        "drop_se": 0.0038416985826584577,
+        "drop_ci_low": -0.010129590861469149,
+        "drop_ci_high": 0.004929590861469149,
+        "ci_z": 1.959963984540054,
+        "mcnemar_exact_p": 0.5322280622485493
+      }
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 98.34229559999994,
+  "notes": "Clean accuracy of behavioral-watermark W* against the P0.6 baseline W, both re-scored on CPU from hash-checked weights. The paired statistics treat the test images as the sample; training-seed variation is not measured, since each model is a single run."
+}

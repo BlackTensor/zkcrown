@@ -130,6 +130,23 @@ def evaluate(
     return {"accuracy": correct / total, "loss": loss_sum / total, "n": total}
 
 
+@torch.no_grad()
+def per_sample_correct(model: nn.Module, loader: DataLoader, device: torch.device) -> torch.Tensor:
+    """Bool tensor on the CPU: whether each sample's top-1 prediction is right, in loader order.
+
+    For paired comparisons of two models on the same, unshuffled, eval set
+    (P2.5). Puts the model in eval mode and leaves it there, like `evaluate`.
+    """
+    model.eval()
+    chunks = [
+        (model(inputs.to(device, non_blocking=True)).argmax(dim=1).cpu() == targets).cpu()
+        for inputs, targets in loader
+    ]
+    if not chunks:
+        raise ValueError("per_sample_correct() got an empty loader")
+    return torch.cat(chunks)
+
+
 def train_one_epoch(
     model: nn.Module,
     loader: Iterable,

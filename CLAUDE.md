@@ -227,7 +227,11 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
   - **WDR of `W*` is 100% (100/100)**, with mean target probability 0.9995 (min 0.9965).
   - Controls, not FPR or p-values. Clean `W` on the same triggers: 3/100 fired, 60 classified as the base label, 37 as some other class. `W*` on the unperturbed base images: 1/100 fired, 98 correct. `W` on the base images: 1/100 fired, 97 correct.
   - Caveat: these are the images `W*` was trained on, so this measures retention of trained responses, not generalisation. 15 new tests, 257 in total, all pass. A repeat run gave an identical record apart from the timestamp.
-- [ ] **P2.5** Measure clean accuracy of `W*` and compute the accuracy drop against P0.6.
+- [x] **P2.5** Measure clean accuracy of `W*` and compute the accuracy drop against P0.6.
+  - `experiments/p2_5_accuracy_drop.py` loads `W` and `W*` by hash and scores both per image on CPU. Test accuracy reproduces the Colab runs exactly: `W` 9,120/10,000 = 91.20%, `W*` 9,073/10,000 = 90.73%. Holdout: `W` 90.88%, `W*` 91.14%.
+  - **Drop on the test set: 0.47 percentage points** (0.52% relative).
+  - Paired analysis (`src/utils/stats.py`): `W` alone is right on 362 images and `W*` alone on 315. Exact McNemar p = 0.077, 95% CI for the drop [-0.04, +0.98] pp. So the drop cannot be told apart from zero at the 5% level on this test set. On the holdout the sign flips: -0.26 pp, CI [-1.01, +0.49], p = 0.53.
+  - Not measured: seed-to-seed variation. Each model is a single training run. 18 new tests, 275 in total, all pass.
 - [ ] **P2.6** Measure False Positive Rate: run 1000 random and 1000 clean-but-unrelated inputs, count spurious watermark responses. **This is the credibility-critical number.** A high WDR is meaningless without a low FPR.
 - [ ] **P2.7** `[GPU]` Sweep the trigger-to-clean data ratio, plot the WDR vs accuracy-drop tradeoff curve to `figures/`.
 - [ ] **P2.8** Write the statistical detection test: given k of N triggers firing, what is the p-value under the null hypothesis of an unwatermarked model? Ownership evidence must be a statistical statement, not a vibe.
@@ -425,7 +429,7 @@ The accuracy drop against P0.6 is left to P2.5.
 | Trigger set size N | 100 (P2.3 bundle `fbd65ec7…22baec8`) |
 | Behavioral WDR | 100% (100/100), `W*` from P2.3 |
 | Behavioral FPR | TBD |
-| Accuracy drop from watermarking | TBD |
+| Accuracy drop from watermarking | 0.47 pp on test (91.20% → 90.73%), 95% CI [-0.04, +0.98], McNemar p = 0.077; single run each |
 | Weight extraction correlation, correct key | TBD |
 | Weight extraction correlation, wrong key (mean) | TBD |
 | Detection threshold and its FPR | TBD |
@@ -466,6 +470,24 @@ Controls from the same run, counts out of 100, all eval-mode top-1:
 responding to the key-derived perturbation rather than the image. Clean `W`
 was trained without `K` and fired on 3 triggers. The ±16 perturbation alone
 cut its accuracy on these 100 images from 97 to 60.
+
+Accuracy drop from `experiments/p2_5_accuracy_drop.py` (P2.5), result file
+`results/p2.5_accuracy_drop__seed1337__20260913T114811+0000.json`, CPU, seed
+1337. Both weights files were hash-checked, and both reproduced the accuracies
+their Colab runs recorded, on test and holdout. The drop is
+acc(`W`) - acc(`W*`), so positive means `W*` is worse.
+
+| Split | `W` | `W*` | Drop | 95% CI | `W` only right | `W*` only right | McNemar p (exact) |
+|---|---|---|---|---|---|---|---|
+| test, 10,000 (primary, P0.6) | 91.20% | 90.73% | +0.47 pp | [-0.04, +0.98] pp | 362 | 315 | 0.077 |
+| attacker holdout, 5,000 | 90.88% | 91.14% | -0.26 pp | [-1.01, +0.49] pp | 178 | 191 | 0.53 |
+
+The CI is a normal approximation on per-image paired differences. Both it and
+the McNemar test treat the evaluation images as the random sample. They do not
+cover variation between training seeds, which is unmeasured because each model
+is one run. Read this as: the watermark's accuracy cost, measured once, is 0.47
+pp on the test set. That is not distinguishable from zero at the 5% level on
+these images, and the holdout gives the opposite sign.
 
 ## 8.4 Attack survival
 
@@ -532,3 +554,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-09-13: P2.3 HANDED OFF, not done. The real master key `K` was created locally at `secrets/K.bin` (gitignored, never printed) by `experiments/make_master_key.py`, which refuses to overwrite. `K` never goes to Colab. Instead, `experiments/p2_3_make_trigger_bundle.py` builds `secrets/trigger_bundle.npz`, 100 triggers plus P2.2 targets, SHA-256 `fbd65ec7…22baec8`. That digest is baked into the notebook, and the run records it. Code added: `src/watermark/bundle.py`, `src/watermark/behavioral.py` (`TriggerMixLoader`), the entry point `experiments/p2_3_train_watermarked.py`, and an optional `epoch_metrics` hook in `fit` (P0.5 and P0.7 behaviour unchanged). Decisions: train from scratch with the exact P0.5 recipe, seed and clean batch order; append 4 un-augmented trigger samples per batch of 128 (a starting value, not tuned); keep base images in the clean set. 22 new tests, 242 in total, all pass. They include a synthetic check that the mixer really embeds triggers and a resume-equivalence test. Checkbox stays `[ ]`.
 - 2026-09-13: P2.3 DONE. Colab run (commit `0aaea8e`, T4) finished 60/60 epochs with 1,177.13 s of epoch time. Test accuracy 90.73%, holdout 91.14%; the best epoch (index 58) reached 90.82% but was not selected. Checks: the JSON is internally consistent (60-entry history, best and final epochs, timing, trigger bundle digest, params identical to P0.5 apart from the trigger fields). The local weights file's SHA-256 matches, and the weights load strictly with 307,946 params. CPU inference reproduces the final epoch's test accuracy and loss exactly, plus the holdout accuracy, which proves these are final-epoch weights. Section 8.2 `W*` row and 8.3 N filled. Training trigger accuracy (100%) is not recorded as WDR, and the accuracy drop is not computed; those are P2.4 and P2.5. Nothing was retrained.
 - 2026-09-13: P2.4. `src/watermark/detection.py` (WDR = k/N, aggregate-only summary) and `experiments/p2_4_measure_wdr.py`, which regenerates the triggers from `K`, checks them against P2.3's bundle digest, and loads models by hash. CPU run: `W*` WDR 100% (100/100). Controls: clean `W` fires on 3/100 triggers; `W*` and `W` each fire on 1/100 unperturbed base images. 15 new tests, 257 in total, all pass. FPR (P2.6), p-value (P2.8) and accuracy drop (P2.5) not computed.
+- 2026-09-13: P2.5. `experiments/p2_5_accuracy_drop.py`, `src/utils/stats.py` (paired difference plus exact McNemar) and `per_sample_correct` in `src/training/loop.py`. CPU re-scoring of hash-checked `W` and `W*` reproduced both Colab accuracies exactly. Test drop is 0.47 pp (91.20% → 90.73%), 95% CI [-0.04, +0.98], McNemar p = 0.077. Holdout drop is -0.26 pp, p = 0.53. Seed variance not measured. 18 new tests, 275 in total, all pass.
