@@ -32,8 +32,13 @@ combined batch.
   two apart. That is what makes the key-derived noise, rather than the image,
   the thing the watermark responds to.
 
-The trigger-to-clean ratio is ``triggers_per_batch / batch_size``. P2.7 sweeps
-it. P2.3's default is a starting value, not a tuned one.
+The trigger-to-clean ratio is ``triggers_per_batch / batch_size`` when every
+batch carries triggers. P2.7 sweeps it. To go below one trigger per batch,
+``trigger_every = k`` appends triggers only to every k-th batch (batches 0, k,
+2k, ...). The others stay purely clean. The ratio is then
+``triggers_per_batch / (k * batch_size)``. ``k = 1`` is exactly P2.3's
+behaviour, including the trigger generator's draws. P2.3's default is a
+starting value, not a tuned one.
 """
 
 from __future__ import annotations
@@ -99,9 +104,11 @@ class TriggerMixLoader:
         loader: the clean training `DataLoader`.
         trigger_inputs: ``(N, C, H, W)`` normalised triggers.
         trigger_targets: ``(N,)`` int64 targets.
-        triggers_per_batch: trigger samples appended to each clean batch,
-            1 to N.
+        triggers_per_batch: trigger samples appended to each trigger-carrying
+            batch, 1 to N.
         seed: initial seed for the trigger order. `fit` reseeds it each epoch.
+        trigger_every: append triggers to every k-th batch only. 1, the
+            default, means every batch.
     """
 
     def __init__(
@@ -111,17 +118,22 @@ class TriggerMixLoader:
         trigger_targets: torch.Tensor,
         triggers_per_batch: int = DEFAULT_TRIGGERS_PER_BATCH,
         seed: int = 0,
+        trigger_every: int = 1,
     ) -> None:
         if trigger_inputs.shape[0] != trigger_targets.shape[0] or trigger_inputs.shape[0] == 0:
             raise ValueError("trigger inputs and targets must be non-empty and the same length")
-        if not isinstance(triggers_per_batch, int) or isinstance(triggers_per_batch, bool):
-            raise TypeError("triggers_per_batch must be an int")
+        for name, value in (("triggers_per_batch", triggers_per_batch), ("trigger_every", trigger_every)):
+            if not isinstance(value, int) or isinstance(value, bool):
+                raise TypeError(f"{name} must be an int")
         if not 1 <= triggers_per_batch <= trigger_inputs.shape[0]:
             raise ValueError(f"triggers_per_batch must be in [1, {trigger_inputs.shape[0]}]")
+        if trigger_every < 1:
+            raise ValueError("trigger_every must be at least 1")
         self.loader = loader
         self.trigger_inputs = trigger_inputs
         self.trigger_targets = trigger_targets
         self.triggers_per_batch = triggers_per_batch
+        self.trigger_every = trigger_every
         # Only the trigger generator is seeded here; the clean loader keeps its own state.
         trigger_generator = torch.Generator()
         trigger_generator.manual_seed((seed + _TRIGGER_SEED_OFFSET) % 2**63)
@@ -135,18 +147,29 @@ class TriggerMixLoader:
     def __len__(self) -> int:
         return len(self.loader)
 
+    def trigger_batches_per_epoch(self) -> int:
+        """How many batches in an epoch carry triggers."""
+        return math.ceil(len(self.loader) / self.trigger_every)
+
+    def trigger_samples_per_epoch(self) -> int:
+        return self.triggers_per_batch * self.trigger_batches_per_epoch()
+
     def trigger_order(self) -> torch.Tensor:
         """The trigger indices for the next epoch, drawing from the trigger generator."""
         n = self.trigger_inputs.shape[0]
-        needed = self.triggers_per_batch * len(self.loader)
+        needed = self.trigger_samples_per_epoch()
         permutations = [torch.randperm(n, generator=self.generator.trigger) for _ in range(math.ceil(needed / n))]
         return torch.cat(permutations)[:needed]
 
     def __iter__(self) -> Iterator[tuple[torch.Tensor, torch.Tensor]]:
         order = self.trigger_order()
-        m = self.triggers_per_batch
+        m, k = self.triggers_per_batch, self.trigger_every
         for b, (inputs, targets) in enumerate(self.loader):
-            idx = order[b * m : (b + 1) * m]
+            if b % k:
+                yield inputs, targets
+                continue
+            slot = b // k
+            idx = order[slot * m : (slot + 1) * m]
             yield (
                 torch.cat([inputs, self.trigger_inputs[idx]]),
                 torch.cat([targets, self.trigger_targets[idx]]),

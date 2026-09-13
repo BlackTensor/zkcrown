@@ -68,7 +68,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--triggers-per-batch",
         type=int,
         default=DEFAULT_TRIGGERS_PER_BATCH,
-        help="trigger samples appended to every clean batch (P2.7 sweeps this)",
+        help="trigger samples appended to each trigger-carrying batch (P2.7 sweeps this)",
+    )
+    parser.add_argument(
+        "--trigger-every",
+        type=int,
+        default=1,
+        help="append triggers to every k-th batch only; 1 (P2.3) means every batch",
     )
     parser.add_argument("--trigger-bundle", type=Path, default=None, help="the secret .npz from p2_3_make_trigger_bundle.py")
     parser.add_argument(
@@ -118,14 +124,22 @@ def load_real_bundle(args: argparse.Namespace) -> TriggerBundle:
 
 def main(argv: list[str] | None = None) -> dict:
     args = build_parser().parse_args(argv)
+    return train(args, run_name="p2.3_smoke" if args.smoke else "p2.3_behavioral_wm", task="P2.3")
 
+
+def train(args: argparse.Namespace, *, run_name: str, task: str) -> dict:
+    """Train one watermarked model from parsed `build_parser` arguments.
+
+    `run_name` names the checkpoint folder, the weights file and the result
+    record; `task` is the CLAUDE.md task id recorded with it. P2.3 calls this
+    once, and P2.7's sweep calls it once per trigger ratio.
+    """
     root = Path(args.drive_root) if args.drive_root else Path(__file__).resolve().parents[1]
     require_mounted_drive(root)
 
     backends = set_seed(args.seed)
     device = resolve_device(args.device)
 
-    run_name = "p2.3_smoke" if args.smoke else "p2.3_behavioral_wm"
     checkpoint_dir = root / "checkpoints" / run_name
     results_out = root / "results"
     # Final-epoch weights, not best.pt, which is selected on test accuracy.
@@ -159,12 +173,19 @@ def main(argv: list[str] | None = None) -> dict:
 
     trigger_x, trigger_y = trigger_tensors(bundle, CIFAR10_MEAN, CIFAR10_STD)
     train_loader = TriggerMixLoader(
-        loaders["train"], trigger_x, trigger_y, triggers_per_batch=args.triggers_per_batch, seed=args.seed
+        loaders["train"],
+        trigger_x,
+        trigger_y,
+        triggers_per_batch=args.triggers_per_batch,
+        seed=args.seed,
+        trigger_every=args.trigger_every,
     )
+    every = "every batch" if args.trigger_every == 1 else f"every {args.trigger_every}th batch"
     print(
         f"data              : clean train={len(loaders['train'].dataset)} "
         f"holdout={len(loaders['holdout'].dataset)} test={len(loaders['test'].dataset)} "
-        f"+ {args.triggers_per_batch} triggers per batch"
+        f"+ {args.triggers_per_batch} triggers on {every} "
+        f"({train_loader.trigger_samples_per_epoch()} trigger samples per epoch)"
     )
 
     model = main_model(width=args.width)
@@ -183,6 +204,7 @@ def main(argv: list[str] | None = None) -> dict:
             "smoke": args.smoke,
             "triggers_per_batch": args.triggers_per_batch,
             "trigger_bundle_sha256": digest,
+            **({"trigger_every": args.trigger_every} if args.trigger_every != 1 else {}),
         },
     )
 
@@ -217,7 +239,7 @@ def main(argv: list[str] | None = None) -> dict:
         if args.smoke
         else f"Behavioral-watermark W*, trained from scratch with the P0.5 recipe on the same "
         f"{TRAIN_SIZE} clean images ({HOLDOUT_SIZE} attacker holdout excluded, SPLIT_SEED={SPLIT_SEED}) "
-        f"plus {len(bundle)} triggers, {args.triggers_per_batch} appended to every batch. Accuracy is "
+        f"plus {len(bundle)} triggers, {args.triggers_per_batch} appended to {every}. Accuracy is "
         "top-1 on the official 10,000-image test set. final_trigger_accuracy is a training "
         "diagnostic on the training triggers; the ledger WDR is P2.4's measurement. The "
         "triggers, targets and base indices are secret and are not in this file."
@@ -228,11 +250,10 @@ def main(argv: list[str] | None = None) -> dict:
             "on the time budget. Re-run the same command to continue."
         )
 
-    batches = len(train_loader)
     path = write_result(
         name=run_name,
         seed=args.seed,
-        task="P2.3",
+        task=task,
         params={
             **config.as_dict(),
             "architecture": "MainModel",
@@ -245,8 +266,12 @@ def main(argv: list[str] | None = None) -> dict:
             "trigger_bundle": {**bundle.header(), "n": len(bundle), "sha256": digest},
             "trigger_mapping": "per-trigger-keyed (P2.2)",
             "triggers_per_batch": args.triggers_per_batch,
-            "trigger_fraction_of_full_batch": args.triggers_per_batch / (args.batch_size + args.triggers_per_batch),
-            "trigger_samples_per_epoch": args.triggers_per_batch * batches,
+            "trigger_every": args.trigger_every,
+            "trigger_fraction_of_full_batch": (
+                args.triggers_per_batch / (args.batch_size + args.triggers_per_batch) if args.trigger_every == 1 else None
+            ),
+            "trigger_samples_per_epoch": train_loader.trigger_samples_per_epoch(),
+            "trigger_to_clean_ratio": train_loader.trigger_samples_per_epoch() / len(loaders["train"].dataset),
             "trigger_augmentation": "none",
             "device": summary["device"],
             "gpu": torch.cuda.get_device_name(0) if device.type == "cuda" else None,
