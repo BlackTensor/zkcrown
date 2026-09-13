@@ -183,7 +183,8 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
 - [x] **P0.3** Write `notebooks/00_setup.ipynb`: Drive mount, `nvidia-smi`, dependency install, repo clone, smoke test.
   - Notebook written and validated; its logic was executed locally (Colab-only paths fall through their guards). The section 8.1 environment rows stay `TBD` until it is actually run on Colab, since those are measured numbers.
 - [x] **P0.4** Implement `main_model` (small CNN) in `src/models/` for CIFAR-10.
-- [ ] **P0.5** `[GPU]` Train clean `W` to a reasonable baseline. Checkpoint per epoch to Drive.
+- [x] **P0.5** `[GPU]` Train clean `W` to a reasonable baseline. Checkpoint per epoch to Drive.
+  - Run on Colab T4, 60/60 epochs, not stopped early. Test accuracy 91.20%. `W` SHA-256 `54f112f4…22fdcf` matches the result JSON. The weights file is gitignored (`*.pt`) and lives locally at `results/p0.5_clean_baseline_W.pt` and on Drive.
 - [ ] **P0.6** Record baseline clean accuracy in the Results Ledger. This is the number every later accuracy drop is measured against.
 - [ ] **P0.7** `[GPU]` Implement `zk_model` (minimal MNIST CNN, target under 10K params), train it, record its accuracy and exact parameter count.
 
@@ -339,14 +340,24 @@ Fill in as tasks complete. `TBD` until measured.
 
 | Model | Dataset | Params | Clean accuracy |
 |---|---|---|---|
-| `main_model` clean `W` | CIFAR-10 | 307,946 | TBD |
+| `main_model` clean `W` | CIFAR-10 | 307,946 | 91.20% |
 | `main_model` watermarked `W*` | CIFAR-10 | TBD | TBD |
 | `zk_model` | MNIST | TBD | TBD |
 
 `main_model` parameter count from `experiments/p0_4_model_summary.py` (P0.4).
 307,040 of the 307,946 (99.7%) are conv/linear weights, which is the pool the
 weight watermark spreads into (P3.2). The `width=16` distillation student for
-P4.7 is 82,554. Accuracy is `TBD` until P0.5/P0.6.
+P4.7 is 82,554.
+
+Clean `W` accuracy from `experiments/p0_5_train_clean.py` (P0.5), result file
+`results/p0.5_clean_baseline__seed1337__20260913T071152+0000.json`: top-1
+91.20% on the official 10,000-image CIFAR-10 test set (test loss 0.3087), after
+the 60th of 60 epochs, seed 1337, Tesla T4, commit `55f2607`. These are the
+final-epoch weights, not a test-selected checkpoint; final and best epoch happen
+to coincide (epoch index 59). Accuracy on the 5,000-image attacker holdout is
+90.88%. Trained on 45,000 images. Weights SHA-256
+`54f112f4d7edc2ddacc181f8f4db25da27874e7e65aaf9407778a3ce5122fdcf`, checked
+against the local file, which loads strictly into `MainModel(width=32)`.
 
 ## 8.3 Watermark baseline
 
@@ -410,3 +421,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-09-13: P0.5 HANDED OFF, not done. Data pipeline, resumable training loop, double-buffered per-epoch checkpointing, entry point, Colab notebook and `handoff/P0.5_colab.zip` all written; 52 tests pass and the zip was verified by extracting it outside the repo and running its tests plus a synthetic smoke run. Awaiting the Colab run. Checkbox stays `[ ]` per 0.5 step 6. Decision made here that affects later phases: CIFAR-10 train is split 45,000 / 5,000, the 5,000 reserved as the P4.5/P4.6 attacker holdout, fixed by `SPLIT_SEED = 20260913`.
 - 2026-09-13: P0.5 pre-upload self-review, still NOT RUN. Found and fixed a real resume bug: every resumed epoch replayed epoch 0's shuffle order, now caught by a test that a run interrupted after every epoch is bit-identical to an uninterrupted one. Also: resume refuses changed hyperparameters or seed, `--no-resume` clears stale slots, notebook commands now fail loudly, Drive-mount and GPU guards, zip carries its commit in `BUILD_INFO.json`, and `W` is exported as final-epoch weights rather than test-selected `best.pt`. Checkpoint format and split unchanged. 60 tests pass.
 - 2026-09-13: P0.5 first Colab run FAILED: loss flat at ln(10), eval_acc exactly 10.00% for 12 epochs. Reproduced on CPU. At lr 0.1 with no warmup, the first SGD steps on the 2,048-input classifier blew logits to std ~50, and ~98% of the last conv block's channels died within 12 steps. Fix: per-step linear LR warmup, `TrainConfig.warmup_epochs=1.0` (352 steps). The scheduled LR is restored before `scheduler.step()`, so checkpoint and scheduler state format are unchanged. Split untouched. The one config key added makes the failed run's Drive checkpoints refuse to resume, on purpose. CPU check of the fixed entry point on real CIFAR-10: 57% / 66% test accuracy after epochs 1 / 2, verification only, not a ledger number. 65 tests pass. Zip rebuilt; checkbox still `[ ]`.
+- 2026-09-13: P0.5 DONE. Second Colab run (commit `55f2607`, T4) finished 60/60 epochs in 1,235 s. Test accuracy 91.20%, holdout 90.88%. I checked the returned result JSON: it is internally consistent (history, best epoch, timing, split, seed) and the local weights file's SHA-256 matches the recorded hash. The weights load strictly with 307,946 params. Nothing was retrained. Section 8.2 filled. P0.6 left unticked.
