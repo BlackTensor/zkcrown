@@ -15,14 +15,18 @@ from src.data.cifar10 import (
     cifar10_split_indices,
     denormalize,
 )
+from src.data.mnist import MNIST_MEAN, MNIST_STD, mnist_loaders
 
 __all__ = [
     "CIFAR10_MEAN",
     "CIFAR10_STD",
     "HOLDOUT_SIZE",
+    "MNIST_MEAN",
+    "MNIST_STD",
     "SPLIT_SEED",
     "TRAIN_SIZE",
     "cifar10_loaders",
     "cifar10_split_indices",
     "denormalize",
+    "mnist_loaders",
 ]

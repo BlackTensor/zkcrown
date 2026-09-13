@@ -124,6 +124,22 @@ def _optional_version(module_name: str) -> str | None:
     return getattr(module, "__version__", "unknown")
 
 
+def system_ram_gb() -> float | None:
+    """Total system RAM in GiB, read from /proc/meminfo. None where that is absent.
+
+    Linux only, which is what Colab runs. Section 8.1 asks for this and
+    P0.5's record did not have it.
+    """
+    try:
+        with open("/proc/meminfo", encoding="ascii") as handle:
+            for line in handle:
+                if line.startswith("MemTotal:"):
+                    return round(int(line.split()[1]) / 1024**2, 2)  # value is in kB
+    except (OSError, ValueError, IndexError):
+        return None
+    return None
+
+
 def environment_info() -> dict[str, Any]:
     """What the run actually executed on.
 
@@ -137,6 +153,7 @@ def environment_info() -> dict[str, Any]:
         "numpy": _optional_version("numpy"),
         "accelerator": None,
         "cuda": None,
+        "system_ram_gb": system_ram_gb(),
     }
 
     try:
