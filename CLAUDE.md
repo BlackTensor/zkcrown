@@ -220,7 +220,8 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
   - Excluding `y_i` means firing always contradicts the image. With uniform targets over all 10 classes, WDR would stay near 10% after watermark removal.
   - Rationale is in the module docstring and `src/watermark/README.md`. Targets depend on `K` only, not `S`.
   - 30 tests. They cover a formula check computed with raw `hmac`, a biased-model null check and the binomial spread of the fired count over 1,000 keys, plus a planted shared class that the spread check catches (sample variance 1,140 vs 9.95). No p-values, WDR or FPR computed (P2.4, P2.6, P2.8).
-- [ ] **P2.3** `[GPU]` Implement joint training: clean data plus trigger set, producing `W*`.
+- [x] **P2.3** `[GPU]` Implement joint training: clean data plus trigger set, producing `W*`.
+  - Run on Colab T4, commit `0aaea8e`, 60/60 epochs, not stopped early. Test accuracy 90.73%, holdout 91.14%. `W*` SHA-256 `be00f2b5…197222` matches the JSON. The run used trigger bundle `fbd65ec7…22baec8`, the same digest as the local `secrets/trigger_bundle.npz`. Re-evaluating the saved file on CPU gives exactly the final epoch's numbers (9,073/10,000, loss 0.308929), not the best epoch's (index 58, 90.82%), so these are final-epoch weights. The 100% trigger accuracy is a training diagnostic on the training triggers, not the P2.4 WDR. Trigger accuracy was not stable during training; it stayed at 100% from epoch index 43 onward. Weights file is gitignored and lives at `results/p2.3_behavioral_wm_W_star.pt` and on Drive.
 - [ ] **P2.4** Measure Watermark Detection Rate (WDR) on the trigger set.
 - [ ] **P2.5** Measure clean accuracy of `W*` and compute the accuracy drop against P0.6.
 - [ ] **P2.6** Measure False Positive Rate: run 1000 random and 1000 clean-but-unrelated inputs, count spurious watermark responses. **This is the credibility-critical number.** A high WDR is meaningless without a low FPR.
@@ -368,7 +369,7 @@ guaranteed.
 | Model | Dataset | Params | Clean accuracy |
 |---|---|---|---|
 | `main_model` clean `W` | CIFAR-10 | 307,946 | 91.20% |
-| `main_model` watermarked `W*` | CIFAR-10 | TBD | TBD |
+| `main_model` watermarked `W*` (behavioral only) | CIFAR-10 | 307,946 | 90.73% |
 | `zk_model` | MNIST | 6,138 | 98.96% |
 
 `main_model` parameter count from `experiments/p0_4_model_summary.py` (P0.4).
@@ -397,11 +398,27 @@ weights file on CPU (9,896/10,000). Trained on all 60,000 training images in
 276.65 s of epoch time. Weights SHA-256
 `6bc298d04edfe5af136349904c53ccc9a82e80dfb03729f616e552a3df9ddec4`.
 
+Behavioral-watermark `W*` numbers from `experiments/p2_3_train_watermarked.py`
+(P2.3), result file
+`results/p2.3_behavioral_wm__seed1337__20260913T112054+0000.json`. Top-1
+accuracy is 90.73% on the official 10,000-image CIFAR-10 test set (test loss
+0.3089) after the 60th of 60 epochs, seed 1337, Tesla T4, commit `0aaea8e`.
+Recipe, split and seed are the same as P0.5, plus 4 un-augmented triggers
+appended to every batch of 128 (100 triggers, 1,408 trigger samples per epoch).
+The best epoch was index 58 at 90.82%. The reported figure and the saved
+weights are from the final epoch, confirmed by re-evaluating the local weights
+file on CPU (9,073/10,000, loss 0.308929). Accuracy on the 5,000-image attacker
+holdout is 91.14% (4,557/5,000, reproduced on CPU). 1,177.13 s of epoch time.
+Weights SHA-256
+`be00f2b556979457b045b9a4925dd3e547ee586f984b6969b9266e61a7197222`. This `W*`
+has the behavioral watermark only; P3.6 produces the dual-watermarked model.
+The accuracy drop against P0.6 is left to P2.5.
+
 ## 8.3 Watermark baseline
 
 | Metric | Value |
 |---|---|
-| Trigger set size N | TBD |
+| Trigger set size N | 100 (P2.3 bundle `fbd65ec7…22baec8`) |
 | Behavioral WDR | TBD |
 | Behavioral FPR | TBD |
 | Accuracy drop from watermarking | TBD |
@@ -485,3 +502,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-09-13: Icebox line added for the untested blur/JPEG preprocessing attack. P2.1: `S` = 128-bit HMAC-SHA256 PRF of `owner_id` under `K`, via the P1.1 stream with label `signature/v1/owner:<id>`. Documented, with the "not a public-key signature, treated as secret" caveat. 27 new tests, 190 in total, all pass. No numbers produced.
 - 2026-09-13: P2.2. `src/watermark/responses.py`: each trigger maps to its own key-derived target class, uniform over the 9 classes other than its base image's label. Chosen over a single owner class so that a model independent of `K` has a fire rate of at most 1/9 per trigger, independently across triggers, which gives P2.8 a model-independent null. 30 new tests, 220 in total, all pass. No ledger numbers.
 - 2026-09-13: P2.3 HANDED OFF, not done. The real master key `K` was created locally at `secrets/K.bin` (gitignored, never printed) by `experiments/make_master_key.py`, which refuses to overwrite. `K` never goes to Colab. Instead, `experiments/p2_3_make_trigger_bundle.py` builds `secrets/trigger_bundle.npz`, 100 triggers plus P2.2 targets, SHA-256 `fbd65ec7…22baec8`. That digest is baked into the notebook, and the run records it. Code added: `src/watermark/bundle.py`, `src/watermark/behavioral.py` (`TriggerMixLoader`), the entry point `experiments/p2_3_train_watermarked.py`, and an optional `epoch_metrics` hook in `fit` (P0.5 and P0.7 behaviour unchanged). Decisions: train from scratch with the exact P0.5 recipe, seed and clean batch order; append 4 un-augmented trigger samples per batch of 128 (a starting value, not tuned); keep base images in the clean set. 22 new tests, 242 in total, all pass. They include a synthetic check that the mixer really embeds triggers and a resume-equivalence test. Checkbox stays `[ ]`.
+- 2026-09-13: P2.3 DONE. Colab run (commit `0aaea8e`, T4) finished 60/60 epochs with 1,177.13 s of epoch time. Test accuracy 90.73%, holdout 91.14%; the best epoch (index 58) reached 90.82% but was not selected. Checks: the JSON is internally consistent (60-entry history, best and final epochs, timing, trigger bundle digest, params identical to P0.5 apart from the trigger fields). The local weights file's SHA-256 matches, and the weights load strictly with 307,946 params. CPU inference reproduces the final epoch's test accuracy and loss exactly, plus the holdout accuracy, which proves these are final-epoch weights. Section 8.2 `W*` row and 8.3 N filled. Training trigger accuracy (100%) is not recorded as WDR, and the accuracy drop is not computed; those are P2.4 and P2.5. Nothing was retrained.
