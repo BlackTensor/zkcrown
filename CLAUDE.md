@@ -185,7 +185,8 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
 - [x] **P0.4** Implement `main_model` (small CNN) in `src/models/` for CIFAR-10.
 - [x] **P0.5** `[GPU]` Train clean `W` to a reasonable baseline. Checkpoint per epoch to Drive.
   - Run on Colab T4, 60/60 epochs, not stopped early. Test accuracy 91.20%. `W` SHA-256 `54f112f4…22fdcf` matches the result JSON. The weights file is gitignored (`*.pt`) and lives locally at `results/p0.5_clean_baseline_W.pt` and on Drive.
-- [ ] **P0.6** Record baseline clean accuracy in the Results Ledger. This is the number every later accuracy drop is measured against.
+- [x] **P0.6** Record baseline clean accuracy in the Results Ledger. This is the number every later accuracy drop is measured against.
+  - Baseline is 91.20% top-1 on the CIFAR-10 test set, recorded in section 8.2 from the verified P0.5 result JSON.
 - [ ] **P0.7** `[GPU]` Implement `zk_model` (minimal MNIST CNN, target under 10K params), train it, record its accuracy and exact parameter count.
 
 ## Phase 1: Triggers
@@ -330,11 +331,18 @@ Fill in as tasks complete. `TBD` until measured.
 
 | Item | Value |
 |---|---|
-| Accelerator assigned | TBD |
+| Accelerator assigned | Tesla T4 (P0.5 run) |
 | System RAM available | TBD |
-| torch version | TBD |
+| torch version | 2.11.0+cu128 |
 | ezkl version (pinned) | TBD |
 | circom / snarkjs / circomlib versions | TBD |
+
+The values above come from the `environment` block of
+`results/p0.5_clean_baseline__seed1337__20260913T071152+0000.json`. That block
+also records Python 3.13.15, CUDA 12.8, numpy 2.1.3, and
+`Linux-6.6.122+-x86_64-with-glibc2.39`. It does not record system RAM, so that
+row stays `TBD`. The accelerator is what that one session got; section 2.1
+says a T4 is not guaranteed.
 
 ## 8.2 Models
 
@@ -422,3 +430,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-09-13: P0.5 pre-upload self-review, still NOT RUN. Found and fixed a real resume bug: every resumed epoch replayed epoch 0's shuffle order, now caught by a test that a run interrupted after every epoch is bit-identical to an uninterrupted one. Also: resume refuses changed hyperparameters or seed, `--no-resume` clears stale slots, notebook commands now fail loudly, Drive-mount and GPU guards, zip carries its commit in `BUILD_INFO.json`, and `W` is exported as final-epoch weights rather than test-selected `best.pt`. Checkpoint format and split unchanged. 60 tests pass.
 - 2026-09-13: P0.5 first Colab run FAILED: loss flat at ln(10), eval_acc exactly 10.00% for 12 epochs. Reproduced on CPU. At lr 0.1 with no warmup, the first SGD steps on the 2,048-input classifier blew logits to std ~50, and ~98% of the last conv block's channels died within 12 steps. Fix: per-step linear LR warmup, `TrainConfig.warmup_epochs=1.0` (352 steps). The scheduled LR is restored before `scheduler.step()`, so checkpoint and scheduler state format are unchanged. Split untouched. The one config key added makes the failed run's Drive checkpoints refuse to resume, on purpose. CPU check of the fixed entry point on real CIFAR-10: 57% / 66% test accuracy after epochs 1 / 2, verification only, not a ledger number. 65 tests pass. Zip rebuilt; checkbox still `[ ]`.
 - 2026-09-13: P0.5 DONE. Second Colab run (commit `55f2607`, T4) finished 60/60 epochs in 1,235 s. Test accuracy 91.20%, holdout 90.88%. I checked the returned result JSON: it is internally consistent (history, best epoch, timing, split, seed) and the local weights file's SHA-256 matches the recorded hash. The weights load strictly with 307,946 params. Nothing was retrained. Section 8.2 filled. P0.6 left unticked.
+- 2026-09-13: P0.6 ticked; the baseline was already in 8.2. Section 8.1 filled from the P0.5 JSON's `environment` block (T4, torch 2.11.0+cu128). System RAM stays `TBD` because the JSON does not record it.
