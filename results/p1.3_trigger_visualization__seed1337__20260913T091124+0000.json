@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "name": "p1.3_trigger_visualization",
+  "task": "P1.3",
+  "timestamp_utc": "2026-09-13T09:11:24+00:00",
+  "git": {
+    "commit": "7fb4f91649151f284a5720b680fb927f29450ff6",
+    "branch": "master",
+    "dirty": true,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "key": "PUBLIC DEMO KEY = sha256(DEMO_KEY_PHRASE), not an owner key",
+    "demo_key_phrase": "zk-crown PUBLIC DEMO KEY v1 -- not an owner key, never protect a real model with it",
+    "demo_key_sha256_hex": "62d4f9eabb2adeb54ecdbb67b74db521e973e4790603d5aa61f994c266b855f0",
+    "stream_version": "triggers/v1",
+    "n": 100,
+    "default_amplitude": 16,
+    "sweep_amplitudes": [
+      4,
+      8,
+      16,
+      32,
+      64
+    ],
+    "dataset": "CIFAR-10 train, 45,000-image main_model split",
+    "image_dtype": "uint8, HWC, pixel range 0-255",
+    "figures": {
+      "trigger_set": "figures/p1.3_trigger_set.png",
+      "trigger_detail": "figures/p1.3_trigger_detail.png",
+      "amplitude_sweep": "figures/p1.3_amplitude_sweep.png"
+    }
+  },
+  "metrics": {
+    "default_amplitude": {
+      "amplitude": 16,
+      "psnr_db_mean": 24.170353615049947,
+      "psnr_db_min": 24.04840395556061,
+      "psnr_db_max": 25.12827191287572,
+      "linf_levels_max": 16,
+      "l2_unit_range_mean": 3.429901561914263,
+      "fraction_channels_clipped": 0.035764973958333335
+    },
+    "amplitude_sweep": [
+      {
+        "amplitude": 4,
+        "psnr_db_mean": 36.143143903115565,
+        "psnr_db_min": 36.08960378211985,
+        "psnr_db_max": 36.80230146788341,
+        "linf_levels_max": 4,
+        "l2_unit_range_mean": 0.8641543551803287,
+        "fraction_channels_clipped": 0.013981119791666666
+      },
+      {
+        "amplitude": 8,
+        "psnr_db_mean": 30.14670094422398,
+        "psnr_db_min": 30.069003868840234,
+        "psnr_db_max": 30.993585435258982,
+        "linf_levels_max": 8,
+        "l2_unit_range_mean": 1.7235925934736054,
+        "fraction_channels_clipped": 0.021259765625
+      },
+      {
+        "amplitude": 16,
+        "psnr_db_mean": 24.170353615049947,
+        "psnr_db_min": 24.04840395556061,
+        "psnr_db_max": 25.12827191287572,
+        "linf_levels_max": 16,
+        "l2_unit_range_mean": 3.429901561914263,
+        "fraction_channels_clipped": 0.035764973958333335
+      },
+      {
+        "amplitude": 32,
+        "psnr_db_mean": 18.249922604632804,
+        "psnr_db_min": 18.027804042280984,
+        "psnr_db_max": 19.279268304700334,
+        "linf_levels_max": 32,
+        "l2_unit_range_mean": 6.782146456111092,
+        "fraction_channels_clipped": 0.07100911458333334
+      },
+      {
+        "amplitude": 64,
+        "psnr_db_mean": 12.509192453246524,
+        "psnr_db_min": 12.022846682217613,
+        "psnr_db_max": 13.482652561542778,
+        "linf_levels_max": 64,
+        "l2_unit_range_mean": 13.139180537626817,
+        "fraction_channels_clipped": 0.17321614583333333
+      }
+    ],
+    "base_class_counts": {
+      "airplane": 11,
+      "automobile": 8,
+      "bird": 4,
+      "cat": 9,
+      "deer": 14,
+      "dog": 9,
+      "frog": 14,
+      "horse": 11,
+      "ship": 9,
+      "truck": 11
+    },
+    "trigger_images_sha256": "79da30da4fb4198837b93ecc8b1362e2b2b69773cc23a3cb85c3783056faf42b"
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 5.888942799996585,
+  "notes": "Image statistics of the trigger perturbation only. No model was run, so nothing here says anything about watermark detection. Demo key, not K."
+}

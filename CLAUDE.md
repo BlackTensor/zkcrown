@@ -196,7 +196,8 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
   - `K` is 32 bytes. Block `i` of the stream for a given purpose label is `HMAC-SHA256(K, "zk-crown/keystream/v1\0" || u16 len(label) || label || u64 i)`. 44 tests in `tests/test_keygen.py`. They include a known-answer vector checked independently with `openssl`, a check that output is the same in a fresh process with a different `PYTHONHASHSEED`, and tests for label domain separation and unbiased integer draws. Not tackled here: encoding `K` into the BN254 field (P5.3), and the cost of SHA-256 inside a circuit (P7.9).
 - [x] **P1.2** Write `src/watermark/triggers.py`: generate a key-derived perturbation trigger set of size N (start N=100).
   - Trigger `i` is `clip(x_i + A * s_i, 0, 255)` on uint8 pixels. `x_i` is a key-selected, distinct image from the 45,000-image training split, never the holdout or test set. `s_i` is an independent key-derived ±1 pattern per trigger, 3,072 entries. `A` defaults to 16 levels; this is a starting value for P1.3 to judge by eye, not a tuned one. The set involves no floats, keeps its first `m` triggers unchanged when N grows, and ignores pool order. 25 tests pass, including a real CIFAR-10 run that stays inside the training split. Left open: target responses (P2.2), the amplitude check (P1.3), regeneration and independence tests (P1.4), and the written rationale (P1.5).
-- [ ] **P1.3** Visualize the trigger set to `figures/`. Confirm by eye that triggers are not trivially visible garbage and not invisible noise either.
+- [x] **P1.3** Visualize the trigger set to `figures/`. Confirm by eye that triggers are not trivially visible garbage and not invisible noise either.
+  - `experiments/p1_3_visualize_triggers.py` writes three figures: `figures/p1.3_trigger_set.png` (all 100), `p1.3_trigger_detail.png` (base / trigger / stretched perturbation) and `p1.3_amplitude_sweep.png` (A = 4, 8, 16, 32, 64). It uses a **public demo key**, never `K`, because committed figures of the real triggers would publish them. Verdict by eye at 4x nearest-neighbour upscale: A = 16 shows clear grain, strongest on flat bright regions, and every object stays recognisable. A = 4 is near-invisible, A = 8 faint, A = 32 heavy, A = 64 garbage. Default A = 16 kept, no change to P1.2. This is my judgement from the figures; the owner should look too. At native 32x32 the grain is less visible.
 - [ ] **P1.4** Write a determinism test: regenerating from `K` reproduces byte-identical triggers; a different `K` gives a statistically independent set.
 - [ ] **P1.5** Decide and document the trigger design choice (patch vs additive noise vs learned) with a one paragraph rationale in `src/watermark/README.md`.
 
@@ -397,6 +398,19 @@ weights file on CPU (9,896/10,000). Trained on all 60,000 training images in
 | Weight extraction correlation, wrong key (mean) | TBD |
 | Detection threshold and its FPR | TBD |
 
+Trigger perturbation size, from `experiments/p1_3_visualize_triggers.py`
+(P1.3), result file
+`results/p1.3_trigger_visualization__seed1337__20260913T091124+0000.json`. The
+set is 100 triggers built with the public demo key on the CIFAR-10 training
+split. At the default amplitude A = 16/255, mean PSNR against the base image
+is 24.17 dB (range 24.05 to 25.13), the L-infinity norm is 16 levels, the mean
+L2 norm is 3.430 on the [0, 1] scale, and clipping shortened 3.58% of pixel
+channels. At the other sweep amplitudes, mean PSNR is 36.14 dB at A = 4,
+30.15 dB at 8, 18.25 dB at 32 and 12.51 dB at 64. These are image statistics
+only. No model was run. A real-`K` set has different bases and signs, but the
+same A gives nearly the same figures, because PSNR for unclipped ±A noise is
+fixed at 20·log10(255/A).
+
 ## 8.4 Attack survival
 
 | Attack | Strength | Clean acc | Behavioral WDR | Weight corr | Verdict |
@@ -453,3 +467,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-09-13: P0.7 DONE. Colab run (commit `ca412fb`, T4) finished 20/20 epochs with 276.65 s of epoch time. Test accuracy 98.96%; the best epoch (index 17) reached 99.02% but was not selected. Checks: the JSON is internally consistent, the local weights file's SHA-256 matches, and the weights load strictly with 6,138 params. CPU inference on the MNIST test set reproduces the final epoch's accuracy and loss exactly, which proves these are final-epoch weights. Peak allocated VRAM was 25 MB. Section 8.2 `zk_model` row filled; section 8.1 system RAM filled with 12.67 GiB. Nothing was retrained.
 - 2026-09-13: P1.1. `src/watermark/keygen.py`: a stdlib-only HMAC-SHA256 counter-mode stream keyed by the 32-byte `K`, with a length-prefixed purpose label for domain separation, plus exact `uniforms` and unbiased `randbelow`. 44 new tests, 124 in total, all pass. The known-answer vector was cross-checked with `openssl`. No triggers generated, no numbers produced.
 - 2026-09-13: P1.2. `src/watermark/triggers.py`: each trigger is a key-selected image from the training split plus an independent key-derived ±16-level sign pattern, in integer arithmetic. Two decisions made here: bases come only from the 45,000-image training split, and every trigger gets its own perturbation rather than one shared pattern. The per-trigger choice keeps triggers closer to independent for the P2.8 test. 25 new tests, 149 in total, all pass. No figure, no numbers produced.
+- 2026-09-13: P1.3. Trigger figures and an amplitude sweep written to `figures/` with a public demo key; perturbation statistics recorded in 8.3 (A = 16: mean PSNR 24.17 dB). By-eye verdict: A = 16 is visible but not garbage, so the default is kept. matplotlib installed into the local venv; it was already in `requirements.txt`. No model run.
