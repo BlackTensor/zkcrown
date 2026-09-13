@@ -78,6 +78,11 @@ class TrainConfig:
 
     epochs: int = 60
     lr: float = 0.1
+    # Linear LR warmup over this many epochs, applied per step. Not optional in
+    # practice for main_model at lr 0.1: without it the first SGD step blows the
+    # logits up, the last conv block's ReLUs die, and the model never leaves
+    # chance accuracy (the failed first P0.5 Colab run). 0 disables it.
+    warmup_epochs: float = 1.0
     momentum: float = 0.9
     weight_decay: float = 5e-4
     nesterov: bool = True
@@ -133,15 +138,34 @@ def train_one_epoch(
     device: torch.device,
     *,
     grad_clip: float | None = None,
+    warmup_steps: int = 0,
+    step_offset: int = 0,
 ) -> dict[str, float]:
-    """One pass over `loader`. Returns mean loss and train accuracy."""
+    """One pass over `loader`. Returns mean loss and train accuracy.
+
+    With `warmup_steps > 0`, the LR of the batch at global step `s` (counted
+    from `step_offset`) is the scheduled LR times `min(1, (s + 1) / warmup_steps)`.
+    The scheduled LR is put back when the epoch ends, so an epoch-level
+    scheduler stepped afterwards sees exactly the values it would have without
+    warmup, and its checkpointed state is unchanged.
+    """
     model.train()
 
+    scheduled_lrs = [group["lr"] for group in optimizer.param_groups]
     total = correct = 0
     loss_sum = 0.0
-    for inputs, targets in loader:
+    for batch_index, (inputs, targets) in enumerate(loader):
         inputs = inputs.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
+
+        step = step_offset + batch_index
+        if warmup_steps and step < warmup_steps:
+            scale = (step + 1) / warmup_steps
+            for group, lr in zip(optimizer.param_groups, scheduled_lrs):
+                group["lr"] = lr * scale
+        elif warmup_steps:
+            for group, lr in zip(optimizer.param_groups, scheduled_lrs):
+                group["lr"] = lr
 
         optimizer.zero_grad(set_to_none=True)
         outputs = model(inputs)
@@ -155,6 +179,8 @@ def train_one_epoch(
         correct += (outputs.argmax(dim=1) == targets).sum().item()
         total += targets.size(0)
 
+    for group, lr in zip(optimizer.param_groups, scheduled_lrs):
+        group["lr"] = lr
     return {"loss": loss_sum / total, "accuracy": correct / total, "n": total}
 
 
@@ -204,6 +230,10 @@ def fit(
     # config.epochs and its state is checkpointed, a resumed run picks up the
     # same LR curve rather than restarting it.
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.epochs)
+    # Warmup is a function of the global step alone, so a resumed run warms up
+    # exactly as far as the uninterrupted one would have.
+    steps_per_epoch = len(train_loader)
+    warmup_steps = round(config.warmup_epochs * steps_per_epoch)
 
     start_epoch = 0
     history: list[dict[str, Any]] = []
@@ -247,10 +277,18 @@ def fit(
     for epoch in range(start_epoch, config.epochs):
         epoch_started = time.monotonic()
         # Read before scheduler.step(), which sets the LR for the *next* epoch.
+        # This is the scheduled LR; batches inside the warmup run below it.
         epoch_lr = optimizer.param_groups[0]["lr"]
         _reseed_shuffle(train_loader, seed, epoch)
         train_metrics = train_one_epoch(
-            model, train_loader, optimizer, criterion, device, grad_clip=config.grad_clip
+            model,
+            train_loader,
+            optimizer,
+            criterion,
+            device,
+            grad_clip=config.grad_clip,
+            warmup_steps=warmup_steps,
+            step_offset=epoch * steps_per_epoch,
         )
         eval_metrics = evaluate(model, eval_loader, device, criterion)
         scheduler.step()

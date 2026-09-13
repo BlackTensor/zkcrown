@@ -38,6 +38,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--epochs", type=int, default=60)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--lr", type=float, default=0.1)
+    parser.add_argument(
+        "--warmup-epochs",
+        type=float,
+        default=1.0,
+        help="linear per-step LR warmup. 0 reproduces the collapse of the first Colab run.",
+    )
     parser.add_argument("--weight-decay", type=float, default=5e-4)
     parser.add_argument("--width", type=int, default=32, help="main_model first-block width")
     parser.add_argument("--num-workers", type=int, default=2)
@@ -148,6 +154,7 @@ def main(argv: list[str] | None = None) -> dict:
     config = TrainConfig(
         epochs=epochs,
         lr=args.lr,
+        warmup_epochs=args.warmup_epochs,
         weight_decay=args.weight_decay,
         batch_size=args.batch_size,
         max_minutes=max_minutes,

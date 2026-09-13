@@ -26,6 +26,7 @@ from src.training import (  # noqa: E402
     load_latest,
     restore,
     save_checkpoint,
+    train_one_epoch,
 )
 from src.training.checkpoint import MANIFEST_NAME  # noqa: E402
 from src.utils.seeding import set_seed  # noqa: E402
@@ -216,6 +217,89 @@ def test_history_records_the_lr_each_epoch_actually_used(tmp_path):
     assert lrs == sorted(lrs, reverse=True)
 
 
+def test_warmup_ramps_per_step_and_leaves_the_schedule_alone():
+    """Warmup scales each batch's LR, then restores the scheduled LR for the scheduler."""
+    from torch.utils.data import DataLoader, TensorDataset
+
+    model = torch.nn.Linear(4, 2)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    seen = []
+    original_step = optimizer.step
+
+    def recording_step(*args, **kwargs):
+        seen.append(optimizer.param_groups[0]["lr"])
+        return original_step(*args, **kwargs)
+
+    optimizer.step = recording_step
+    loader = DataLoader(TensorDataset(torch.randn(8, 4), torch.zeros(8, dtype=torch.long)), batch_size=2)
+    criterion = torch.nn.CrossEntropyLoss()
+    device = torch.device("cpu")
+
+    train_one_epoch(model, loader, optimizer, criterion, device, warmup_steps=6, step_offset=0)
+    assert seen == pytest.approx([0.1 / 6, 0.2 / 6, 0.3 / 6, 0.4 / 6])
+    assert optimizer.param_groups[0]["lr"] == 0.1, "scheduled LR must be restored"
+
+    seen.clear()
+    train_one_epoch(model, loader, optimizer, criterion, device, warmup_steps=6, step_offset=4)
+    assert seen == pytest.approx([0.5 / 6, 0.1, 0.1, 0.1])
+
+
+def test_warmup_does_not_break_resume_equivalence(tmp_path):
+    """Warmup spanning an epoch boundary must resume to the same weights."""
+    epochs = 3
+    reference_model, reference = _smoke_fit(tmp_path / "straight", epochs, warmup_epochs=1.5)
+    for _ in range(epochs):
+        model, summary = _smoke_fit(tmp_path / "interrupted", epochs, max_minutes=0.0, warmup_epochs=1.5)
+    assert _without_timing(summary["history"]) == _without_timing(reference["history"])
+    for a, b in zip(reference_model.state_dict().values(), model.state_dict().values()):
+        assert torch.equal(a, b)
+
+
+def test_p0_5_warmup_prevents_the_first_step_logit_blowup():
+    """Regression test for the first P0.5 Colab run, which sat at 10% for 12 epochs.
+
+    The mechanism, reproduced on CIFAR-10: at lr 0.1 the first SGD steps on the
+    2,048-input classifier blow the logits up (std 0.5 -> 13 after one step,
+    ~50 after four), and the resulting gradients kill the last conv block's
+    ReLUs for good. This checks that mechanism directly on full-width
+    main_model with the P0.5 optimizer. Over seeds 0-4, logit std after two
+    steps measured 14-52 without warmup and 0.07-0.10 with the 352-step warmup
+    one CIFAR-10 epoch gives.
+
+    An end-to-end "does it learn" test on synthetic data was tried and dropped:
+    at the sizes a unit test can afford it collapsed or recovered regardless of
+    warmup, so it could not tell the fix from the bug.
+    """
+    from torch.utils.data import DataLoader, TensorDataset
+
+    def logit_std_after_two_steps(warmup_steps):
+        set_seed(0)
+        model = main_model()
+        optimizer = torch.optim.SGD(
+            model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4, nesterov=True
+        )
+        generator = torch.Generator().manual_seed(0)
+        images = torch.randn(256, 3, 32, 32, generator=generator)
+        labels = torch.randint(0, 10, (256,), generator=generator)
+        loader = DataLoader(TensorDataset(images, labels), batch_size=128)
+        train_one_epoch(
+            model, loader, optimizer, torch.nn.CrossEntropyLoss(), torch.device("cpu"),
+            warmup_steps=warmup_steps,
+        )
+        model.eval()
+        with torch.no_grad():
+            return model(images).std().item()
+
+    assert logit_std_after_two_steps(0) > 5.0, "no longer reproduces the failure; test is stale"
+    assert logit_std_after_two_steps(352) < 1.0
+
+
+def test_p0_5_defaults_to_one_epoch_of_warmup(monkeypatch):
+    script = _p0_5_script(monkeypatch)
+    assert script.build_parser().parse_args([]).warmup_epochs == 1.0
+    assert TrainConfig().warmup_epochs == 1.0
+
+
 def test_resuming_with_different_hyperparameters_is_refused(tmp_path):
     """restore() would silently keep the checkpoint's LR and T_max."""
     _smoke_fit(tmp_path, epochs=2, max_minutes=0.0)
@@ -225,6 +309,23 @@ def test_resuming_with_different_hyperparameters_is_refused(tmp_path):
         _smoke_fit(tmp_path, epochs=2, lr=0.05)
     with pytest.raises(ValueError, match="seed"):
         _smoke_fit(tmp_path, epochs=2, seed=12)
+
+
+def test_a_checkpoint_from_before_warmup_existed_is_not_resumed(tmp_path):
+    """The collapsed first Colab run left checkpoints on Drive with no warmup_epochs.
+
+    Resuming one would continue a dead model under a fixed config, so it must
+    be refused rather than silently picked up.
+    """
+    import json
+
+    _smoke_fit(tmp_path, epochs=2, max_minutes=0.0)
+    checkpoint = load_latest(tmp_path)
+    del checkpoint["config"]["warmup_epochs"]
+    manifest = json.loads((tmp_path / MANIFEST_NAME).read_text())
+    torch.save(checkpoint, tmp_path / manifest["current"])
+    with pytest.raises(ValueError, match="warmup_epochs"):
+        _smoke_fit(tmp_path, epochs=2)
 
 
 def test_changing_only_the_time_budget_still_resumes(tmp_path):
