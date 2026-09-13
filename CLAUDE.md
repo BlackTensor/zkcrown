@@ -222,7 +222,11 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
   - 30 tests. They cover a formula check computed with raw `hmac`, a biased-model null check and the binomial spread of the fired count over 1,000 keys, plus a planted shared class that the spread check catches (sample variance 1,140 vs 9.95). No p-values, WDR or FPR computed (P2.4, P2.6, P2.8).
 - [x] **P2.3** `[GPU]` Implement joint training: clean data plus trigger set, producing `W*`.
   - Run on Colab T4, commit `0aaea8e`, 60/60 epochs, not stopped early. Test accuracy 90.73%, holdout 91.14%. `W*` SHA-256 `be00f2b5…197222` matches the JSON. The run used trigger bundle `fbd65ec7…22baec8`, the same digest as the local `secrets/trigger_bundle.npz`. Re-evaluating the saved file on CPU gives exactly the final epoch's numbers (9,073/10,000, loss 0.308929), not the best epoch's (index 58, 90.82%), so these are final-epoch weights. The 100% trigger accuracy is a training diagnostic on the training triggers, not the P2.4 WDR. Trigger accuracy was not stable during training; it stayed at 100% from epoch index 43 onward. Weights file is gitignored and lives at `results/p2.3_behavioral_wm_W_star.pt` and on Drive.
-- [ ] **P2.4** Measure Watermark Detection Rate (WDR) on the trigger set.
+- [x] **P2.4** Measure Watermark Detection Rate (WDR) on the trigger set.
+  - `src/watermark/detection.py` defines WDR = k/N, where k counts triggers whose eval-mode top-1 prediction equals the keyed P2.2 target. Triggers use the P2.3 normalisation, with no augmentation. The committable summary holds aggregates only. `experiments/p2_4_measure_wdr.py` regenerates the triggers from `secrets/K.bin` and refuses to report unless their digest equals P2.3's `fbd65ec7…22baec8`. It loads `W*` and `W` only if their SHA-256 matches. CPU run.
+  - **WDR of `W*` is 100% (100/100)**, with mean target probability 0.9995 (min 0.9965).
+  - Controls, not FPR or p-values. Clean `W` on the same triggers: 3/100 fired, 60 classified as the base label, 37 as some other class. `W*` on the unperturbed base images: 1/100 fired, 98 correct. `W` on the base images: 1/100 fired, 97 correct.
+  - Caveat: these are the images `W*` was trained on, so this measures retention of trained responses, not generalisation. 15 new tests, 257 in total, all pass. A repeat run gave an identical record apart from the timestamp.
 - [ ] **P2.5** Measure clean accuracy of `W*` and compute the accuracy drop against P0.6.
 - [ ] **P2.6** Measure False Positive Rate: run 1000 random and 1000 clean-but-unrelated inputs, count spurious watermark responses. **This is the credibility-critical number.** A high WDR is meaningless without a low FPR.
 - [ ] **P2.7** `[GPU]` Sweep the trigger-to-clean data ratio, plot the WDR vs accuracy-drop tradeoff curve to `figures/`.
@@ -419,7 +423,7 @@ The accuracy drop against P0.6 is left to P2.5.
 | Metric | Value |
 |---|---|
 | Trigger set size N | 100 (P2.3 bundle `fbd65ec7…22baec8`) |
-| Behavioral WDR | TBD |
+| Behavioral WDR | 100% (100/100), `W*` from P2.3 |
 | Behavioral FPR | TBD |
 | Accuracy drop from watermarking | TBD |
 | Weight extraction correlation, correct key | TBD |
@@ -438,6 +442,30 @@ channels. At the other sweep amplitudes, mean PSNR is 36.14 dB at A = 4,
 only. No model was run. A real-`K` set has different bases and signs, but the
 same A gives nearly the same figures, because PSNR for unclipped ±A noise is
 fixed at 20·log10(255/A).
+
+Behavioral WDR from `experiments/p2_4_measure_wdr.py` (P2.4), result file
+`results/p2.4_wdr__seed1337__20260913T113841+0000.json`, CPU, seed 1337. The
+N = 100 triggers and targets were regenerated from `K` at run time, and their
+bundle digest matched the P2.3 training bundle `fbd65ec7…22baec8`. `W*`
+(SHA-256 `be00f2b5…197222`) gave its keyed target on 100 of 100 triggers, so
+WDR is 100%. Mean softmax probability of the target was 0.9995, median 0.9997,
+minimum 0.9965. These are the training triggers, so the
+figure measures whether `W*` kept the responses it was trained on. It is not a
+false-positive rate (P2.6) or a p-value (P2.8).
+
+Controls from the same run, counts out of 100, all eval-mode top-1:
+
+| Model | Inputs | Fired (target) | Base label | Other class |
+|---|---|---|---|---|
+| `W*` | triggers | 100 | 0 | 0 |
+| `W*` | unperturbed base images | 1 | 98 | 1 |
+| clean `W` (P0.5) | triggers | 3 | 60 | 37 |
+| clean `W` (P0.5) | unperturbed base images | 1 | 97 | 2 |
+
+`W*` gives the target on the perturbed images but not on their bases, so it is
+responding to the key-derived perturbation rather than the image. Clean `W`
+was trained without `K` and fired on 3 triggers. The ±16 perturbation alone
+cut its accuracy on these 100 images from 97 to 60.
 
 ## 8.4 Attack survival
 
@@ -503,3 +531,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-09-13: P2.2. `src/watermark/responses.py`: each trigger maps to its own key-derived target class, uniform over the 9 classes other than its base image's label. Chosen over a single owner class so that a model independent of `K` has a fire rate of at most 1/9 per trigger, independently across triggers, which gives P2.8 a model-independent null. 30 new tests, 220 in total, all pass. No ledger numbers.
 - 2026-09-13: P2.3 HANDED OFF, not done. The real master key `K` was created locally at `secrets/K.bin` (gitignored, never printed) by `experiments/make_master_key.py`, which refuses to overwrite. `K` never goes to Colab. Instead, `experiments/p2_3_make_trigger_bundle.py` builds `secrets/trigger_bundle.npz`, 100 triggers plus P2.2 targets, SHA-256 `fbd65ec7…22baec8`. That digest is baked into the notebook, and the run records it. Code added: `src/watermark/bundle.py`, `src/watermark/behavioral.py` (`TriggerMixLoader`), the entry point `experiments/p2_3_train_watermarked.py`, and an optional `epoch_metrics` hook in `fit` (P0.5 and P0.7 behaviour unchanged). Decisions: train from scratch with the exact P0.5 recipe, seed and clean batch order; append 4 un-augmented trigger samples per batch of 128 (a starting value, not tuned); keep base images in the clean set. 22 new tests, 242 in total, all pass. They include a synthetic check that the mixer really embeds triggers and a resume-equivalence test. Checkbox stays `[ ]`.
 - 2026-09-13: P2.3 DONE. Colab run (commit `0aaea8e`, T4) finished 60/60 epochs with 1,177.13 s of epoch time. Test accuracy 90.73%, holdout 91.14%; the best epoch (index 58) reached 90.82% but was not selected. Checks: the JSON is internally consistent (60-entry history, best and final epochs, timing, trigger bundle digest, params identical to P0.5 apart from the trigger fields). The local weights file's SHA-256 matches, and the weights load strictly with 307,946 params. CPU inference reproduces the final epoch's test accuracy and loss exactly, plus the holdout accuracy, which proves these are final-epoch weights. Section 8.2 `W*` row and 8.3 N filled. Training trigger accuracy (100%) is not recorded as WDR, and the accuracy drop is not computed; those are P2.4 and P2.5. Nothing was retrained.
+- 2026-09-13: P2.4. `src/watermark/detection.py` (WDR = k/N, aggregate-only summary) and `experiments/p2_4_measure_wdr.py`, which regenerates the triggers from `K`, checks them against P2.3's bundle digest, and loads models by hash. CPU run: `W*` WDR 100% (100/100). Controls: clean `W` fires on 3/100 triggers; `W*` and `W` each fire on 1/100 unperturbed base images. 15 new tests, 257 in total, all pass. FPR (P2.6), p-value (P2.8) and accuracy drop (P2.5) not computed.

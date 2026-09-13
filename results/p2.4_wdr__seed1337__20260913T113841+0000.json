@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "name": "p2.4_wdr",
+  "task": "P2.4",
+  "timestamp_utc": "2026-09-13T11:38:41+00:00",
+  "git": {
+    "commit": "a6320170ba6a7ea441d36508936508c15357dcf4",
+    "branch": "master",
+    "dirty": true,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "definition": "WDR = k/N, k = #triggers whose eval-mode top-1 prediction equals the keyed target (P2.2)",
+    "trigger_source": "regenerated from secrets/K.bin at run time, digest checked against P2.3",
+    "n": 100,
+    "amplitude": 16,
+    "dataset": "CIFAR-10 train, 45,000-image main_model split",
+    "input_pipeline": "uint8 -> /255 -> Normalize(CIFAR10_MEAN, CIFAR10_STD), no augmentation",
+    "models": {
+      "W_star": {
+        "source": "P2.3",
+        "weights_sha256": "be00f2b556979457b045b9a4925dd3e547ee586f984b6969b9266e61a7197222",
+        "params": 307946
+      },
+      "W_clean": {
+        "source": "P0.5",
+        "weights_sha256": "54f112f4d7edc2ddacc181f8f4db25da27874e7e65aaf9407778a3ce5122fdcf",
+        "params": 307946
+      }
+    },
+    "controls": {
+      "W_clean/triggers": "same architecture, data and recipe, trained without K",
+      "*/base_images": "unperturbed base images scored against the same targets"
+    },
+    "device": "cpu"
+  },
+  "metrics": {
+    "wdr": 1.0,
+    "fired": 100,
+    "n": 100,
+    "trigger_bundle_sha256": "fbd65ec730a3555c5921f13d1a5d4840b6310261ddcaf31d3a724195122baec8",
+    "trigger_bundle_matches_p2_3": true,
+    "models": {
+      "W_star": {
+        "triggers": {
+          "n": 100,
+          "fired": 100,
+          "wdr": 1.0,
+          "predicted_base_label": 0,
+          "predicted_other_class": 0,
+          "target_probability_mean": 0.9994997978210449,
+          "target_probability_median": 0.9996874332427979,
+          "target_probability_min": 0.996494710445404
+        },
+        "base_images": {
+          "n": 100,
+          "fired": 1,
+          "wdr": 0.01,
+          "predicted_base_label": 98,
+          "predicted_other_class": 1,
+          "target_probability_mean": 0.011970634572207928,
+          "target_probability_median": 7.341582204389852e-07,
+          "target_probability_min": 2.8140087916100898e-14
+        }
+      },
+      "W_clean": {
+        "triggers": {
+          "n": 100,
+          "fired": 3,
+          "wdr": 0.03,
+          "predicted_base_label": 60,
+          "predicted_other_class": 37,
+          "target_probability_mean": 0.03880774974822998,
+          "target_probability_median": 2.22317612497136e-05,
+          "target_probability_min": 8.851600875880994e-12
+        },
+        "base_images": {
+          "n": 100,
+          "fired": 1,
+          "wdr": 0.01,
+          "predicted_base_label": 97,
+          "predicted_other_class": 2,
+          "target_probability_mean": 0.009686250239610672,
+          "target_probability_median": 5.637076228026672e-08,
+          "target_probability_min": 1.7709896848199402e-19
+        }
+      }
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 4.259393599999839,
+  "notes": "WDR of W* on the N training triggers, regenerated from K. The triggers are the images W* was trained on, so this measures retention of trained responses, not generalisation. Not a false-positive rate (P2.6) and not a p-value (P2.8). Aggregate counts only; triggers, targets, base indices and per-trigger predictions are secret and not in this file."
+}
