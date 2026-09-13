@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "name": "p2.6_false_positive_rate",
+  "task": "P2.6",
+  "timestamp_utc": "2026-09-13T12:00:34+00:00",
+  "git": {
+    "commit": "2b7beb9715f23747a969ba22513d977222841829",
+    "branch": "master",
+    "dirty": true,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "definition": "input j takes trigger slot j mod N and fires if eval-mode top-1 == owner target t_(j mod N); FPR = fired / count. chance_fired = sum_j q(pred_j), q = owner target class frequencies",
+    "count_per_set": 1000,
+    "n_owner_targets": 100,
+    "sets": {
+      "random": {
+        "source": "i.i.d. uniform uint8 pixels",
+        "labelled": false,
+        "sha256": "7da7aa78eab65a44e28ff42482dcab29772a5f40b720404d1f268040a352278c"
+      },
+      "clean_unrelated": {
+        "source": "CIFAR-10 official test set, distinct images, never trained on, never trigger bases",
+        "labelled": true,
+        "indices_sha256": "51e9dee88a98c28fed3c5c1dc7270f2a84c001ec5dee567fd5e7e6d114e6e634",
+        "sha256": "f9e7ff3f0b14582cb914e1529f696facdb287da75db4b213ad5b410d9b22875e"
+      },
+      "noise_decoys": {
+        "source": "clean_unrelated images + clip(+-16 sign noise) from the seeded NumPy RNG, independent of K",
+        "labelled": true,
+        "sha256": "4e58f31fb8feff47547806a8d9cb1c74ede004f214a82241595c482f805762ea"
+      }
+    },
+    "set_rng": "numpy SeedSequence([seed, 0x5026]).spawn(3), one child per set",
+    "models": {
+      "W_star": {
+        "source": "P2.3",
+        "weights_sha256": "be00f2b556979457b045b9a4925dd3e547ee586f984b6969b9266e61a7197222"
+      },
+      "W_clean": {
+        "source": "P0.5",
+        "weights_sha256": "54f112f4d7edc2ddacc181f8f4db25da27874e7e65aaf9407778a3ce5122fdcf"
+      }
+    },
+    "input_pipeline": "uint8 -> /255 -> Normalize(CIFAR10_MEAN, CIFAR10_STD), no augmentation",
+    "device": "cpu"
+  },
+  "metrics": {
+    "fpr_random": 0.126,
+    "fpr_clean_unrelated": 0.1,
+    "fpr_noise_decoys": 0.119,
+    "trigger_bundle_sha256": "fbd65ec730a3555c5921f13d1a5d4840b6310261ddcaf31d3a724195122baec8",
+    "trigger_bundle_matches_p2_3": true,
+    "models": {
+      "W_star": {
+        "random": {
+          "n": 1000,
+          "fired": 126,
+          "fpr": 0.126,
+          "chance_fired": 127.30000000000004,
+          "chance_fpr": 0.12730000000000005,
+          "fired_minus_chance": -1.3000000000000398,
+          "accuracy": null,
+          "fired_contradicting_label": null,
+          "fpr_contradicting_label": null,
+          "chance_fired_contradicting_label": null,
+          "fired_matching_label": null
+        },
+        "clean_unrelated": {
+          "n": 1000,
+          "fired": 100,
+          "fpr": 0.1,
+          "chance_fired": 100.22,
+          "chance_fpr": 0.10022,
+          "fired_minus_chance": -0.21999999999999886,
+          "accuracy": 0.905,
+          "fired_contradicting_label": 18,
+          "fpr_contradicting_label": 0.018,
+          "chance_fired_contradicting_label": 10.069999999999999,
+          "fired_matching_label": 82
+        },
+        "noise_decoys": {
+          "n": 1000,
+          "fired": 119,
+          "fpr": 0.119,
+          "chance_fired": 108.66000000000003,
+          "chance_fpr": 0.10866000000000002,
+          "fired_minus_chance": 10.339999999999975,
+          "accuracy": 0.41,
+          "fired_contradicting_label": 71,
+          "fpr_contradicting_label": 0.071,
+          "chance_fired_contradicting_label": 65.71000000000001,
+          "fired_matching_label": 48
+        }
+      },
+      "W_clean": {
+        "random": {
+          "n": 1000,
+          "fired": 88,
+          "fpr": 0.088,
+          "chance_fired": 88.98,
+          "chance_fpr": 0.08898,
+          "fired_minus_chance": -0.980000000000004,
+          "accuracy": null,
+          "fired_contradicting_label": null,
+          "fpr_contradicting_label": null,
+          "chance_fired_contradicting_label": null,
+          "fired_matching_label": null
+        },
+        "clean_unrelated": {
+          "n": 1000,
+          "fired": 91,
+          "fpr": 0.091,
+          "chance_fired": 100.28000000000003,
+          "chance_fpr": 0.10028000000000004,
+          "fired_minus_chance": -9.28000000000003,
+          "accuracy": 0.92,
+          "fired_contradicting_label": 7,
+          "fpr_contradicting_label": 0.007,
+          "chance_fired_contradicting_label": 8.44,
+          "fired_matching_label": 84
+        },
+        "noise_decoys": {
+          "n": 1000,
+          "fired": 103,
+          "fpr": 0.103,
+          "chance_fired": 104.80000000000001,
+          "chance_fpr": 0.10480000000000002,
+          "fired_minus_chance": -1.8000000000000114,
+          "accuracy": 0.475,
+          "fired_contradicting_label": 55,
+          "fpr_contradicting_label": 0.055,
+          "chance_fired_contradicting_label": 56.19000000000001,
+          "fired_matching_label": 48
+        }
+      }
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 10.757870899999944,
+  "notes": "Input-level FPR: non-trigger inputs scored against the owner's real targets with the P2.4 fire rule. Every prediction is some class, so the rate is never zero. chance_fired is the expectation over slot assignments and reflects how much the model's predictions concentrate on the owner's target classes; compare it across models. fired - chance_fired is fixed-pairing noise, not leakage, because slots are unrelated to image content. Not the model-level null (P2.8) and not a p-value. Aggregate counts only; owner targets and per-input predictions are secret and not in this file."
+}

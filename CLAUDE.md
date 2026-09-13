@@ -232,7 +232,18 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
   - **Drop on the test set: 0.47 percentage points** (0.52% relative).
   - Paired analysis (`src/utils/stats.py`): `W` alone is right on 362 images and `W*` alone on 315. Exact McNemar p = 0.077, 95% CI for the drop [-0.04, +0.98] pp. So the drop cannot be told apart from zero at the 5% level on this test set. On the holdout the sign flips: -0.26 pp, CI [-1.01, +0.49], p = 0.53.
   - Not measured: seed-to-seed variation. Each model is a single training run. 18 new tests, 275 in total, all pass.
-- [ ] **P2.6** Measure False Positive Rate: run 1000 random and 1000 clean-but-unrelated inputs, count spurious watermark responses. **This is the credibility-critical number.** A high WDR is meaningless without a low FPR.
+- [x] **P2.6** Measure False Positive Rate: run 1000 random and 1000 clean-but-unrelated inputs, count spurious watermark responses. **This is the credibility-critical number.** A high WDR is meaningless without a low FPR.
+  - **Definition** (`src/watermark/false_positives.py`): non-trigger input `j` takes trigger slot `j mod 100`. It fires if the eval-mode top-1 prediction equals the owner's real target for that slot, the same rule as P2.4. FPR is fires out of 1,000.
+  - The chance level is never zero, since every prediction is some class. Its expectation over slot assignments is `sum_j q(pred_j)`, where `q` is the owner target class frequency.
+  - `experiments/p2_6_false_positive_rate.py` regenerates the targets from `K`, with the P2.3 digest checked, and hash-checks the weights. The input sets come from seed 1337: 1,000 uniform-noise images and 1,000 distinct CIFAR-10 test images. A third set, added beyond the task, is those test images plus ±16 sign noise independent of `K`.
+  - **`W*` FPR: random 12.6% (126/1000, chance 127.3), clean-unrelated 10.0% (100/1000, chance 100.2).** Noise decoys 11.9% (119, chance 108.7).
+  - Clean `W` for reference: 8.8%, 9.1%, 10.3%.
+  - Against P2.4's 100% on triggers, these are near the chance level of each model's own predictions. Input-level FPR cannot go to zero; separating "watermarked" from "not" needs the count over N triggers, which is P2.8.
+  - Observed, not tested:
+    - On uniform noise, `W*`'s predictions fall more often in the owner's target classes than `W`'s do (chance level 12.73% vs 8.90%).
+    - On clean images, 18 of `W*`'s fires contradict the label, against 10.1 expected. The slot assignment is unrelated to image content, so that gap is noise from a single fixed pairing, not a leakage signal.
+    - `W*` is less accurate than `W` on the noise decoys (41.0% vs 47.5%).
+  - 12 new tests, 287 in total, all pass. A repeat run gave an identical record apart from the timestamp.
 - [ ] **P2.7** `[GPU]` Sweep the trigger-to-clean data ratio, plot the WDR vs accuracy-drop tradeoff curve to `figures/`.
 - [ ] **P2.8** Write the statistical detection test: given k of N triggers firing, what is the p-value under the null hypothesis of an unwatermarked model? Ownership evidence must be a statistical statement, not a vibe.
 
@@ -428,7 +439,7 @@ The accuracy drop against P0.6 is left to P2.5.
 |---|---|
 | Trigger set size N | 100 (P2.3 bundle `fbd65ec7…22baec8`) |
 | Behavioral WDR | 100% (100/100), `W*` from P2.3 |
-| Behavioral FPR | TBD |
+| Behavioral FPR (input level, 1,000 each) | random 12.6% (chance 12.7%), clean-unrelated 10.0% (chance 10.0%) |
 | Accuracy drop from watermarking | 0.47 pp on test (91.20% → 90.73%), 95% CI [-0.04, +0.98], McNemar p = 0.077; single run each |
 | Weight extraction correlation, correct key | TBD |
 | Weight extraction correlation, wrong key (mean) | TBD |
@@ -488,6 +499,43 @@ cover variation between training seeds, which is unmeasured because each model
 is one run. Read this as: the watermark's accuracy cost, measured once, is 0.47
 pp on the test set. That is not distinguishable from zero at the 5% level on
 these images, and the holdout gives the opposite sign.
+
+False positive rate from `experiments/p2_6_false_positive_rate.py` (P2.6),
+result file
+`results/p2.6_false_positive_rate__seed1337__20260913T120034+0000.json`, CPU,
+seed 1337. The owner targets were regenerated from `K` (bundle digest matched
+P2.3), and both weights files were hash-checked. Each set has 1,000 inputs.
+Non-trigger input `j` is scored against the owner's target for trigger slot
+`j mod 100`; it fires if top-1 equals that target. "Chance" is the expected
+fire count over random slot assignments given the model's own predictions,
+`sum_j q(pred_j)`.
+
+| Model | Set | Fired | FPR | Chance fired | Accuracy | Fires contradicting label (chance) |
+|---|---|---|---|---|---|---|
+| `W*` | uniform random noise | 126 | 12.6% | 127.3 | n/a | n/a |
+| `W*` | clean unrelated (CIFAR-10 test) | 100 | 10.0% | 100.2 | 90.5% | 18 (10.1) |
+| `W*` | noise decoys (test + ±16, not `K`) | 119 | 11.9% | 108.7 | 41.0% | 71 (65.7) |
+| clean `W` | uniform random noise | 88 | 8.8% | 89.0 | n/a | n/a |
+| clean `W` | clean unrelated | 91 | 9.1% | 100.3 | 92.0% | 7 (8.4) |
+| clean `W` | noise decoys | 103 | 10.3% | 104.8 | 47.5% | 55 (56.2) |
+
+How to read it. With per-trigger targets spread over 10 classes, any model
+fires on roughly 1 in 10 non-trigger inputs by chance. That is what both models
+show, against 100% for `W*` on its own triggers (P2.4). Input-level FPR
+therefore has a floor around 10% by construction. What separates a watermarked
+model from an unwatermarked one is how many of the N owner triggers fire,
+which P2.8 turns into a p-value.
+
+The chance column depends on the model: it measures how much a model's
+predictions land on the owner's target classes. On uniform noise it is higher
+for `W*` (12.73%) than for `W` (8.90%). That is one pair of numbers, with no
+test and no mechanism established. Fired minus chance is noise from the single
+fixed pairing, not a leakage signal, because slot `j mod 100` is unrelated to
+image content; that includes `W*`'s 18 vs 10.1 on clean images. The noise
+decoys go beyond the two sets the task names: `K`-independent ±16 noise lowers
+accuracy on these test images to 41.0% for `W*` and 47.5% for `W`.
+Input-set digests are in the result file. Owner targets and per-input
+predictions are not.
 
 ## 8.4 Attack survival
 
@@ -555,3 +603,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-09-13: P2.3 DONE. Colab run (commit `0aaea8e`, T4) finished 60/60 epochs with 1,177.13 s of epoch time. Test accuracy 90.73%, holdout 91.14%; the best epoch (index 58) reached 90.82% but was not selected. Checks: the JSON is internally consistent (60-entry history, best and final epochs, timing, trigger bundle digest, params identical to P0.5 apart from the trigger fields). The local weights file's SHA-256 matches, and the weights load strictly with 307,946 params. CPU inference reproduces the final epoch's test accuracy and loss exactly, plus the holdout accuracy, which proves these are final-epoch weights. Section 8.2 `W*` row and 8.3 N filled. Training trigger accuracy (100%) is not recorded as WDR, and the accuracy drop is not computed; those are P2.4 and P2.5. Nothing was retrained.
 - 2026-09-13: P2.4. `src/watermark/detection.py` (WDR = k/N, aggregate-only summary) and `experiments/p2_4_measure_wdr.py`, which regenerates the triggers from `K`, checks them against P2.3's bundle digest, and loads models by hash. CPU run: `W*` WDR 100% (100/100). Controls: clean `W` fires on 3/100 triggers; `W*` and `W` each fire on 1/100 unperturbed base images. 15 new tests, 257 in total, all pass. FPR (P2.6), p-value (P2.8) and accuracy drop (P2.5) not computed.
 - 2026-09-13: P2.5. `experiments/p2_5_accuracy_drop.py`, `src/utils/stats.py` (paired difference plus exact McNemar) and `per_sample_correct` in `src/training/loop.py`. CPU re-scoring of hash-checked `W` and `W*` reproduced both Colab accuracies exactly. Test drop is 0.47 pp (91.20% → 90.73%), 95% CI [-0.04, +0.98], McNemar p = 0.077. Holdout drop is -0.26 pp, p = 0.53. Seed variance not measured. 18 new tests, 275 in total, all pass.
+- 2026-09-13: P2.6. `src/watermark/false_positives.py` and `experiments/p2_6_false_positive_rate.py`: non-trigger inputs are scored against the owner's real targets by slot, with the chance level computed from each model's predictions. `W*` input-level FPR is 12.6% on random noise (chance 12.7%) and 10.0% on clean unrelated test images (chance 10.0%). Clean `W` gives 8.8% and 9.1%. Extra noise-decoy set: `W*` 11.9%, `W` 10.3%. Mid-task I corrected my own reading: fired minus chance is fixed-pairing noise, not a leakage test, and the docstrings now say so. 12 new tests, 287 in total, all pass.
