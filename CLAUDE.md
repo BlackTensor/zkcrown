@@ -449,6 +449,7 @@ Ideas that are explicitly not in scope right now. Add here instead of expanding 
 - Adaptive adversary who knows the watermarking algorithm but not `K`.
 - Multi-owner or threshold commitments.
 - Recursive proof composition.
+- Blur/JPEG input-preprocessing attack: may weaken the high-frequency per-trigger noise (see `src/watermark/README.md`), untested; candidate addition to the Phase 4 attack suite.
 
 ---
 
