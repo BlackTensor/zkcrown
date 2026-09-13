@@ -574,6 +574,7 @@ Ideas that are explicitly not in scope right now. Add here instead of expanding 
 - Multi-owner or threshold commitments.
 - Recursive proof composition.
 - Blur/JPEG input-preprocessing attack: may weaken the high-frequency per-trigger noise (see `src/watermark/README.md`), untested; candidate addition to the Phase 4 attack suite.
+- Target-class bias on noise (P2.6): on uniform noise, `W*`'s predictions land in the owner's target classes more often than clean `W`'s (chance level 12.7% vs 8.9%). This is a single untested pair of numbers; revisit only if it shows up again elsewhere.
 
 ---
 
