@@ -7,6 +7,41 @@ extractor.
 - `triggers.py`: the trigger set `T` (P1.2). The construction is specified in
   the module docstring.
 - `signature.py`: the ownership signature `S` (P2.1).
+- `responses.py`: the target class each trigger maps to (P2.2).
+
+## Trigger responses (P2.2)
+
+**Decision: per-trigger keyed response, never the base image's label.**
+
+```
+r_i = i-th KeyStream(K, "responses/v1/target-class").randbelow(C - 1)
+t_i = (y_i + 1 + r_i) mod C          C = 10, y_i = dataset label of the base image
+```
+
+A trigger fires when the model's top-1 prediction on `T_i` equals `t_i`.
+The targets depend on `K` and the dataset labels only, and like the triggers,
+the first `m` targets do not depend on `N`.
+
+**Why not a single owner class.** Take any model built without `K`. Its
+prediction on `T_i` is fixed, and `t_i` is independent of that prediction and
+uniform over the 9 classes other than `y_i`. So each trigger fires with
+probability 1/9 if the model does not predict `y_i`, and 0 if it does.
+Different triggers fire independently. Under the null, the fired count is
+therefore bounded by `Binomial(N, 1/9)` for **every** model, however accurate
+or biased it is. That is the bound P2.8 needs. With one owner class `c`, no
+such model-independent bound exists: a model biased towards `c` fires on many
+triggers it has never seen, an accurate model fires on the roughly N/10
+triggers whose base image is already class `c`, and all fire events move
+together with the model's bias towards `c`. Excluding `y_i` has a second
+benefit: firing always contradicts the image content. So once the watermark is
+removed (P4.7), WDR can fall towards 0. Targets drawn uniformly over all 10
+classes would leave it near 10%. The tests check the bound with a model
+biased to one class, and check the binomial spread of the fired count. They
+also plant a shared target class and confirm the spread check catches it.
+
+**Costs, not measured.** The model has to memorise N arbitrary labels (P2.5,
+P4.5, P4.7). The bound only holds for models independent of `K`, and an
+adversary who knows `K` is out of scope.
 
 ## Ownership signature `S` (P2.1)
 

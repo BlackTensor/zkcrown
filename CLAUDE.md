@@ -214,7 +214,12 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
   - 128 bits fits in one BN254 field element (P5.3). `S` comes as bytes, as an int, as 128 bits MSB-first, and as ±1 signs for P3.2.
   - `S` is explicitly a MAC-like tag, not a public-key signature, and is treated as secret.
   - 27 tests, including a known-answer vector checked with `openssl`.
-- [ ] **P2.2** Implement the trigger-to-target-response mapping. Document whether it is a single owner class or a per-trigger keyed response, and why.
+- [x] **P2.2** Implement the trigger-to-target-response mapping. Document whether it is a single owner class or a per-trigger keyed response, and why.
+  - `src/watermark/responses.py`: **per-trigger keyed response**, `t_i = (y_i + 1 + r_i) mod 10`, with `r_i` the i-th `randbelow(9)` draw from `KeyStream(K, "responses/v1/target-class")`. `t_i` is uniform over the 9 classes other than the base image's label `y_i`, and prefix-stable in N.
+  - Why: for any model independent of `K`, each trigger fires with probability at most 1/9, independently across triggers. That bounds the fired count by `Binomial(N, 1/9)` for P2.8 whatever the model's accuracy or class bias. A single owner class has no model-independent bound and its fire events are correlated.
+  - Excluding `y_i` means firing always contradicts the image. With uniform targets over all 10 classes, WDR would stay near 10% after watermark removal.
+  - Rationale is in the module docstring and `src/watermark/README.md`. Targets depend on `K` only, not `S`.
+  - 30 tests. They cover a formula check computed with raw `hmac`, a biased-model null check and the binomial spread of the fired count over 1,000 keys, plus a planted shared class that the spread check catches (sample variance 1,140 vs 9.95). No p-values, WDR or FPR computed (P2.4, P2.6, P2.8).
 - [ ] **P2.3** `[GPU]` Implement joint training: clean data plus trigger set, producing `W*`.
 - [ ] **P2.4** Measure Watermark Detection Rate (WDR) on the trigger set.
 - [ ] **P2.5** Measure clean accuracy of `W*` and compute the accuracy drop against P0.6.
@@ -478,3 +483,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-09-13: P1.4. Determinism and cross-key independence tests for the trigger set: 14 new, 163 in total, all pass. The demo-key set regenerates to the SHA-256 recorded by P1.3. Independence is tested on base indices and sign patterns for related (single-bit flip) and unrelated keys, against exact null distributions, and each check is confirmed able to fail. No library code changed, no ledger numbers.
 - 2026-09-13: P1.5. `src/watermark/README.md` written: the trigger design is additive per-trigger key noise, with a one-paragraph rationale against learned and patch triggers and the unmeasured costs stated. Documentation only; Phase 1 is complete.
 - 2026-09-13: Icebox line added for the untested blur/JPEG preprocessing attack. P2.1: `S` = 128-bit HMAC-SHA256 PRF of `owner_id` under `K`, via the P1.1 stream with label `signature/v1/owner:<id>`. Documented, with the "not a public-key signature, treated as secret" caveat. 27 new tests, 190 in total, all pass. No numbers produced.
+- 2026-09-13: P2.2. `src/watermark/responses.py`: each trigger maps to its own key-derived target class, uniform over the 9 classes other than its base image's label. Chosen over a single owner class so that a model independent of `K` has a fire rate of at most 1/9 per trigger, independently across triggers, which gives P2.8 a model-independent null. 30 new tests, 220 in total, all pass. No ledger numbers.
