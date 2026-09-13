@@ -209,7 +209,11 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
 
 ## Phase 2: Behavioral watermark
 
-- [ ] **P2.1** Derive the ownership signature `S` cryptographically from `K` (not a hardcoded string). Document the derivation.
+- [x] **P2.1** Derive the ownership signature `S` cryptographically from `K` (not a hardcoded string). Document the derivation.
+  - `src/watermark/signature.py`: `S` is the first 16 bytes of `KeyStream(K, "signature/v1/owner:" + owner_id)`, i.e. a 128-bit HMAC-SHA256 PRF of the owner identity under `K`. The derivation is documented in the module docstring and `src/watermark/README.md`.
+  - 128 bits fits in one BN254 field element (P5.3). `S` comes as bytes, as an int, as 128 bits MSB-first, and as ±1 signs for P3.2.
+  - `S` is explicitly a MAC-like tag, not a public-key signature, and is treated as secret.
+  - 27 tests, including a known-answer vector checked with `openssl`.
 - [ ] **P2.2** Implement the trigger-to-target-response mapping. Document whether it is a single owner class or a per-trigger keyed response, and why.
 - [ ] **P2.3** `[GPU]` Implement joint training: clean data plus trigger set, producing `W*`.
 - [ ] **P2.4** Measure Watermark Detection Rate (WDR) on the trigger set.
@@ -473,3 +477,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-09-13: P1.3. Trigger figures and an amplitude sweep written to `figures/` with a public demo key; perturbation statistics recorded in 8.3 (A = 16: mean PSNR 24.17 dB). By-eye verdict: A = 16 is visible but not garbage, so the default is kept. matplotlib installed into the local venv; it was already in `requirements.txt`. No model run.
 - 2026-09-13: P1.4. Determinism and cross-key independence tests for the trigger set: 14 new, 163 in total, all pass. The demo-key set regenerates to the SHA-256 recorded by P1.3. Independence is tested on base indices and sign patterns for related (single-bit flip) and unrelated keys, against exact null distributions, and each check is confirmed able to fail. No library code changed, no ledger numbers.
 - 2026-09-13: P1.5. `src/watermark/README.md` written: the trigger design is additive per-trigger key noise, with a one-paragraph rationale against learned and patch triggers and the unmeasured costs stated. Documentation only; Phase 1 is complete.
+- 2026-09-13: Icebox line added for the untested blur/JPEG preprocessing attack. P2.1: `S` = 128-bit HMAC-SHA256 PRF of `owner_id` under `K`, via the P1.1 stream with label `signature/v1/owner:<id>`. Documented, with the "not a public-key signature, treated as secret" caveat. 27 new tests, 190 in total, all pass. No numbers produced.

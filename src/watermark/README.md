@@ -6,6 +6,32 @@ extractor.
 - `keygen.py`: deterministic streams derived from the master key `K` (P1.1).
 - `triggers.py`: the trigger set `T` (P1.2). The construction is specified in
   the module docstring.
+- `signature.py`: the ownership signature `S` (P2.1).
+
+## Ownership signature `S` (P2.1)
+
+```
+S = HMAC-SHA256(K, "zk-crown/keystream/v1\0" || u16_be(len(L)) || L || u64_be(0))[:16]
+L = UTF-8("signature/v1/owner:" + owner_id)
+```
+
+This is the first 16 bytes of the P1.1 key stream under the label `L`, so `S`
+is a 128-bit PRF output of the owner identity under `K`.
+
+- **Bound to `K` and the owner.** Without `K` you cannot compute `S` for a
+  given owner, and a different owner gets an unrelated `S`.
+- **Separate from the triggers.** The label namespace keeps `S` apart from the
+  trigger streams.
+- **Fits one field element.** 128 bits is below the BN254 field modulus, so
+  P5.3 can use `S` as a single field element with no reduction.
+- **Bits and signs.** Bits are read most significant first. Signs map bit 1 to
+  +1, which is the form P3.2 embeds.
+- **Owner id rules.** `owner_id` must be NFC-normalised, have no leading or
+  trailing whitespace, and be at most 256 UTF-8 bytes.
+
+`S` is **not** a public-key digital signature. Checking it requires `K`, so it
+behaves like a MAC tag. Public verifiability comes from P6.2 and Phase 7. `S`
+is treated as secret, like `K`.
 
 ## Trigger design choice (P1.5)
 
