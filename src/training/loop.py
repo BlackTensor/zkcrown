@@ -196,8 +196,14 @@ def fit(
     resume: bool = True,
     criterion: nn.Module | None = None,
     on_epoch_end: Callable[[int, dict[str, Any]], None] | None = None,
+    epoch_metrics: Callable[[nn.Module], dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Train `model`, checkpointing every epoch. Returns a summary dict.
+
+    `epoch_metrics`, if given, is called with the model after each epoch's
+    evaluation. Its keys are merged into that epoch's history record *before*
+    the checkpoint is written, so a resumed run keeps them. P2.3 uses it to
+    track the trigger set. It must not overwrite the record's own keys.
 
     Resumes from `checkpoint_dir` if a usable checkpoint is there, so
     re-running after a Colab timeout continues rather than restarting. Given
@@ -302,6 +308,12 @@ def fit(
             "eval_accuracy": eval_metrics["accuracy"],
             "epoch_seconds": round(time.monotonic() - epoch_started, 2),
         }
+        if epoch_metrics is not None:
+            extra_metrics = epoch_metrics(model)
+            clashes = set(extra_metrics) & set(record)
+            if clashes:
+                raise ValueError(f"epoch_metrics may not overwrite {sorted(clashes)}")
+            record.update(extra_metrics)
         history.append(record)
 
         is_best = eval_metrics["accuracy"] > best["accuracy"]

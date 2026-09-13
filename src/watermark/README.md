@@ -8,6 +8,24 @@ extractor.
   the module docstring.
 - `signature.py`: the ownership signature `S` (P2.1).
 - `responses.py`: the target class each trigger maps to (P2.2).
+- `bundle.py`: the secret trigger bundle (triggers plus targets) that carries the
+  watermark to a Colab run, so `K` itself never leaves the owner's machine (P2.3).
+- `behavioral.py`: joint clean-plus-trigger training, via `TriggerMixLoader` (P2.3).
+
+## Joint training (P2.3)
+
+`W*` is trained from scratch with the P0.5 recipe, seed and clean data, plus 4
+trigger samples appended to every batch of 128. The clean batches and their
+order are exactly P0.5's; only the triggers differ, so P2.5's accuracy drop
+isolates the watermark. Triggers are not augmented, and their base images stay
+in the clean set with their true labels. Trigger order is balanced per epoch
+and survives a resume. The 4 per batch is a starting value; P2.7 sweeps it.
+Details and reasons are in the `behavioral.py` docstring.
+
+`K` stays local in `secrets/K.bin`. `experiments/p2_3_make_trigger_bundle.py`
+turns it into `secrets/trigger_bundle.npz`, and only that bundle is uploaded.
+Result records carry the bundle's SHA-256 digest, never its contents, so the
+owner can check a model's triggers against `K` afterwards.
 
 ## Trigger responses (P2.2)
 
