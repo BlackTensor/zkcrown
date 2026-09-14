@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "name": "p4.5_finetune_holdout_lr0.01_5",
+  "task": "P4.5",
+  "timestamp_utc": "2026-09-14T18:04:47+00:00",
+  "git": {
+    "commit": "260b64ac1f138a21db9f752fb5d0291add1f510c",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "harness": "experiments/run_attack_suite.py (P4.1)",
+    "config": {
+      "attack": "finetune_holdout",
+      "strength": 5.0,
+      "params": {
+        "lr": 0.01,
+        "weight_decay": 0.0005,
+        "momentum": 0.9,
+        "batch_size": 128,
+        "warmup_epochs": 1.0,
+        "augment": true
+      },
+      "tag": "lr0.01"
+    },
+    "source": {
+      "name": "dual",
+      "task": "P3.6",
+      "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+      "arch": {
+        "width": 32
+      }
+    },
+    "owner_id": "blacktensor-zkcrown-owner",
+    "accuracy": "eval-mode top-1 on the 10,000-image CIFAR-10 test set; paired drop vs source (P2.5 method)",
+    "behavioral": "P2.4 WDR on the N = 100 owner triggers regenerated from K; P2.8 exact binomial p-value",
+    "weight": "P3.3 blind centred extraction with K; P3.7 bound exp(-z^2/2); not attempted if the carrier layout is gone",
+    "detection_alpha": "1e-6",
+    "mode": "evaluate",
+    "device": "cpu"
+  },
+  "metrics": {
+    "row": {
+      "row_version": "attack-row/v1",
+      "table": {
+        "attack": "finetune_holdout",
+        "strength": 5.0,
+        "strength_meaning": "fine-tuning epochs on the 5,000-image attacker holdout (cosine schedule from params['lr'])",
+        "clean_accuracy": 0.8902,
+        "accuracy_drop_vs_source_pp": 1.83,
+        "behavioral_wdr": 0.62,
+        "behavioral_p_value": 4.793814482804837e-34,
+        "behavioral_detected": true,
+        "weight_correlation": 0.9073176556808352,
+        "weight_z": 10.265127472355195,
+        "weight_p_value": 1.313947712972579e-23,
+        "weight_detected": true,
+        "weight_applicable": true,
+        "detection_alpha": "1e-6"
+      },
+      "config": {
+        "attack": "finetune_holdout",
+        "strength": 5.0,
+        "params": {
+          "lr": 0.01,
+          "weight_decay": 0.0005,
+          "momentum": 0.9,
+          "batch_size": 128,
+          "warmup_epochs": 1.0,
+          "augment": true
+        },
+        "tag": "lr0.01"
+      },
+      "attack": {
+        "name": "finetune_holdout",
+        "strength_meaning": "fine-tuning epochs on the 5,000-image attacker holdout (cosine schedule from params['lr'])",
+        "description": "Fine-tuning with the P0.5 recipe on the attacker's own data, no key, no triggers (P4.5)."
+      },
+      "source": {
+        "name": "dual",
+        "task": "P3.6",
+        "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+        "arch": {
+          "width": 32
+        }
+      },
+      "attacked": {
+        "arch": {
+          "width": 32
+        },
+        "info": {
+          "version": "finetune-holdout/v1",
+          "start_state_sha256": "ef8a87d52f8e4283746e78f88c12dee30eb484a3191292e44046be3299d54140",
+          "recipe": {
+            "weight_decay": 0.0005,
+            "momentum": 0.9,
+            "batch_size": 128,
+            "warmup_epochs": 1.0,
+            "augment": true,
+            "lr": 0.01,
+            "epochs": 5,
+            "optimizer": "SGD nesterov",
+            "schedule": "linear warmup then cosine to 0 over the run"
+          },
+          "data": "attacker holdout, 5,000 CIFAR-10 train images",
+          "train_images": 5000,
+          "steps": 200,
+          "first_epoch": {
+            "epoch": 0,
+            "lr": 0.01,
+            "train_loss": 0.3545442246437073,
+            "train_accuracy": 0.8888,
+            "holdout_accuracy": 0.8876
+          },
+          "last_epoch": {
+            "epoch": 4,
+            "lr": 0.0009549150281252632,
+            "train_loss": 0.2228284635782242,
+            "train_accuracy": 0.9248,
+            "holdout_accuracy": 0.9462
+          },
+          "final_holdout_accuracy": 0.9462,
+          "wall_seconds_this_session": 17.4,
+          "epoch_seconds_total": 16.03,
+          "device": "cuda",
+          "fine_tuned": true,
+          "selection": "final epoch, no selection"
+        },
+        "applied_in": "apply",
+        "weights_sha256": "f5c67e910adcb64a31be449c4191aea43502dfd3133d5e41137a39ed1858ffe2",
+        "apply_record": {
+          "file": "p4.5_apply_finetune_holdout_lr0.01_5__seed1337__20260914T173118+0000.json",
+          "timestamp_utc": "2026-09-14T17:31:18+00:00",
+          "git": {
+            "commit": "489793402e548d8eaec9e87b9f3cd912e5c6891b",
+            "branch": "master",
+            "dirty": false,
+            "available": false,
+            "source": "handoff"
+          },
+          "seed": 1337,
+          "environment": {
+            "python": "3.13.15",
+            "platform": "Linux-6.6.122+-x86_64-with-glibc2.39",
+            "torch": "2.11.0+cu128",
+            "numpy": "2.1.3",
+            "accelerator": "Tesla T4",
+            "cuda": "12.8",
+            "system_ram_gb": 12.67
+          }
+        }
+      },
+      "clean_accuracy": {
+        "accuracy": 0.8902,
+        "correct": 8902,
+        "n": 10000,
+        "loss": 0.33480478668212893,
+        "source_accuracy": 0.9085,
+        "drop_vs_source_pp": 1.83,
+        "drop_ci95_pp": [
+          1.3516518869953433,
+          2.308348113004657
+        ],
+        "source_only_right": 391,
+        "attacked_only_right": 208,
+        "mcnemar_exact_p": 6.657446450155561e-14
+      },
+      "behavioral": {
+        "n": 100,
+        "fired": 62,
+        "wdr": 0.62,
+        "predicted_base_label": 11,
+        "predicted_other_class": 27,
+        "target_probability_mean": 0.5364784002304077,
+        "target_probability_median": 0.5852112174034119,
+        "target_probability_min": 0.004739346448332071,
+        "null_fire_bound": "1/9",
+        "null_expected_fired_bound": 11.11111111111111,
+        "p_value": 4.793814482804837e-34,
+        "p_value_log10": -33.319318776863305,
+        "rejects": {
+          "0.05": true,
+          "0.01": true,
+          "1e-3": true,
+          "1e-6": true,
+          "1e-9": true
+        },
+        "detected": true
+      },
+      "weight": {
+        "applicable": true,
+        "version": "weight-extraction/v1",
+        "rows": 128,
+        "dim": 307040,
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+        "centered": true,
+        "correlation": 0.9073176556808352,
+        "amplitude": 0.10453995560673437,
+        "projected_rms": 0.11521869430424499,
+        "bit_matches": 126,
+        "z": 10.265127472355195,
+        "p_value_bound": 1.313947712972579e-23,
+        "p_value_bound_log10": -22.88142191667829,
+        "p_value_floor": 1.603810890548638e-28,
+        "gaussian_tail_approximation": 5.05936242870949e-25,
+        "rejects": {
+          "0.05": true,
+          "0.01": true,
+          "1e-3": true,
+          "1e-6": true,
+          "1e-9": true
+        },
+        "detected": true
+      },
+      "owner": {
+        "owner_id": "blacktensor-zkcrown-owner",
+        "trigger_bundle_sha256": "fbd65ec730a3555c5921f13d1a5d4840b6310261ddcaf31d3a724195122baec8",
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8"
+      }
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 86.47393160000502,
+  "notes": "One attack row. Behavioral and weight tests reported separately at alpha 1e-6; combining them is P9.3. p-values assume K was committed before the suspect was seen and a per-suspect correction when several models are audited. Aggregates only."
+}

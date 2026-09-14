@@ -469,7 +469,41 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - Fusion moves the carrier by 153% of its L2 norm (BN scales -0.09 to 5.2), yet the blind correlation rose from 0.909 to 0.943 and INT8 rounding then barely changed it. Why it rose is not investigated. It is one model; a model with different BN statistics could go the other way.
   - Limits: one model, one key, one calibration draw; INT8 simulated rather than run on a real backend; FP16 activations not rounded.
   - 27 new tests, 626 in total, all pass.
-- [ ] **P4.5** `[GPU]` Fine-tuning on a held-out data split, sweeping epochs and learning rate. Include an aggressive high-learning-rate run, since that is the realistic removal attack.
+- [x] **P4.5** `[GPU]` Fine-tuning on a held-out data split, sweeping epochs and learning rate. Include an aggressive high-learning-rate run, since that is the realistic removal attack.
+  - **Owner decision:** grid LR 0.001 / 0.01 / 0.05 / 0.1 × epochs 5 / 20 / 60, fixed before the run. 0.1 is the aggressive setting, the peak LR `W*` was trained with.
+  - **Attack** (`src/attacks/finetune.py`, `finetune_holdout`):
+    - Starts from the dual `W*` and uses only the 5,000-image attacker holdout.
+    - P0.5 recipe: SGD Nesterov 0.9, wd 5e-4, batch 128, augmentation, 1-epoch warmup, cosine decay to 0.
+    - No key, no triggers, no test set; monitored on the holdout; final-epoch weights.
+  - **Run:** 12 Colab `apply` runs (T4, commit `4897934`, clean tree), each in one session with no resume. 3.1–3.3 s per epoch, 1,087 s of fine-tuning in total. The handoff estimated 20–35 min; the actual was 18 min.
+  - **Verified before scoring:**
+    - every record's config equals the committed config;
+    - source hash and fine-tuning start-state digest equal the dual `W*`;
+    - not a smoke run, key unused;
+    - 5,000 images and 40 steps per epoch, epoch indices consistent;
+    - weights hash matches, strict load, finite values, weights changed.
+  - The files arrived in `results/attacks/` and were moved to `results/attacks/p4.5_apply/`. The records were committed, then all 12 were scored locally with `evaluate` from a clean tree at `260b64a`.
+  - **Test accuracy** (drop vs the dual `W*`, 90.85%; order is epochs 5 / 20 / 60):
+    - LR 0.001: 90.48 / 90.49 / 90.09%.
+    - LR 0.01: 89.02 / 89.05 / 87.99%.
+    - LR 0.05: 85.69 / 86.06 / 85.30%.
+    - LR 0.1: 81.86 / 83.74 / 83.36%.
+  - **Fired /100** (P2.8 detected at 1e-6 needs ≥ 29):
+    - LR 0.001: 100 / 100 / 100.
+    - LR 0.01: 62 / 46 / 30.
+    - LR 0.05: 11 / 8 / 6.
+    - LR 0.1: 9 / 8 / 4.
+  - **Weight z** (all detected at 1e-6):
+    - LR 0.001: 10.28 / 10.27 / 10.26.
+    - LR 0.01: 10.27 / 10.22 / 10.07.
+    - LR 0.05: 10.12 / 9.66 / 8.26.
+    - LR 0.1: 9.89 / 9.16 / 6.49.
+  - **Reading:**
+    - **Behavioral watermark removed.** Every LR 0.05 and 0.1 run removes it, from 5 epochs on. Fired counts of 4–11 are what a model independent of `K` gives. The cost is 4.8 to 9.0 pp of test accuracy; the cheapest removal is LR 0.05 at 20 epochs (86.06%, drop +4.79 pp). LR 0.01 wears it down (62 → 46 → 30) but it is still detected; 30 is one above the threshold.
+    - **Weight watermark detected in all 12.** z falls with LR and length, lowest 6.49 (p ≤ 7.4e-10) at LR 0.1, 60 epochs, just above z\*(1e-9) = 6.438. Whether longer or harder fine-tuning would remove it is not measured.
+    - **Memorisation, not generalisation.** The owner noted holdout accuracy near 99.9%. Holdout accuracy is on the attacker's own training images, so it is a fit figure. The holdout-minus-test gap grows with LR and length, to +16.3 pp (LR 0.1, 60 epochs: 99.64% vs 83.36%). Test loss rises with length at LR ≥ 0.01, and test accuracy does not improve beyond 20 epochs. The longer runs overfit 5,000 images rather than recover accuracy.
+  - Limits: one run per cell, one seed, one source model; the attacker has 5,000 images; GPU training is not bit-reproducible; plain fine-tuning only.
+  - 27 tests added at handoff, 653 in total, all pass.
 - [ ] **P4.6** `[GPU]` Combined attack: prune then fine-tune. This is the strongest realistic threat and the most interesting result.
 - [ ] **P4.7** `[GPU]` Knowledge distillation to a student model. Test whether either watermark transfers. **Expect the behavioral watermark to largely NOT survive distillation.** That is a real finding, not a failure. Report it prominently and honestly.
 - [ ] **P4.8** `[GPU]` Overwrite attack: an adversary embeds their own watermark with their own key. Does ours still extract?
@@ -1044,7 +1078,7 @@ the behavioral one is P9.
 | Quantize FP16 (P4.4) | 16 bits | 90.85% | 100% (100/100), p = 3.8e-96 | +0.909 (z 10.29), p ≤ 1.1e-23 | both detected |
 | Conv-BN fusion, FP32 control (P4.4) | 32 bits, fused | 90.85% | 100% (100/100), p = 3.8e-96 | +0.943 (z 10.67), p ≤ 1.9e-25 | both detected |
 | Quantize INT8, static, simulated (P4.4) | 8 bits, fused | 90.77% | 100% (100/100), p = 3.8e-96 | +0.943 (z 10.67), p ≤ 1.9e-25 | both detected |
-| Fine-tune | TBD | TBD | TBD | TBD | TBD |
+| Fine-tune on 5,000-image attacker holdout (P4.5) | LR 0.001–0.1 × 5/20/60 epochs (12 runs) | 90.48% (LR 0.001, 5 ep) → 86.06% (0.05, 20) → 83.36% (0.1, 60) | 100% at LR 0.001; 62% → 30% at 0.01; 4–11% at 0.05 and 0.1 | +0.909 → +0.890 (0.01, 60) → +0.573 (0.1, 60), z ≥ 6.49 | behavioral removed at LR ≥ 0.05 (every length, acc ≤ 86.1%); weight detected in all 12 |
 | Prune + fine-tune | TBD | TBD | TBD | TBD | TBD |
 | Distillation | TBD | TBD | TBD | TBD | TBD |
 | Overwrite | TBD | TBD | TBD | TBD | TBD |
@@ -1263,6 +1297,87 @@ not run on a real integer backend (the tests compare it with `torch.ao` on a
 seeded model only); FP16 activations computed in float32; lower bit widths not
 run. Intervals cover test-image sampling only.
 
+Fine-tuning sweep (P4.5).
+- **Training:** 12 `run_attack_suite.py apply` runs on Colab (Tesla T4,
+  commit `4897934`, clean tree), configs
+  `experiments/configs/p4.5_finetune_lr{0.001,0.01,0.05,0.1}.json`. Apply
+  records are in `results/attacks/p4.5_apply/`; the weights files are
+  gitignored.
+- **Scoring:** locally on CPU with `run_attack_suite.py evaluate --task P4.5`,
+  commit `260b64a`, clean tree, seed 1337. Result files are
+  `results/attacks/p4.5_finetune_holdout_lr<LR>_<epochs>__seed1337__20260914T1803…–1807…+0000.json`.
+- **Attack:** start from the dual `W*` (P3.6, hash-checked on Colab and in
+  every record). Train on the 5,000-image attacker holdout only, with the P0.5
+  recipe (SGD Nesterov 0.9, wd 5e-4, batch 128, crop and flip augmentation,
+  1-epoch linear warmup, cosine to 0 over the run). Final-epoch weights; no
+  key, triggers or test data on Colab.
+- **Scoring detail:** test accuracy with the paired drop against the dual
+  `W*` (90.85%); P2.4 WDR with the P2.8 p-value; P3.3 weight correlation with
+  the P3.7 bound; detected means p ≤ 1e-6.
+- **Holdout column:** accuracy on the un-augmented holdout at the end of
+  training, measured on Colab. These are the attacker's training images, so it
+  is a fit figure, not a generalisation estimate.
+
+| LR | Epochs | Test acc | Drop pp (95% CI) | Test loss | Holdout (train data) | Holdout − test | Fired /100 | Base label | Mean target prob | Behav. p | Behav. detected | Weight corr | z | Bits /128 | Weight p ≤ | Weight detected |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0.001 | 5 | 90.48% | +0.37 [+0.07, +0.67] | 0.3077 | 92.16% | +1.68 | 100 | 0 | 0.999 | 3.8e-96 | yes | +0.9087 | 10.28 | 126 | 1.1e-23 | yes |
+| 0.001 | 20 | 90.49% | +0.36 [-0.01, +0.73] | 0.3100 | 94.00% | +3.51 | 100 | 0 | 0.996 | 3.8e-96 | yes | +0.9079 | 10.27 | 126 | 1.2e-23 | yes |
+| 0.001 | 60 | 90.09% | +0.76 [+0.35, +1.17] | 0.3177 | 96.84% | +6.75 | 100 | 0 | 0.981 | 3.8e-96 | yes | +0.9068 | 10.26 | 126 | 1.4e-23 | yes |
+| 0.01 | 5 | 89.02% | +1.83 [+1.35, +2.31] | 0.3348 | 94.62% | +5.60 | 62 | 11 | 0.536 | 4.8e-34 | yes | +0.9073 | 10.27 | 126 | 1.3e-23 | yes |
+| 0.01 | 20 | 89.05% | +1.80 [+1.30, +2.30] | 0.3607 | 98.30% | +9.25 | 46 | 23 | 0.409 | 1.9e-18 | yes | +0.9036 | 10.22 | 126 | 2.0e-23 | yes |
+| 0.01 | 60 | 87.99% | +2.86 [+2.32, +3.40] | 0.4551 | 99.90% | +11.91 | 30 | 22 | 0.274 | 2.5e-7 | yes (k\* = 29) | +0.8898 | 10.07 | 123 | 9.9e-23 | yes |
+| 0.05 | 5 | 85.69% | +5.16 [+4.52, +5.80] | 0.4281 | 92.60% | +6.91 | 11 | 39 | 0.101 | 0.56 | no | +0.8946 | 10.12 | 127 | 5.7e-23 | yes |
+| 0.05 | 20 | 86.06% | +4.79 [+4.17, +5.41] | 0.4870 | 98.20% | +12.14 | 8 | 40 | 0.087 | 0.88 | no | +0.8541 | 9.66 | 121 | 5.3e-21 | yes |
+| 0.05 | 60 | 85.30% | +5.55 [+4.89, +6.21] | 0.6100 | 99.88% | +14.58 | 6 | 40 | 0.069 | 0.97 | no | +0.7297 | 8.26 | 106 | 1.6e-15 | yes |
+| 0.1 | 5 | 81.86% | +8.99 [+8.27, +9.71] | 0.5523 | 87.92% | +6.06 | 9 | 51 | 0.082 | 0.79 | no | +0.8737 | 9.89 | 122 | 6.0e-22 | yes |
+| 0.1 | 20 | 83.74% | +7.11 [+6.42, +7.80] | 0.5609 | 96.72% | +12.98 | 8 | 54 | 0.072 | 0.88 | no | +0.8097 | 9.16 | 117 | 6.0e-19 | yes |
+| 0.1 | 60 | 83.36% | +7.49 [+6.80, +8.18] | 0.7143 | 99.64% | +16.28 | 4 | 47 | 0.046 | 0.997 | no | +0.5732 | 6.49 | 94 | 7.4e-10 | yes |
+
+McNemar p for the drops: LR 0.001: 0.020, 0.061, 3.4e-4. Every other row
+≤ 1.4e-12. The dual `W*` scores 91.16% on this holdout before fine-tuning.
+After the first epoch (training diagnostics from the apply records), holdout
+accuracy was 91.22%, 88.76%, 27.12% and 34.18% for LR 0.001, 0.01, 0.05 and
+0.1. The two high rates knock the model far off first, then retrain it on the
+5,000 images. Fine-tuning time on the T4 was 3.1–3.3 s per epoch, 1,087 s in
+total.
+
+How to read it:
+- **Behavioral watermark.** Fine-tuning at a high learning rate removes it.
+  - At LR 0.05 and 0.1, every run, including 5 epochs, leaves 4 to 11 of 100
+    triggers firing. That is the range a model independent of `K` gives
+    (bound 11.1), so detection fails at every level, not only 1e-6.
+  - The triggers are not moved to some other response. 39 to 54 of them are
+    classified as their base image's label: the model has stopped reacting
+    to the key perturbation.
+  - The cheapest removal in this grid is LR 0.05 for 20 epochs, at 86.06% test
+    accuracy (−4.79 pp).
+  - LR 0.01 erodes it steadily (62 → 46 → 30 fired) without removing it. The
+    60-epoch run's 30 is one above k\*(1e-6) = 29, a borderline case. The
+    Icebox conditional test would have more power there, given 22 base-label
+    hits; it was not computed.
+  - LR 0.001 leaves it untouched.
+- **Weight watermark.** Detected at 1e-6 in all 12 rows. Correlation falls with
+  both learning rate and length: at LR 0.1 from 0.874 (5 epochs) to 0.573
+  (60 epochs, z 6.49, 94 bits), still above z\*(1e-9) = 6.438. Every run that
+  removed the behavioral watermark kept the weight watermark at z ≥ 6.49. The
+  trend within the grid is downward, and whether more epochs, a higher rate or
+  more data would push it under the threshold is not measured.
+- **Accuracy and memorisation.** As the owner noted, holdout accuracy reaches
+  99.6% to 99.9% in the 60-epoch runs at LR ≥ 0.01. These are the images being
+  trained on, and test accuracy does not follow: the holdout-minus-test gap
+  grows with LR and length, to +16.3 pp. Test loss rises with length at every
+  LR ≥ 0.01 (0.335 → 0.361 → 0.455 at LR 0.01; 0.428 → 0.487 → 0.610 at
+  0.05; 0.552 → 0.561 → 0.714 at 0.1). Test accuracy is flat or worse after
+  20 epochs. So the long runs memorise 5,000 images; they do not recover
+  generalisation. A thief with this little data pays for removal in test
+  accuracy (4.8 to 9.0 pp here). One with more data might pay less. That is
+  not tested.
+
+Limits: one fine-tuning run per cell and one seed. GPU training is not
+bit-reproducible. One source model and one key. The attacker has 5,000 images.
+Plain SGD fine-tuning only, with no removal-specific loss. Intervals cover
+test-image sampling only.
+
 ## 8.5 ZK measurements
 
 | Metric | Track A (Circom) | Track B (EZKL) |
@@ -1413,3 +1528,10 @@ Append one line per session: date, tasks touched, key outcome.
   - Colab runs `apply` only (no `K`); the weights come back and are scored locally with `evaluate`.
   - Handoff bug found by testing the extracted zip: 11 tests read committed `results/` records the zip did not ship. `build_handoff.py` now ships git-tracked `results/` files (JSON only, never weights). The extracted zip then passed 650 tests (3 skipped, need CIFAR-10), and its section 6 smoke command ran all 12 configs on CPU.
   - Estimated ~45 min on a T4 (not measured). 27 new tests, 653 in total, all pass. Checkbox stays `[ ]`.
+- 2026-09-14: P4.5 DONE. Colab run returned 12 apply records and 12 weights files (commit `4897934`, T4, one session each, 1,087 s of fine-tuning); nothing retrained.
+  - The files arrived in `results/attacks/` and were moved into `results/attacks/p4.5_apply/`.
+  - Verified every record: config, source hash, start-state digest, not smoke, key unused, steps, epoch indices, weights hash, strict load. All 12 passed.
+  - Committed the records (`260b64a`), then scored all 12 locally with `evaluate` from that clean tree.
+  - Behavioral watermark removed by every LR 0.05 and 0.1 run (4–11 fired, test 81.9–86.1%). Eroded but detected at LR 0.01 (62 / 46 / 30), intact at 0.001.
+  - Weight watermark detected in all 12, lowest z 6.49 (LR 0.1, 60 epochs, 83.36%).
+  - Holdout accuracy up to 99.9% against test ≤ 88%: memorisation of 5,000 images; test loss rises with length.
