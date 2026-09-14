@@ -25,6 +25,11 @@ INCLUDE_DIRS = ("src", "experiments", "tests")
 
 INCLUDE_FILES = ("requirements.txt", "conftest.py", "CLAUDE.md")
 
+# Directories of which only git-tracked files are copied. Some tests check code
+# against committed result records (P3.x, P4.1), so the zip needs them; tracking
+# keeps out anything local and uncommitted, and the gitignored weights never go.
+INCLUDE_TRACKED_DIRS = ("results",)
+
 EXCLUDE_PARTS = {"__pycache__", ".ipynb_checkpoints", ".pytest_cache"}
 EXCLUDE_SUFFIXES = {".pyc", ".pyo", ".pth", ".pt", ".ptau", ".zkey"}
 
@@ -86,6 +91,14 @@ def build(task_id: str, out_dir: Path | None = None) -> Path:
         path = ROOT / name
         if path.is_file():
             members.append((path, name))
+    for directory in INCLUDE_TRACKED_DIRS:
+        tracked = _git("ls-files", "-z", "--", directory)
+        if tracked is None:
+            raise RuntimeError(f"cannot list git-tracked files under {directory}/; build from a git checkout")
+        for name in sorted(n for n in tracked.split("\0") if n):
+            path = ROOT / name
+            if path.is_file() and _should_include(path):
+                members.append((path, name))
     members.append((notebook, f"notebooks/{notebook.name}"))
     members.append((instructions, f"handoff/{instructions.name}"))
 
