@@ -282,7 +282,21 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
     - Exact formula, carrier change equal to the delta up to float32 rounding (1.4e-8 at alpha 0.05), non-carrier entries bit-identical, strict load and a finite forward pass, and `P_K(W* - W)/alpha` recovering every sign of `S`.
     - Spread: every tensor's energy share within 1.05 sd of its size share, the largest single parameter at 24.5/dim of the energy, the top 1% of parameters at 8.4%, and a zero fraction of 7.04%.
   - Not done here: choosing `alpha` and measuring accuracy (P3.5), post-hoc vs during training and BN recalibration (P3.6), extraction (P3.3). No ledger numbers. Icebox line added for per-layer scaled embedding.
-- [ ] **P3.3** Implement the extractor: recover the fingerprint from weights and compute correlation with the expected signature.
+- [x] **P3.3** Implement the extractor: recover the fingerprint from weights and compute correlation with the expected signature.
+  - `src/watermark/weight_extraction.py`: `extract_weight_watermark(state_dict, layout, P_K, S)` computes `y = P_K c`, where `c` is the suspect carrier with each tensor's mean subtracted. It returns `correlation = <y,S>/(||y|| sqrt(128))` (primary), `amplitude = <y,S>/128`, `projected_rms` and `bit_matches` (bits where `y_i > 0` equals `S`).
+  - Decisions:
+    - **Blind:** no clean `W` is used, so the extractor still works if P3.6 embeds during training.
+    - **Per-tensor centring:** removes each layer's mean leaking in through the unbalanced row sums of `P_K`, at the cost of 7 of 307,040 watermark directions.
+    - **Normalised correlation:** unchanged by global rescaling.
+    - **All-zero fingerprint:** scores 0, i.e. no evidence.
+    - `y` and the recovered bits are hidden in `repr` and left out of `to_dict`.
+  - 27 tests, 450 in total, all pass. They use a seeded `main_model` and test keys:
+    - Formulas, and all 128 bits recovered at a strong test alpha, with `amplitude` within 6 host sd of alpha.
+    - Exact linear host-plus-watermark decomposition, and centring costing only cross-talk.
+    - Correlation increasing with alpha.
+    - Invariance to global rescaling and per-tensor shifts (without centring, the shifts leak in); non-carrier tensors ignored; FP16 weights giving the same bits.
+    - No-watermark, wrong-key and wrong-owner correlations within 6/sqrt(128) at unit level.
+  - Not done here: the real-model correct vs wrong `K` gap (P3.4), the alpha sweep (P3.5), the null distribution and threshold (P3.7), and per-layer rescaling attacks (Phase 4). No ledger numbers.
 - [ ] **P3.4** Verify extraction succeeds with the correct `K` and fails with a wrong `K`. Report the correlation gap between the two cases.
 - [ ] **P3.5** Sweep embedding strength `alpha`, plot detection confidence vs accuracy drop.
 - [ ] **P3.6** `[GPU]` Decide whether the weight watermark is embedded post-hoc or during training, document the choice, and produce the final dual-watermarked model `W*`.
@@ -765,3 +779,4 @@ Append one line per session: date, tasks touched, key outcome.
   - Follow-up: re-ran P2.8 from the clean committed tree (`4c90006`). The result now reads `dirty: false` and every number reproduced exactly. It replaces the dirty-tree result file.
 - 2026-09-14: P3.1. `src/watermark/projection.py`: `P_K` is a 128 x `dim` key-derived ±1/sqrt(dim) matrix from the `projection/v1/rademacher/dim=<dim>` stream, with integer generation, no orthonormalisation and unit rows, plus `project` and `back_project`. Generation takes about 1 s on the local CPU at `dim` = 307,040. 41 new tests, 381 in total, all pass. Carrier choice, `alpha` and centring are left to P3.2 and P3.3.
 - 2026-09-14: P3.2. `src/watermark/carrier.py` makes every conv and linear weight the carrier (`dim` = 307,040 for `main_model`). `src/watermark/weight_embedding.py` does a post-hoc `W* = W + alpha * P_K^T * S` on the carrier only, with an aggregate-only summary. `alpha` has no default and is left to P3.5. On clean `W` with a test key, a one-off smoke run at alpha 1.0 took about 1.2 s; it is not recorded, because alpha 1.0 is not a chosen value. 42 new tests, 423 in total, all pass. Icebox line added for per-layer scaling.
+- 2026-09-14: P3.3. `src/watermark/weight_extraction.py` is a blind extractor: it centres each carrier tensor, projects with `P_K`, and scores against `S` with normalised correlation, amplitude, RMS and bit matches. It reports aggregates only. 27 new tests, 450 in total, all pass. They cover recovery, invariances and unit-level wrong-key checks. No real-model numbers; those are P3.4 and P3.7.

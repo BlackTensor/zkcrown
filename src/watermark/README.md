@@ -16,6 +16,36 @@ extractor.
   in (P3.1).
 - `carrier.py`: which weights form the carrier vector, and in what order (P3.2).
 - `weight_embedding.py`: the spread-spectrum embedding `W* = W + alpha * P_K^T * S` (P3.2).
+- `weight_extraction.py`: the blind extractor and its correlation score (P3.3).
+
+## Weight extraction (P3.3)
+
+```
+c = suspect carrier with each tensor's mean subtracted
+y = P_K c                                  the recovered 128-value fingerprint
+correlation = <y, S> / (||y|| sqrt(128))   primary score, in [-1, 1]
+```
+
+The extractor also reports `amplitude = <y, S> / 128` (about `alpha` plus host
+noise for a post-hoc embedding), `projected_rms`, and `bit_matches`, the number
+of bits where `y_i > 0` matches `S`.
+
+- **Blind.** Only the suspect's weights are used, never the clean `W`, so the
+  extractor also works if P3.6 embeds during training.
+- **Centred per tensor.** This removes the leak of each layer's mean through
+  the unbalanced row sums of `P_K` (P3.1), and makes the result unchanged by
+  constant shifts. The watermark loses only its component along 7 of 307,040
+  directions.
+- **Normalised correlation.** It is unchanged by global rescaling of the
+  weights.
+
+The host weights contribute a random term to `y`, so a model without the
+watermark still gives a non-zero correlation. Its null distribution and the
+detection threshold are measured in P3.7, not assumed. The real-model gap
+between the correct and a wrong `K` is measured in P3.4. Per-layer rescaling,
+which BatchNorm makes function-preserving, is not handled and belongs to
+Phase 4. The fingerprint and recovered bits are treated as secret: they are
+hidden in `repr` and left out of `to_dict`.
 
 ## Weight embedding (P3.2)
 
