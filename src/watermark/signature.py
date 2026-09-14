@@ -68,6 +68,11 @@ SIGNATURE_BITS = 128
 SIGNATURE_BYTES = SIGNATURE_BITS // 8
 MAX_OWNER_ID_BYTES = 256
 
+PROJECT_OWNER_ID = "blacktensor-zkcrown-owner"
+"""The owner identity this project's real `S` is derived for, chosen by the owner
+in P3.4. Experiments that use the real `K` use this id. Changing it changes `S`
+and every weight-watermark result, and later the commitment (P5.3)."""
+
 _LABEL_PREFIX = f"{SIGNATURE_VERSION}/owner:"
 
 
