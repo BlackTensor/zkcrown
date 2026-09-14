@@ -188,6 +188,8 @@ is a 128-bit PRF output of the owner identity under `K`.
   +1, which is the form P3.2 embeds.
 - **Owner id rules.** `owner_id` must be NFC-normalised, have no leading or
   trailing whitespace, and be at most 256 UTF-8 bytes.
+- **Project owner id.** The real `S` is derived for
+  `PROJECT_OWNER_ID = "blacktensor-zkcrown-owner"`, chosen by the owner in P3.4.
 
 `S` is **not** a public-key digital signature. Checking it requires `K`, so it
 behaves like a MAC tag. Public verifiability comes from P6.2 and Phase 7. `S`

@@ -1,0 +1,1591 @@
+{
+  "schema_version": 1,
+  "name": "p3.4_key_specificity",
+  "task": "P3.4",
+  "timestamp_utc": "2026-09-14T08:21:16+00:00",
+  "git": {
+    "commit": "2a2eee90667818ca79f4dc02ff63b86a6f446591",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "hosts": {
+      "W_star": "be00f2b556979457b045b9a4925dd3e547ee586f984b6969b9266e61a7197222",
+      "W_clean": "54f112f4d7edc2ddacc181f8f4db25da27874e7e65aaf9407778a3ce5122fdcf"
+    },
+    "owner_id": "blacktensor-zkcrown-owner",
+    "embedding": "post-hoc W + alpha * P_K^T * S on the carrier (P3.2)",
+    "extraction": "blind, per-tensor centred, normalised correlation (P3.3)",
+    "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+    "dim": 307040,
+    "rows": 128,
+    "alphas": [
+      0.0,
+      0.005,
+      0.01,
+      0.02,
+      0.05,
+      0.1
+    ],
+    "alphas_note": "fixed before running; not a selection; accuracy not measured (P3.5)",
+    "wrong_keys": {
+      "count": 100,
+      "derivation": "SHA-256('zk-crown/p3.4/wrong-key/v1' || u64 seed || u64 j), public, never K",
+      "each_derives": "its own P_K' and S' for the same owner id"
+    },
+    "z": "correlation * sqrt(128); a scale, not a p-value",
+    "device": "cpu"
+  },
+  "metrics": {
+    "hosts": {
+      "W_star": {
+        "0.0": {
+          "alpha": 0.0,
+          "embedding": {
+            "version": "weight-embedding/v1",
+            "alpha": 0.0,
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "delta_l2": 0.0,
+            "delta_rms": 0.0,
+            "delta_max_abs": 0.0,
+            "carrier_l2": 24.812374736047268,
+            "relative_l2": 0.0,
+            "zero_fraction": 1.0,
+            "float32_rounding_max_abs": 0.0,
+            "tensors": [
+              {
+                "name": "features.0.weight",
+                "numel": 864,
+                "delta_rms": 0.0,
+                "weight_rms": 0.19299925880427415,
+                "relative_rms": 0.0,
+                "energy_share": 0.0,
+                "zero_fraction": 1.0
+              },
+              {
+                "name": "features.3.weight",
+                "numel": 9216,
+                "delta_rms": 0.0,
+                "weight_rms": 0.07112931916849381,
+                "relative_rms": 0.0,
+                "energy_share": 0.0,
+                "zero_fraction": 1.0
+              },
+              {
+                "name": "features.7.weight",
+                "numel": 18432,
+                "delta_rms": 0.0,
+                "weight_rms": 0.06662168601408265,
+                "relative_rms": 0.0,
+                "energy_share": 0.0,
+                "zero_fraction": 1.0
+              },
+              {
+                "name": "features.10.weight",
+                "numel": 36864,
+                "delta_rms": 0.0,
+                "weight_rms": 0.053204875942681716,
+                "relative_rms": 0.0,
+                "energy_share": 0.0,
+                "zero_fraction": 1.0
+              },
+              {
+                "name": "features.14.weight",
+                "numel": 73728,
+                "delta_rms": 0.0,
+                "weight_rms": 0.04484229886706298,
+                "relative_rms": 0.0,
+                "energy_share": 0.0,
+                "zero_fraction": 1.0
+              },
+              {
+                "name": "features.17.weight",
+                "numel": 147456,
+                "delta_rms": 0.0,
+                "weight_rms": 0.028727427133763018,
+                "relative_rms": 0.0,
+                "energy_share": 0.0,
+                "zero_fraction": 1.0
+              },
+              {
+                "name": "classifier.2.weight",
+                "numel": 20480,
+                "delta_rms": 0.0,
+                "weight_rms": 0.06278696928056997,
+                "relative_rms": 0.0,
+                "energy_share": 0.0,
+                "zero_fraction": 1.0
+              }
+            ]
+          },
+          "correct_key": {
+            "version": "weight-extraction/v1",
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "centered": true,
+            "correlation": 0.12263756066325872,
+            "amplitude": 0.0059906381090526675,
+            "projected_rms": 0.04884831430642942,
+            "bit_matches": 68,
+            "z": 1.3874856123706694
+          },
+          "wrong_keys": {
+            "correlation": {
+              "count": 100,
+              "mean": 0.0009029739012905025,
+              "sd": 0.09508152254986696,
+              "min": -0.1795270208905774,
+              "max": 0.23947450065416323,
+              "max_abs": 0.23947450065416323
+            },
+            "z_max_abs": 2.7093446933411385,
+            "bit_matches": {
+              "mean": 64.43,
+              "min": 51,
+              "max": 79
+            }
+          },
+          "wrong_projection_true_signature": {
+            "correlation": {
+              "count": 100,
+              "mean": -0.007648594298688153,
+              "sd": 0.08593590862769086,
+              "min": -0.2253740063274364,
+              "max": 0.19475692162958927,
+              "max_abs": 0.2253740063274364
+            },
+            "z_max_abs": 2.5498158108369626
+          },
+          "gap": {
+            "correct_minus_wrong_mean": 0.12173458676196822,
+            "in_wrong_key_sd": 1.2803180207607914,
+            "correct_minus_wrong_max": -0.11683693999090451,
+            "correct_above_every_wrong_key": false
+          }
+        },
+        "0.005": {
+          "alpha": 0.005,
+          "embedding": {
+            "version": "weight-embedding/v1",
+            "alpha": 0.005,
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "delta_l2": 0.056600513207586745,
+            "delta_rms": 0.00010214635888091325,
+            "delta_max_abs": 0.00048726619839464303,
+            "carrier_l2": 24.812374736047268,
+            "relative_l2": 0.0022811405119300353,
+            "zero_fraction": 0.07092561229807191,
+            "float32_rounding_max_abs": 2.6622260209454044e-08,
+            "tensors": [
+              {
+                "name": "features.0.weight",
+                "numel": 864,
+                "delta_rms": 0.000100754354915082,
+                "weight_rms": 0.19299925880427415,
+                "relative_rms": 0.0005220452945742126,
+                "energy_share": 0.002737793310126278,
+                "zero_fraction": 0.0763888888888889
+              },
+              {
+                "name": "features.3.weight",
+                "numel": 9216,
+                "delta_rms": 0.00010200658720953614,
+                "weight_rms": 0.07112931916849381,
+                "relative_rms": 0.0014341004300617455,
+                "energy_share": 0.02993354573512667,
+                "zero_fraction": 0.07183159722222222
+              },
+              {
+                "name": "features.7.weight",
+                "numel": 18432,
+                "delta_rms": 0.00010171567821976806,
+                "weight_rms": 0.06662168601408265,
+                "relative_rms": 0.0015267652967874028,
+                "energy_share": 0.059526112682204195,
+                "zero_fraction": 0.06949869791666667
+              },
+              {
+                "name": "features.10.weight",
+                "numel": 36864,
+                "delta_rms": 0.00010254570345168949,
+                "weight_rms": 0.053204875942681716,
+                "relative_rms": 0.0019273741670249034,
+                "energy_share": 0.12100314454826738,
+                "zero_fraction": 0.069091796875
+              },
+              {
+                "name": "features.14.weight",
+                "numel": 73728,
+                "delta_rms": 0.00010253702287549582,
+                "weight_rms": 0.04484229886706298,
+                "relative_rms": 0.002286613877211591,
+                "energy_share": 0.2419653187770405,
+                "zero_fraction": 0.0707736545138889
+              },
+              {
+                "name": "features.17.weight",
+                "numel": 147456,
+                "delta_rms": 0.0001019461146235737,
+                "weight_rms": 0.028727427133763018,
+                "relative_rms": 0.003548738080472149,
+                "energy_share": 0.47836904376188766,
+                "zero_fraction": 0.07143147786458333
+              },
+              {
+                "name": "classifier.2.weight",
+                "numel": 20480,
+                "delta_rms": 0.00010196521328009282,
+                "weight_rms": 0.06278696928056997,
+                "relative_rms": 0.001623986863013739,
+                "energy_share": 0.06646504118533672,
+                "zero_fraction": 0.07177734375
+              }
+            ]
+          },
+          "correct_key": {
+            "version": "weight-extraction/v1",
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "centered": true,
+            "correlation": 0.22118223993345487,
+            "amplitude": 0.010996161883684031,
+            "projected_rms": 0.04971539255137459,
+            "bit_matches": 75,
+            "z": 2.502391387759615
+          },
+          "wrong_keys": {
+            "correlation": {
+              "count": 100,
+              "mean": 0.0009064845441044686,
+              "sd": 0.09503989137790028,
+              "min": -0.17965849796631492,
+              "max": 0.23944974654456821,
+              "max_abs": 0.23944974654456821
+            },
+            "z_max_abs": 2.709064632561028,
+            "bit_matches": {
+              "mean": 64.42,
+              "min": 51,
+              "max": 79
+            }
+          },
+          "wrong_projection_true_signature": {
+            "correlation": {
+              "count": 100,
+              "mean": -0.0076266513855925335,
+              "sd": 0.08593207105128575,
+              "min": -0.22552734211893366,
+              "max": 0.19448065865148198,
+              "max_abs": 0.22552734211893366
+            },
+            "z_max_abs": 2.551550607284424
+          },
+          "gap": {
+            "correct_minus_wrong_mean": 0.2202757553893504,
+            "in_wrong_key_sd": 2.3177189303961194,
+            "correct_minus_wrong_max": -0.018267506611113343,
+            "correct_above_every_wrong_key": false
+          }
+        },
+        "0.01": {
+          "alpha": 0.01,
+          "embedding": {
+            "version": "weight-embedding/v1",
+            "alpha": 0.01,
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "delta_l2": 0.11320102641517349,
+            "delta_rms": 0.0002042927177618265,
+            "delta_max_abs": 0.0009745323967892861,
+            "carrier_l2": 24.812374736047268,
+            "relative_l2": 0.004562281023860071,
+            "zero_fraction": 0.07092561229807191,
+            "float32_rounding_max_abs": 2.6622260209454044e-08,
+            "tensors": [
+              {
+                "name": "features.0.weight",
+                "numel": 864,
+                "delta_rms": 0.000201508709830164,
+                "weight_rms": 0.19299925880427415,
+                "relative_rms": 0.0010440905891484253,
+                "energy_share": 0.002737793310126278,
+                "zero_fraction": 0.0763888888888889
+              },
+              {
+                "name": "features.3.weight",
+                "numel": 9216,
+                "delta_rms": 0.00020401317441907227,
+                "weight_rms": 0.07112931916849381,
+                "relative_rms": 0.002868200860123491,
+                "energy_share": 0.02993354573512667,
+                "zero_fraction": 0.07183159722222222
+              },
+              {
+                "name": "features.7.weight",
+                "numel": 18432,
+                "delta_rms": 0.00020343135643953613,
+                "weight_rms": 0.06662168601408265,
+                "relative_rms": 0.0030535305935748057,
+                "energy_share": 0.059526112682204195,
+                "zero_fraction": 0.06949869791666667
+              },
+              {
+                "name": "features.10.weight",
+                "numel": 36864,
+                "delta_rms": 0.00020509140690337898,
+                "weight_rms": 0.053204875942681716,
+                "relative_rms": 0.0038547483340498068,
+                "energy_share": 0.12100314454826738,
+                "zero_fraction": 0.069091796875
+              },
+              {
+                "name": "features.14.weight",
+                "numel": 73728,
+                "delta_rms": 0.00020507404575099164,
+                "weight_rms": 0.04484229886706298,
+                "relative_rms": 0.004573227754423182,
+                "energy_share": 0.2419653187770405,
+                "zero_fraction": 0.0707736545138889
+              },
+              {
+                "name": "features.17.weight",
+                "numel": 147456,
+                "delta_rms": 0.0002038922292471474,
+                "weight_rms": 0.028727427133763018,
+                "relative_rms": 0.007097476160944298,
+                "energy_share": 0.47836904376188766,
+                "zero_fraction": 0.07143147786458333
+              },
+              {
+                "name": "classifier.2.weight",
+                "numel": 20480,
+                "delta_rms": 0.00020393042656018565,
+                "weight_rms": 0.06278696928056997,
+                "relative_rms": 0.003247973726027478,
+                "energy_share": 0.06646504118533672,
+                "zero_fraction": 0.07177734375
+              }
+            ]
+          },
+          "correct_key": {
+            "version": "weight-extraction/v1",
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "centered": true,
+            "correlation": 0.3133843757403552,
+            "amplitude": 0.016001687844389514,
+            "projected_rms": 0.05106089863793085,
+            "bit_matches": 80,
+            "z": 3.5455394752626908
+          },
+          "wrong_keys": {
+            "correlation": {
+              "count": 100,
+              "mean": 0.0009099733657587972,
+              "sd": 0.09499825569046734,
+              "min": -0.17978894923520522,
+              "max": 0.23942344206071806,
+              "max_abs": 0.23942344206071806
+            },
+            "z_max_abs": 2.7087670312985312,
+            "bit_matches": {
+              "mean": 64.37,
+              "min": 51,
+              "max": 79
+            }
+          },
+          "wrong_projection_true_signature": {
+            "correlation": {
+              "count": 100,
+              "mean": -0.0076046630631213296,
+              "sd": 0.08592828258730653,
+              "min": -0.22567945032173695,
+              "max": 0.19420333970109935,
+              "max_abs": 0.22567945032173695
+            },
+            "z_max_abs": 2.5532715151512444
+          },
+          "gap": {
+            "correct_minus_wrong_mean": 0.3124744023745964,
+            "in_wrong_key_sd": 3.289264630213119,
+            "correct_minus_wrong_max": 0.07396093367963716,
+            "correct_above_every_wrong_key": true
+          }
+        },
+        "0.02": {
+          "alpha": 0.02,
+          "embedding": {
+            "version": "weight-embedding/v1",
+            "alpha": 0.02,
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "delta_l2": 0.22640205283034698,
+            "delta_rms": 0.000408585435523653,
+            "delta_max_abs": 0.0019490647935785721,
+            "carrier_l2": 24.812374736047268,
+            "relative_l2": 0.009124562047720141,
+            "zero_fraction": 0.07092561229807191,
+            "float32_rounding_max_abs": 2.7804022992977944e-08,
+            "tensors": [
+              {
+                "name": "features.0.weight",
+                "numel": 864,
+                "delta_rms": 0.000403017419660328,
+                "weight_rms": 0.19299925880427415,
+                "relative_rms": 0.0020881811782968505,
+                "energy_share": 0.002737793310126278,
+                "zero_fraction": 0.0763888888888889
+              },
+              {
+                "name": "features.3.weight",
+                "numel": 9216,
+                "delta_rms": 0.00040802634883814454,
+                "weight_rms": 0.07112931916849381,
+                "relative_rms": 0.005736401720246982,
+                "energy_share": 0.02993354573512667,
+                "zero_fraction": 0.07183159722222222
+              },
+              {
+                "name": "features.7.weight",
+                "numel": 18432,
+                "delta_rms": 0.00040686271287907226,
+                "weight_rms": 0.06662168601408265,
+                "relative_rms": 0.006107061187149611,
+                "energy_share": 0.059526112682204195,
+                "zero_fraction": 0.06949869791666667
+              },
+              {
+                "name": "features.10.weight",
+                "numel": 36864,
+                "delta_rms": 0.00041018281380675797,
+                "weight_rms": 0.053204875942681716,
+                "relative_rms": 0.0077094966680996135,
+                "energy_share": 0.12100314454826738,
+                "zero_fraction": 0.069091796875
+              },
+              {
+                "name": "features.14.weight",
+                "numel": 73728,
+                "delta_rms": 0.0004101480915019833,
+                "weight_rms": 0.04484229886706298,
+                "relative_rms": 0.009146455508846364,
+                "energy_share": 0.2419653187770405,
+                "zero_fraction": 0.0707736545138889
+              },
+              {
+                "name": "features.17.weight",
+                "numel": 147456,
+                "delta_rms": 0.0004077844584942948,
+                "weight_rms": 0.028727427133763018,
+                "relative_rms": 0.014194952321888596,
+                "energy_share": 0.47836904376188766,
+                "zero_fraction": 0.07143147786458333
+              },
+              {
+                "name": "classifier.2.weight",
+                "numel": 20480,
+                "delta_rms": 0.0004078608531203713,
+                "weight_rms": 0.06278696928056997,
+                "relative_rms": 0.006495947452054956,
+                "energy_share": 0.06646504118533672,
+                "zero_fraction": 0.07177734375
+              }
+            ]
+          },
+          "correct_key": {
+            "version": "weight-extraction/v1",
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "centered": true,
+            "correlation": 0.4726617718270258,
+            "amplitude": 0.026012736182555434,
+            "projected_rms": 0.05503456749211145,
+            "bit_matches": 94,
+            "z": 5.347557505064618
+          },
+          "wrong_keys": {
+            "correlation": {
+              "count": 100,
+              "mean": 0.0009168798618037752,
+              "sd": 0.09491497729059756,
+              "min": -0.18004680415906882,
+              "max": 0.23936618376903332,
+              "max_abs": 0.23936618376903332
+            },
+            "z_max_abs": 2.7081192276772605,
+            "bit_matches": {
+              "mean": 64.42,
+              "min": 50,
+              "max": 79
+            }
+          },
+          "wrong_projection_true_signature": {
+            "correlation": {
+              "count": 100,
+              "mean": -0.007560552332952421,
+              "sd": 0.08592084921155341,
+              "min": -0.2259799815395439,
+              "max": 0.1936455098339692,
+              "max_abs": 0.2259799815395439
+            },
+            "z_max_abs": 2.5566716377443575
+          },
+          "gap": {
+            "correct_minus_wrong_mean": 0.471744891965222,
+            "in_wrong_key_sd": 4.970183899648405,
+            "correct_minus_wrong_max": 0.23329558805799247,
+            "correct_above_every_wrong_key": true
+          }
+        },
+        "0.05": {
+          "alpha": 0.05,
+          "embedding": {
+            "version": "weight-embedding/v1",
+            "alpha": 0.05,
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "delta_l2": 0.5660051320758642,
+            "delta_rms": 0.0010214635888091267,
+            "delta_max_abs": 0.004872661983946431,
+            "carrier_l2": 24.812374736047268,
+            "relative_l2": 0.022811405119300226,
+            "zero_fraction": 0.07092561229807191,
+            "float32_rounding_max_abs": 2.7804022992977944e-08,
+            "tensors": [
+              {
+                "name": "features.0.weight",
+                "numel": 864,
+                "delta_rms": 0.0010075435491508202,
+                "weight_rms": 0.19299925880427415,
+                "relative_rms": 0.005220452945742127,
+                "energy_share": 0.0027377933101263097,
+                "zero_fraction": 0.0763888888888889
+              },
+              {
+                "name": "features.3.weight",
+                "numel": 9216,
+                "delta_rms": 0.0010200658720953615,
+                "weight_rms": 0.07112931916849381,
+                "relative_rms": 0.014341004300617457,
+                "energy_share": 0.02993354573512701,
+                "zero_fraction": 0.07183159722222222
+              },
+              {
+                "name": "features.7.weight",
+                "numel": 18432,
+                "delta_rms": 0.0010171567821976807,
+                "weight_rms": 0.06662168601408265,
+                "relative_rms": 0.015267652967874029,
+                "energy_share": 0.05952611268220486,
+                "zero_fraction": 0.06949869791666667
+              },
+              {
+                "name": "features.10.weight",
+                "numel": 36864,
+                "delta_rms": 0.001025457034516895,
+                "weight_rms": 0.053204875942681716,
+                "relative_rms": 0.019273741670249034,
+                "energy_share": 0.12100314454826878,
+                "zero_fraction": 0.069091796875
+              },
+              {
+                "name": "features.14.weight",
+                "numel": 73728,
+                "delta_rms": 0.0010253702287549584,
+                "weight_rms": 0.04484229886706298,
+                "relative_rms": 0.022866138772115914,
+                "energy_share": 0.2419653187770433,
+                "zero_fraction": 0.0707736545138889
+              },
+              {
+                "name": "features.17.weight",
+                "numel": 147456,
+                "delta_rms": 0.001019461146235737,
+                "weight_rms": 0.028727427133763018,
+                "relative_rms": 0.03548738080472149,
+                "energy_share": 0.47836904376189304,
+                "zero_fraction": 0.07143147786458333
+              },
+              {
+                "name": "classifier.2.weight",
+                "numel": 20480,
+                "delta_rms": 0.0010196521328009285,
+                "weight_rms": 0.06278696928056997,
+                "relative_rms": 0.016239868630137395,
+                "energy_share": 0.06646504118533748,
+                "zero_fraction": 0.07177734375
+              }
+            ]
+          },
+          "correct_key": {
+            "version": "weight-extraction/v1",
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "centered": true,
+            "correlation": 0.7559457581995304,
+            "amplitude": 0.05604588340960173,
+            "projected_rms": 0.07414008584834009,
+            "bit_matches": 110,
+            "z": 8.552549949313505
+          },
+          "wrong_keys": {
+            "correlation": {
+              "count": 100,
+              "mean": 0.000937030653946459,
+              "sd": 0.09466519820044789,
+              "min": -0.18079587020962004,
+              "max": 0.2391572669350989,
+              "max_abs": 0.2391572669350989
+            },
+            "z_max_abs": 2.7057556035175954,
+            "bit_matches": {
+              "mean": 64.41,
+              "min": 51,
+              "max": 80
+            }
+          },
+          "wrong_projection_true_signature": {
+            "correlation": {
+              "count": 100,
+              "mean": -0.0074271751618647675,
+              "sd": 0.08589969813710073,
+              "min": -0.2268518502532316,
+              "max": 0.19194701023142027,
+              "max_abs": 0.2268518502532316
+            },
+            "z_max_abs": 2.566535706220405
+          },
+          "gap": {
+            "correct_minus_wrong_mean": 0.7550087275455839,
+            "in_wrong_key_sd": 7.975568021807741,
+            "correct_minus_wrong_max": 0.5167884912644315,
+            "correct_above_every_wrong_key": true
+          }
+        },
+        "0.1": {
+          "alpha": 0.1,
+          "embedding": {
+            "version": "weight-embedding/v1",
+            "alpha": 0.1,
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "delta_l2": 1.1320102641517285,
+            "delta_rms": 0.0020429271776182534,
+            "delta_max_abs": 0.009745323967892862,
+            "carrier_l2": 24.812374736047268,
+            "relative_l2": 0.04562281023860045,
+            "zero_fraction": 0.07092561229807191,
+            "float32_rounding_max_abs": 2.7804022992977944e-08,
+            "tensors": [
+              {
+                "name": "features.0.weight",
+                "numel": 864,
+                "delta_rms": 0.0020150870983016403,
+                "weight_rms": 0.19299925880427415,
+                "relative_rms": 0.010440905891484255,
+                "energy_share": 0.0027377933101263097,
+                "zero_fraction": 0.0763888888888889
+              },
+              {
+                "name": "features.3.weight",
+                "numel": 9216,
+                "delta_rms": 0.002040131744190723,
+                "weight_rms": 0.07112931916849381,
+                "relative_rms": 0.028682008601234914,
+                "energy_share": 0.02993354573512701,
+                "zero_fraction": 0.07183159722222222
+              },
+              {
+                "name": "features.7.weight",
+                "numel": 18432,
+                "delta_rms": 0.0020343135643953614,
+                "weight_rms": 0.06662168601408265,
+                "relative_rms": 0.030535305935748058,
+                "energy_share": 0.05952611268220486,
+                "zero_fraction": 0.06949869791666667
+              },
+              {
+                "name": "features.10.weight",
+                "numel": 36864,
+                "delta_rms": 0.00205091406903379,
+                "weight_rms": 0.053204875942681716,
+                "relative_rms": 0.03854748334049807,
+                "energy_share": 0.12100314454826878,
+                "zero_fraction": 0.069091796875
+              },
+              {
+                "name": "features.14.weight",
+                "numel": 73728,
+                "delta_rms": 0.002050740457509917,
+                "weight_rms": 0.04484229886706298,
+                "relative_rms": 0.04573227754423183,
+                "energy_share": 0.2419653187770433,
+                "zero_fraction": 0.0707736545138889
+              },
+              {
+                "name": "features.17.weight",
+                "numel": 147456,
+                "delta_rms": 0.002038922292471474,
+                "weight_rms": 0.028727427133763018,
+                "relative_rms": 0.07097476160944298,
+                "energy_share": 0.47836904376189304,
+                "zero_fraction": 0.07143147786458333
+              },
+              {
+                "name": "classifier.2.weight",
+                "numel": 20480,
+                "delta_rms": 0.002039304265601857,
+                "weight_rms": 0.06278696928056997,
+                "relative_rms": 0.03247973726027479,
+                "energy_share": 0.06646504118533748,
+                "zero_fraction": 0.07177734375
+              }
+            ]
+          },
+          "correct_key": {
+            "version": "weight-extraction/v1",
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "centered": true,
+            "correlation": 0.9091209522245879,
+            "amplitude": 0.10610112901917498,
+            "projected_rms": 0.1167073850399654,
+            "bit_matches": 126,
+            "z": 10.28552944378844
+          },
+          "wrong_keys": {
+            "correlation": {
+              "count": 100,
+              "mean": 0.0009686013937061313,
+              "sd": 0.09424984522057893,
+              "min": -0.18196259506492335,
+              "max": 0.23868587932001853,
+              "max_abs": 0.23868587932001853
+            },
+            "z_max_abs": 2.7004224614505445,
+            "bit_matches": {
+              "mean": 64.38,
+              "min": 51,
+              "max": 80
+            }
+          },
+          "wrong_projection_true_signature": {
+            "correlation": {
+              "count": 100,
+              "mean": -0.007201587254811212,
+              "sd": 0.08586820847836224,
+              "min": -0.22962202561102588,
+              "max": 0.18903540154754006,
+              "max_abs": 0.22962202561102588
+            },
+            "z_max_abs": 2.59787666270956
+          },
+          "gap": {
+            "correct_minus_wrong_mean": 0.9081523508308817,
+            "in_wrong_key_sd": 9.635584532849627,
+            "correct_minus_wrong_max": 0.6704350729045694,
+            "correct_above_every_wrong_key": true
+          }
+        }
+      },
+      "W_clean": {
+        "0.0": {
+          "alpha": 0.0,
+          "embedding": {
+            "version": "weight-embedding/v1",
+            "alpha": 0.0,
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "delta_l2": 0.0,
+            "delta_rms": 0.0,
+            "delta_max_abs": 0.0,
+            "carrier_l2": 24.70126093496025,
+            "relative_l2": 0.0,
+            "zero_fraction": 1.0,
+            "float32_rounding_max_abs": 0.0,
+            "tensors": [
+              {
+                "name": "features.0.weight",
+                "numel": 864,
+                "delta_rms": 0.0,
+                "weight_rms": 0.19128698836542157,
+                "relative_rms": 0.0,
+                "energy_share": 0.0,
+                "zero_fraction": 1.0
+              },
+              {
+                "name": "features.3.weight",
+                "numel": 9216,
+                "delta_rms": 0.0,
+                "weight_rms": 0.07129198205434076,
+                "relative_rms": 0.0,
+                "energy_share": 0.0,
+                "zero_fraction": 1.0
+              },
+              {
+                "name": "features.7.weight",
+                "numel": 18432,
+                "delta_rms": 0.0,
+                "weight_rms": 0.06687141303506376,
+                "relative_rms": 0.0,
+                "energy_share": 0.0,
+                "zero_fraction": 1.0
+              },
+              {
+                "name": "features.10.weight",
+                "numel": 36864,
+                "delta_rms": 0.0,
+                "weight_rms": 0.05315790277902989,
+                "relative_rms": 0.0,
+                "energy_share": 0.0,
+                "zero_fraction": 1.0
+              },
+              {
+                "name": "features.14.weight",
+                "numel": 73728,
+                "delta_rms": 0.0,
+                "weight_rms": 0.04464412647739441,
+                "relative_rms": 0.0,
+                "energy_share": 0.0,
+                "zero_fraction": 1.0
+              },
+              {
+                "name": "features.17.weight",
+                "numel": 147456,
+                "delta_rms": 0.0,
+                "weight_rms": 0.028429635069994904,
+                "relative_rms": 0.0,
+                "energy_share": 0.0,
+                "zero_fraction": 1.0
+              },
+              {
+                "name": "classifier.2.weight",
+                "numel": 20480,
+                "delta_rms": 0.0,
+                "weight_rms": 0.06209899263689634,
+                "relative_rms": 0.0,
+                "energy_share": 0.0,
+                "zero_fraction": 1.0
+              }
+            ]
+          },
+          "correct_key": {
+            "version": "weight-extraction/v1",
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "centered": true,
+            "correlation": 0.01576622308499714,
+            "amplitude": 0.0006414890550246976,
+            "projected_rms": 0.0406875541191046,
+            "bit_matches": 62,
+            "z": 0.17837445211362188
+          },
+          "wrong_keys": {
+            "correlation": {
+              "count": 100,
+              "mean": 0.013610601893308585,
+              "sd": 0.08788774445309337,
+              "min": -0.2190471221106903,
+              "max": 0.2661677551794407,
+              "max_abs": 0.2661677551794407
+            },
+            "z_max_abs": 3.0113443939293334,
+            "bit_matches": {
+              "mean": 64.2,
+              "min": 50,
+              "max": 82
+            }
+          },
+          "wrong_projection_true_signature": {
+            "correlation": {
+              "count": 100,
+              "mean": -0.0007379333337652169,
+              "sd": 0.08984508056864958,
+              "min": -0.18358822781188844,
+              "max": 0.20119033386013138,
+              "max_abs": 0.20119033386013138
+            },
+            "z_max_abs": 2.27620879010695
+          },
+          "gap": {
+            "correct_minus_wrong_mean": 0.0021556211916885556,
+            "in_wrong_key_sd": 0.024526982744892647,
+            "correct_minus_wrong_max": -0.25040153209444355,
+            "correct_above_every_wrong_key": false
+          }
+        },
+        "0.005": {
+          "alpha": 0.005,
+          "embedding": {
+            "version": "weight-embedding/v1",
+            "alpha": 0.005,
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "delta_l2": 0.056600513207586745,
+            "delta_rms": 0.00010214635888091325,
+            "delta_max_abs": 0.00048726619839464303,
+            "carrier_l2": 24.70126093496025,
+            "relative_l2": 0.00229140177728655,
+            "zero_fraction": 0.07092561229807191,
+            "float32_rounding_max_abs": 2.6622260209454044e-08,
+            "tensors": [
+              {
+                "name": "features.0.weight",
+                "numel": 864,
+                "delta_rms": 0.000100754354915082,
+                "weight_rms": 0.19128698836542157,
+                "relative_rms": 0.0005267182874070231,
+                "energy_share": 0.002737793310126278,
+                "zero_fraction": 0.0763888888888889
+              },
+              {
+                "name": "features.3.weight",
+                "numel": 9216,
+                "delta_rms": 0.00010200658720953614,
+                "weight_rms": 0.07129198205434076,
+                "relative_rms": 0.0014308283241695236,
+                "energy_share": 0.02993354573512667,
+                "zero_fraction": 0.07183159722222222
+              },
+              {
+                "name": "features.7.weight",
+                "numel": 18432,
+                "delta_rms": 0.00010171567821976806,
+                "weight_rms": 0.06687141303506376,
+                "relative_rms": 0.0015210636892992503,
+                "energy_share": 0.059526112682204195,
+                "zero_fraction": 0.06949869791666667
+              },
+              {
+                "name": "features.10.weight",
+                "numel": 36864,
+                "delta_rms": 0.00010254570345168949,
+                "weight_rms": 0.05315790277902989,
+                "relative_rms": 0.0019290772978376879,
+                "energy_share": 0.12100314454826738,
+                "zero_fraction": 0.069091796875
+              },
+              {
+                "name": "features.14.weight",
+                "numel": 73728,
+                "delta_rms": 0.00010253702287549582,
+                "weight_rms": 0.04464412647739441,
+                "relative_rms": 0.0022967640083050014,
+                "energy_share": 0.2419653187770405,
+                "zero_fraction": 0.0707736545138889
+              },
+              {
+                "name": "features.17.weight",
+                "numel": 147456,
+                "delta_rms": 0.0001019461146235737,
+                "weight_rms": 0.028429635069994904,
+                "relative_rms": 0.0035859100678773495,
+                "energy_share": 0.47836904376188766,
+                "zero_fraction": 0.07143147786458333
+              },
+              {
+                "name": "classifier.2.weight",
+                "numel": 20480,
+                "delta_rms": 0.00010196521328009282,
+                "weight_rms": 0.06209899263689634,
+                "relative_rms": 0.0016419785402365741,
+                "energy_share": 0.06646504118533672,
+                "zero_fraction": 0.07177734375
+              }
+            ]
+          },
+          "correct_key": {
+            "version": "weight-extraction/v1",
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "centered": true,
+            "correlation": 0.13746998353865852,
+            "amplitude": 0.005647012729438069,
+            "projected_rms": 0.04107815091030434,
+            "bit_matches": 68,
+            "z": 1.555295321116616
+          },
+          "wrong_keys": {
+            "correlation": {
+              "count": 100,
+              "mean": 0.01360914613791523,
+              "sd": 0.0878511842656876,
+              "min": -0.21919132404447342,
+              "max": 0.26595243369567423,
+              "max_abs": 0.26595243369567423
+            },
+            "z_max_abs": 3.008908309428431,
+            "bit_matches": {
+              "mean": 64.23,
+              "min": 50,
+              "max": 82
+            }
+          },
+          "wrong_projection_true_signature": {
+            "correlation": {
+              "count": 100,
+              "mean": -0.0007163865897284531,
+              "sd": 0.08987734848741226,
+              "min": -0.1835368303835558,
+              "max": 0.20129086472834237,
+              "max_abs": 0.20129086472834237
+            },
+            "z_max_abs": 2.277346167045039
+          },
+          "gap": {
+            "correct_minus_wrong_mean": 0.1238608374007433,
+            "in_wrong_key_sd": 1.4098937701983847,
+            "correct_minus_wrong_max": -0.1284824501570157,
+            "correct_above_every_wrong_key": false
+          }
+        },
+        "0.01": {
+          "alpha": 0.01,
+          "embedding": {
+            "version": "weight-embedding/v1",
+            "alpha": 0.01,
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "delta_l2": 0.11320102641517349,
+            "delta_rms": 0.0002042927177618265,
+            "delta_max_abs": 0.0009745323967892861,
+            "carrier_l2": 24.70126093496025,
+            "relative_l2": 0.0045828035545731,
+            "zero_fraction": 0.07092561229807191,
+            "float32_rounding_max_abs": 2.6622260209454044e-08,
+            "tensors": [
+              {
+                "name": "features.0.weight",
+                "numel": 864,
+                "delta_rms": 0.000201508709830164,
+                "weight_rms": 0.19128698836542157,
+                "relative_rms": 0.0010534365748140462,
+                "energy_share": 0.002737793310126278,
+                "zero_fraction": 0.0763888888888889
+              },
+              {
+                "name": "features.3.weight",
+                "numel": 9216,
+                "delta_rms": 0.00020401317441907227,
+                "weight_rms": 0.07129198205434076,
+                "relative_rms": 0.002861656648339047,
+                "energy_share": 0.02993354573512667,
+                "zero_fraction": 0.07183159722222222
+              },
+              {
+                "name": "features.7.weight",
+                "numel": 18432,
+                "delta_rms": 0.00020343135643953613,
+                "weight_rms": 0.06687141303506376,
+                "relative_rms": 0.0030421273785985006,
+                "energy_share": 0.059526112682204195,
+                "zero_fraction": 0.06949869791666667
+              },
+              {
+                "name": "features.10.weight",
+                "numel": 36864,
+                "delta_rms": 0.00020509140690337898,
+                "weight_rms": 0.05315790277902989,
+                "relative_rms": 0.0038581545956753757,
+                "energy_share": 0.12100314454826738,
+                "zero_fraction": 0.069091796875
+              },
+              {
+                "name": "features.14.weight",
+                "numel": 73728,
+                "delta_rms": 0.00020507404575099164,
+                "weight_rms": 0.04464412647739441,
+                "relative_rms": 0.004593528016610003,
+                "energy_share": 0.2419653187770405,
+                "zero_fraction": 0.0707736545138889
+              },
+              {
+                "name": "features.17.weight",
+                "numel": 147456,
+                "delta_rms": 0.0002038922292471474,
+                "weight_rms": 0.028429635069994904,
+                "relative_rms": 0.007171820135754699,
+                "energy_share": 0.47836904376188766,
+                "zero_fraction": 0.07143147786458333
+              },
+              {
+                "name": "classifier.2.weight",
+                "numel": 20480,
+                "delta_rms": 0.00020393042656018565,
+                "weight_rms": 0.06209899263689634,
+                "relative_rms": 0.0032839570804731482,
+                "energy_share": 0.06646504118533672,
+                "zero_fraction": 0.07177734375
+              }
+            ]
+          },
+          "correct_key": {
+            "version": "weight-extraction/v1",
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "centered": true,
+            "correlation": 0.253238497645018,
+            "amplitude": 0.010652538792038722,
+            "projected_rms": 0.04206524241417324,
+            "bit_matches": 70,
+            "z": 2.8650665430765723
+          },
+          "wrong_keys": {
+            "correlation": {
+              "count": 100,
+              "mean": 0.013607591354723026,
+              "sd": 0.0878147141167249,
+              "min": -0.21933467387293804,
+              "max": 0.2657358780412237,
+              "max_abs": 0.2657358780412237
+            },
+            "z_max_abs": 3.0064582618801707,
+            "bit_matches": {
+              "mean": 64.29,
+              "min": 50,
+              "max": 83
+            }
+          },
+          "wrong_projection_true_signature": {
+            "correlation": {
+              "count": 100,
+              "mean": -0.000694838188789649,
+              "sd": 0.08990958695896317,
+              "min": -0.1834843435794624,
+              "max": 0.2013900241056073,
+              "max_abs": 0.2013900241056073
+            },
+            "z_max_abs": 2.2784680273343554
+          },
+          "gap": {
+            "correct_minus_wrong_mean": 0.23963090629029496,
+            "in_wrong_key_sd": 2.728824078067068,
+            "correct_minus_wrong_max": -0.012497380396205737,
+            "correct_above_every_wrong_key": false
+          }
+        },
+        "0.02": {
+          "alpha": 0.02,
+          "embedding": {
+            "version": "weight-embedding/v1",
+            "alpha": 0.02,
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "delta_l2": 0.22640205283034698,
+            "delta_rms": 0.000408585435523653,
+            "delta_max_abs": 0.0019490647935785721,
+            "carrier_l2": 24.70126093496025,
+            "relative_l2": 0.0091656071091462,
+            "zero_fraction": 0.07092561229807191,
+            "float32_rounding_max_abs": 2.7804022992977944e-08,
+            "tensors": [
+              {
+                "name": "features.0.weight",
+                "numel": 864,
+                "delta_rms": 0.000403017419660328,
+                "weight_rms": 0.19128698836542157,
+                "relative_rms": 0.0021068731496280925,
+                "energy_share": 0.002737793310126278,
+                "zero_fraction": 0.0763888888888889
+              },
+              {
+                "name": "features.3.weight",
+                "numel": 9216,
+                "delta_rms": 0.00040802634883814454,
+                "weight_rms": 0.07129198205434076,
+                "relative_rms": 0.005723313296678094,
+                "energy_share": 0.02993354573512667,
+                "zero_fraction": 0.07183159722222222
+              },
+              {
+                "name": "features.7.weight",
+                "numel": 18432,
+                "delta_rms": 0.00040686271287907226,
+                "weight_rms": 0.06687141303506376,
+                "relative_rms": 0.006084254757197001,
+                "energy_share": 0.059526112682204195,
+                "zero_fraction": 0.06949869791666667
+              },
+              {
+                "name": "features.10.weight",
+                "numel": 36864,
+                "delta_rms": 0.00041018281380675797,
+                "weight_rms": 0.05315790277902989,
+                "relative_rms": 0.007716309191350751,
+                "energy_share": 0.12100314454826738,
+                "zero_fraction": 0.069091796875
+              },
+              {
+                "name": "features.14.weight",
+                "numel": 73728,
+                "delta_rms": 0.0004101480915019833,
+                "weight_rms": 0.04464412647739441,
+                "relative_rms": 0.009187056033220006,
+                "energy_share": 0.2419653187770405,
+                "zero_fraction": 0.0707736545138889
+              },
+              {
+                "name": "features.17.weight",
+                "numel": 147456,
+                "delta_rms": 0.0004077844584942948,
+                "weight_rms": 0.028429635069994904,
+                "relative_rms": 0.014343640271509398,
+                "energy_share": 0.47836904376188766,
+                "zero_fraction": 0.07143147786458333
+              },
+              {
+                "name": "classifier.2.weight",
+                "numel": 20480,
+                "delta_rms": 0.0004078608531203713,
+                "weight_rms": 0.06209899263689634,
+                "relative_rms": 0.0065679141609462964,
+                "energy_share": 0.06646504118533672,
+                "zero_fraction": 0.07177734375
+              }
+            ]
+          },
+          "correct_key": {
+            "version": "weight-extraction/v1",
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "centered": true,
+            "correlation": 0.452641621361464,
+            "amplitude": 0.020663587408870098,
+            "projected_rms": 0.045651098868720395,
+            "bit_matches": 88,
+            "z": 5.121055358591438
+          },
+          "wrong_keys": {
+            "correlation": {
+              "count": 100,
+              "mean": 0.01360418905804607,
+              "sd": 0.08774204952712344,
+              "min": -0.2196187683973738,
+              "max": 0.26529910562110565,
+              "max_abs": 0.26529910562110565
+            },
+            "z_max_abs": 3.0015167460385586,
+            "bit_matches": {
+              "mean": 64.27,
+              "min": 49,
+              "max": 83
+            }
+          },
+          "wrong_projection_true_signature": {
+            "correlation": {
+              "count": 100,
+              "mean": -0.000651735577772117,
+              "sd": 0.08997397038680474,
+              "min": -0.18337608717374923,
+              "max": 0.2015842243902529,
+              "max_abs": 0.2015842243902529
+            },
+            "z_max_abs": 2.2806651527452555
+          },
+          "gap": {
+            "correct_minus_wrong_mean": 0.43903743230341796,
+            "in_wrong_key_sd": 5.003728938058366,
+            "correct_minus_wrong_max": 0.18734251574035837,
+            "correct_above_every_wrong_key": true
+          }
+        },
+        "0.05": {
+          "alpha": 0.05,
+          "embedding": {
+            "version": "weight-embedding/v1",
+            "alpha": 0.05,
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "delta_l2": 0.5660051320758642,
+            "delta_rms": 0.0010214635888091267,
+            "delta_max_abs": 0.004872661983946431,
+            "carrier_l2": 24.70126093496025,
+            "relative_l2": 0.02291401777286537,
+            "zero_fraction": 0.07092561229807191,
+            "float32_rounding_max_abs": 2.7804022992977944e-08,
+            "tensors": [
+              {
+                "name": "features.0.weight",
+                "numel": 864,
+                "delta_rms": 0.0010075435491508202,
+                "weight_rms": 0.19128698836542157,
+                "relative_rms": 0.005267182874070232,
+                "energy_share": 0.0027377933101263097,
+                "zero_fraction": 0.0763888888888889
+              },
+              {
+                "name": "features.3.weight",
+                "numel": 9216,
+                "delta_rms": 0.0010200658720953615,
+                "weight_rms": 0.07129198205434076,
+                "relative_rms": 0.014308283241695238,
+                "energy_share": 0.02993354573512701,
+                "zero_fraction": 0.07183159722222222
+              },
+              {
+                "name": "features.7.weight",
+                "numel": 18432,
+                "delta_rms": 0.0010171567821976807,
+                "weight_rms": 0.06687141303506376,
+                "relative_rms": 0.015210636892992504,
+                "energy_share": 0.05952611268220486,
+                "zero_fraction": 0.06949869791666667
+              },
+              {
+                "name": "features.10.weight",
+                "numel": 36864,
+                "delta_rms": 0.001025457034516895,
+                "weight_rms": 0.05315790277902989,
+                "relative_rms": 0.01929077297837688,
+                "energy_share": 0.12100314454826878,
+                "zero_fraction": 0.069091796875
+              },
+              {
+                "name": "features.14.weight",
+                "numel": 73728,
+                "delta_rms": 0.0010253702287549584,
+                "weight_rms": 0.04464412647739441,
+                "relative_rms": 0.02296764008305002,
+                "energy_share": 0.2419653187770433,
+                "zero_fraction": 0.0707736545138889
+              },
+              {
+                "name": "features.17.weight",
+                "numel": 147456,
+                "delta_rms": 0.001019461146235737,
+                "weight_rms": 0.028429635069994904,
+                "relative_rms": 0.035859100678773494,
+                "energy_share": 0.47836904376189304,
+                "zero_fraction": 0.07143147786458333
+              },
+              {
+                "name": "classifier.2.weight",
+                "numel": 20480,
+                "delta_rms": 0.0010196521328009285,
+                "weight_rms": 0.06209899263689634,
+                "relative_rms": 0.016419785402365748,
+                "energy_share": 0.06646504118533748,
+                "zero_fraction": 0.07177734375
+              }
+            ]
+          },
+          "correct_key": {
+            "version": "weight-extraction/v1",
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "centered": true,
+            "correlation": 0.7794129800763602,
+            "amplitude": 0.0506967343143101,
+            "projected_rms": 0.06504476524030081,
+            "bit_matches": 119,
+            "z": 8.818051256908957
+          },
+          "wrong_keys": {
+            "correlation": {
+              "count": 100,
+              "mean": 0.013591623140492311,
+              "sd": 0.08752636232569873,
+              "min": -0.22045026828036385,
+              "max": 0.26395956326233994,
+              "max_abs": 0.26395956326233994
+            },
+            "z_max_abs": 2.986361554269441,
+            "bit_matches": {
+              "mean": 64.22,
+              "min": 50,
+              "max": 83
+            }
+          },
+          "wrong_projection_true_signature": {
+            "correlation": {
+              "count": 100,
+              "mean": -0.0005224141992369477,
+              "sd": 0.09016630192596936,
+              "min": -0.18302508206154627,
+              "max": 0.20213370299099684,
+              "max_abs": 0.20213370299099684
+            },
+            "z_max_abs": 2.2868817934605024
+          },
+          "gap": {
+            "correct_minus_wrong_mean": 0.7658213569358678,
+            "in_wrong_key_sd": 8.749607964811009,
+            "correct_minus_wrong_max": 0.5154534168140202,
+            "correct_above_every_wrong_key": true
+          }
+        },
+        "0.1": {
+          "alpha": 0.1,
+          "embedding": {
+            "version": "weight-embedding/v1",
+            "alpha": 0.1,
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "delta_l2": 1.1320102641517285,
+            "delta_rms": 0.0020429271776182534,
+            "delta_max_abs": 0.009745323967892862,
+            "carrier_l2": 24.70126093496025,
+            "relative_l2": 0.04582803554573074,
+            "zero_fraction": 0.07092561229807191,
+            "float32_rounding_max_abs": 2.7804022992977944e-08,
+            "tensors": [
+              {
+                "name": "features.0.weight",
+                "numel": 864,
+                "delta_rms": 0.0020150870983016403,
+                "weight_rms": 0.19128698836542157,
+                "relative_rms": 0.010534365748140463,
+                "energy_share": 0.0027377933101263097,
+                "zero_fraction": 0.0763888888888889
+              },
+              {
+                "name": "features.3.weight",
+                "numel": 9216,
+                "delta_rms": 0.002040131744190723,
+                "weight_rms": 0.07129198205434076,
+                "relative_rms": 0.028616566483390476,
+                "energy_share": 0.02993354573512701,
+                "zero_fraction": 0.07183159722222222
+              },
+              {
+                "name": "features.7.weight",
+                "numel": 18432,
+                "delta_rms": 0.0020343135643953614,
+                "weight_rms": 0.06687141303506376,
+                "relative_rms": 0.03042127378598501,
+                "energy_share": 0.05952611268220486,
+                "zero_fraction": 0.06949869791666667
+              },
+              {
+                "name": "features.10.weight",
+                "numel": 36864,
+                "delta_rms": 0.00205091406903379,
+                "weight_rms": 0.05315790277902989,
+                "relative_rms": 0.03858154595675376,
+                "energy_share": 0.12100314454826878,
+                "zero_fraction": 0.069091796875
+              },
+              {
+                "name": "features.14.weight",
+                "numel": 73728,
+                "delta_rms": 0.002050740457509917,
+                "weight_rms": 0.04464412647739441,
+                "relative_rms": 0.04593528016610004,
+                "energy_share": 0.2419653187770433,
+                "zero_fraction": 0.0707736545138889
+              },
+              {
+                "name": "features.17.weight",
+                "numel": 147456,
+                "delta_rms": 0.002038922292471474,
+                "weight_rms": 0.028429635069994904,
+                "relative_rms": 0.07171820135754699,
+                "energy_share": 0.47836904376189304,
+                "zero_fraction": 0.07143147786458333
+              },
+              {
+                "name": "classifier.2.weight",
+                "numel": 20480,
+                "delta_rms": 0.002039304265601857,
+                "weight_rms": 0.06209899263689634,
+                "relative_rms": 0.032839570804731495,
+                "energy_share": 0.06646504118533748,
+                "zero_fraction": 0.07177734375
+              }
+            ]
+          },
+          "correct_key": {
+            "version": "weight-extraction/v1",
+            "rows": 128,
+            "dim": 307040,
+            "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+            "centered": true,
+            "correlation": 0.926734373957012,
+            "amplitude": 0.10075197985977428,
+            "projected_rms": 0.10871721465297435,
+            "bit_matches": 127,
+            "z": 10.484802562938768
+          },
+          "wrong_keys": {
+            "correlation": {
+              "count": 100,
+              "mean": 0.013562847004293064,
+              "sd": 0.08717521149456547,
+              "min": -0.22176616223979762,
+              "max": 0.26163118324253964,
+              "max_abs": 0.26163118324253964
+            },
+            "z_max_abs": 2.96001894145056,
+            "bit_matches": {
+              "mean": 64.07,
+              "min": 50,
+              "max": 83
+            }
+          },
+          "wrong_projection_true_signature": {
+            "correlation": {
+              "count": 100,
+              "mean": -0.00030699647194716654,
+              "sd": 0.09048364881541837,
+              "min": -0.184827138048629,
+              "max": 0.20293848386391317,
+              "max_abs": 0.20293848386391317
+            },
+            "z_max_abs": 2.295986849662236
+          },
+          "gap": {
+            "correct_minus_wrong_mean": 0.9131715269527189,
+            "in_wrong_key_sd": 10.475128322569613,
+            "correct_minus_wrong_max": 0.6651031907144723,
+            "correct_above_every_wrong_key": true
+          }
+        }
+      }
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 273.5909524000017,
+  "notes": "Key specificity of the weight watermark on real hosts, post-hoc embedding. No threshold or p-value: the null distribution and threshold are P3.7. Accuracy of the embedded models is not measured (P3.5). Aggregates only; S, P_K, fingerprints and watermarked weights are not in this file."
+}

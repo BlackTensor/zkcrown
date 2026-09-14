@@ -297,7 +297,21 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
     - Invariance to global rescaling and per-tensor shifts (without centring, the shifts leak in); non-carrier tensors ignored; FP16 weights giving the same bits.
     - No-watermark, wrong-key and wrong-owner correlations within 6/sqrt(128) at unit level.
   - Not done here: the real-model correct vs wrong `K` gap (P3.4), the alpha sweep (P3.5), the null distribution and threshold (P3.7), and per-layer rescaling attacks (Phase 4). No ledger numbers.
-- [ ] **P3.4** Verify extraction succeeds with the correct `K` and fails with a wrong `K`. Report the correlation gap between the two cases.
+- [x] **P3.4** Verify extraction succeeds with the correct `K` and fails with a wrong `K`. Report the correlation gap between the two cases.
+  - `experiments/p3_4_key_specificity.py`, CPU, 274 s, clean tree at `2a2eee9`. The owner id is fixed by the owner as `PROJECT_OWNER_ID = "blacktensor-zkcrown-owner"` in `src/watermark/signature.py`.
+  - Method:
+    - Hosts, loaded by hash: P2.3 `W*` and P0.5 `W`.
+    - Embedding: post-hoc (P3.2) with `K`, at alpha 0 (control), 0.005, 0.01, 0.02, 0.05 and 0.1. The grid was fixed before the run; it is not a selection and has no accuracy check.
+    - Extraction (P3.3) three ways: with `K`; with 100 public wrong keys, each deriving its own `P_K'` and `S'`; and with the wrong `P_K'` against the true `S`.
+  - **`W*` host, correct-key correlation by alpha:** 0 → +0.123, 0.005 → +0.221, 0.01 → +0.313, 0.02 → +0.473, 0.05 → +0.756, 0.1 → +0.909. Bit matches: 68, 75, 80, 94, 110, 126 of 128.
+  - **Wrong keys on `W*`:** mean correlation +0.001, sd 0.095, range [-0.18, +0.24], max |z| 2.71. These barely move with alpha. Wrong `P_K'` against the true `S` gives max |z| 2.6.
+  - **Gap on `W*`** (correct minus wrong mean): +0.12, +0.22, +0.31, +0.47, +0.76, +0.91, i.e. 1.3, 2.3, 3.3, 5.0, 8.0, 9.6 wrong-key sd.
+    - The correct key is above all 100 wrong keys from alpha 0.01 up.
+    - The alpha-0 control is not separated. Its +0.12 (z = 1.39) is the host's chance projection on `K`, and it also lifts the small-alpha `W*` points.
+  - **Clean `W` host:** correlations +0.016, +0.138, +0.253, +0.453, +0.779, +0.927. Wrong keys: mean +0.014, sd 0.088, max |z| 3.01. Gap 0.0, 1.4, 2.7, 5.0, 8.8, 10.5 sd. Above all wrong keys from alpha 0.02 up.
+  - Reading: extraction is key-specific. A wrong key gives a null-looking correlation whether or not the model carries our watermark. The correct key separates from 100 wrong keys once alpha is about 0.02 or more. Below that, the host term (projected RMS 0.049 on `W*`, 0.041 on `W`) dominates.
+  - Finding: normalised correlation is at most 1, so z = corr·sqrt(128) cannot exceed 11.3. At alpha 0.1 it is already at 10.3 to 10.5, so the evidence this statistic can give is capped. This matters for P3.7.
+  - No threshold or p-value (P3.7), no accuracy (P3.5). 10 new tests, 460 in total, all pass.
 - [ ] **P3.5** Sweep embedding strength `alpha`, plot detection confidence vs accuracy drop.
 - [ ] **P3.6** `[GPU]` Decide whether the weight watermark is embedded post-hoc or during training, document the choice, and produce the final dual-watermarked model `W*`.
 - [ ] **P3.7** Null distribution: extract with 1000 random wrong keys, fit the correlation null distribution, derive a detection threshold with a stated false positive rate.
@@ -488,8 +502,8 @@ The accuracy drop against P0.6 is left to P2.5.
 | Accuracy drop from watermarking | 0.47 pp on test (91.20% → 90.73%), 95% CI [-0.04, +0.98], McNemar p = 0.077; single run each |
 | Behavioral detection p-value (P2.8) | `W*` 100/100: p = 3.8e-96; clean `W` 3/100: p = 0.999 |
 | Behavioral detection thresholds, N = 100 (P2.8) | k* = 17 / 20 / 23 / 29 / 35 at alpha 0.05 / 0.01 / 1e-3 / 1e-6 / 1e-9 |
-| Weight extraction correlation, correct key | TBD |
-| Weight extraction correlation, wrong key (mean) | TBD |
+| Weight extraction correlation, correct key (P3.4, post-hoc on `W*`, alpha not chosen) | +0.123 / +0.313 / +0.473 / +0.756 / +0.909 at alpha 0 / 0.01 / 0.02 / 0.05 / 0.1 |
+| Weight extraction correlation, wrong key (P3.4, 100 keys, `W*` host) | mean +0.001, sd 0.095, max \|z\| 2.71 |
 | Detection threshold and its FPR | TBD |
 
 Trigger perturbation size, from `experiments/p1_3_visualize_triggers.py`
@@ -690,6 +704,52 @@ seen, one pre-declared test, one query per trigger, and a correction when
 several suspects are audited. The 100/100 figures are on the training triggers
 of unattacked models; survival under attack is Phase 4.
 
+Weight watermark key specificity from `experiments/p3_4_key_specificity.py`
+(P3.4), result file
+`results/p3.4_key_specificity__seed1337__20260914T082116+0000.json`, CPU, seed
+1337, commit `2a2eee9`, clean tree. `S` was derived from `K` for owner id
+`blacktensor-zkcrown-owner`. Each host was watermarked post-hoc (P3.2) with
+`K` at each alpha, then extracted blind (P3.3). The 100 wrong keys are
+`SHA-256("zk-crown/p3.4/wrong-key/v1" || u64 1337 || u64 j)`, each deriving its
+own `P_K'` and `S'`. z = correlation × sqrt(128), used as a scale only, not a
+p-value. The alpha grid was fixed in advance and is not a selection; the
+accuracy of these models is not measured (P3.5).
+
+| Host | alpha | Correct corr (z) | Bits /128 | Amplitude | Wrong mean | Wrong sd | Wrong range | Wrong max \|z\| | Gap | Gap / wrong sd | Above all 100 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `W*` | 0 | +0.123 (1.39) | 68 | 0.0060 | +0.001 | 0.095 | [-0.180, +0.240] | 2.71 | +0.122 | 1.28 | no |
+| `W*` | 0.005 | +0.221 (2.50) | 75 | 0.0110 | +0.001 | 0.095 | [-0.180, +0.239] | 2.71 | +0.220 | 2.32 | no |
+| `W*` | 0.01 | +0.313 (3.55) | 80 | 0.0160 | +0.001 | 0.095 | [-0.180, +0.239] | 2.71 | +0.313 | 3.29 | yes |
+| `W*` | 0.02 | +0.473 (5.35) | 94 | 0.0260 | +0.001 | 0.095 | [-0.180, +0.239] | 2.71 | +0.472 | 4.97 | yes |
+| `W*` | 0.05 | +0.756 (8.55) | 110 | 0.0560 | +0.001 | 0.095 | [-0.181, +0.239] | 2.71 | +0.755 | 7.98 | yes |
+| `W*` | 0.1 | +0.909 (10.29) | 126 | 0.1061 | +0.001 | 0.094 | [-0.182, +0.239] | 2.70 | +0.908 | 9.64 | yes |
+| clean `W` | 0 | +0.016 (0.18) | 62 | 0.0006 | +0.014 | 0.088 | [-0.219, +0.266] | 3.01 | +0.002 | 0.02 | no |
+| clean `W` | 0.005 | +0.138 (1.56) | 68 | 0.0056 | +0.014 | 0.088 | [-0.219, +0.266] | 3.01 | +0.124 | 1.41 | no |
+| clean `W` | 0.01 | +0.253 (2.87) | 70 | 0.0107 | +0.014 | 0.088 | [-0.219, +0.266] | 3.01 | +0.240 | 2.73 | no |
+| clean `W` | 0.02 | +0.453 (5.12) | 88 | 0.0207 | +0.014 | 0.088 | [-0.220, +0.265] | 3.00 | +0.439 | 5.00 | yes |
+| clean `W` | 0.05 | +0.779 (8.82) | 119 | 0.0507 | +0.014 | 0.088 | [-0.221, +0.264] | 2.99 | +0.766 | 8.75 | yes |
+| clean `W` | 0.1 | +0.927 (10.48) | 127 | 0.1008 | +0.014 | 0.087 | [-0.222, +0.262] | 2.96 | +0.913 | 10.48 | yes |
+
+With the wrong projection scored against the true `S`, max |z| was 2.55 to
+2.60 on `W*` and 2.28 to 2.30 on `W`. The size of the embedded change, from
+the same run: RMS per carrier parameter is 0.00010, 0.00020, 0.00041, 0.00102
+and 0.00204 at the five non-zero alphas, which is 0.23%, 0.46%, 0.91%, 2.28%
+and 4.56% of the carrier L2 norm of `W*`. The largest float32 rounding error
+was 2.8e-8.
+
+How to read it. A wrong key gives a correlation that looks like noise: its
+spread does not change with alpha, and it is about the 1/sqrt(128) = 0.088 that
+independent projections would give. That holds whether the wrong key derives
+its own `S'` or is scored against the true `S`. The correct key's correlation
+grows with alpha. It clears all 100 wrong keys from alpha 0.02 on both hosts,
+and from 0.01 on `W*`. The 0.01 case on `W*` is helped by that host's chance
+correlation of +0.12 on `K` at alpha 0, which is noise, not a watermark. The
+host term's projected RMS, 0.049 for `W*` and 0.041 for `W`, sets the scale
+alpha must beat. The normalised correlation cannot exceed 1, so z is capped at
+sqrt(128) = 11.3, and at alpha 0.1 it is already about 10.4. Any p-value built
+on this statistic will have a floor, and P3.7 has to state it. Separation
+from 100 keys is not a false positive rate; that is P3.7's 1,000-key null.
+
 ## 8.4 Attack survival
 
 | Attack | Strength | Clean acc | Behavioral WDR | Weight corr | Verdict |
@@ -780,3 +840,8 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-09-14: P3.1. `src/watermark/projection.py`: `P_K` is a 128 x `dim` key-derived ±1/sqrt(dim) matrix from the `projection/v1/rademacher/dim=<dim>` stream, with integer generation, no orthonormalisation and unit rows, plus `project` and `back_project`. Generation takes about 1 s on the local CPU at `dim` = 307,040. 41 new tests, 381 in total, all pass. Carrier choice, `alpha` and centring are left to P3.2 and P3.3.
 - 2026-09-14: P3.2. `src/watermark/carrier.py` makes every conv and linear weight the carrier (`dim` = 307,040 for `main_model`). `src/watermark/weight_embedding.py` does a post-hoc `W* = W + alpha * P_K^T * S` on the carrier only, with an aggregate-only summary. `alpha` has no default and is left to P3.5. On clean `W` with a test key, a one-off smoke run at alpha 1.0 took about 1.2 s; it is not recorded, because alpha 1.0 is not a chosen value. 42 new tests, 423 in total, all pass. Icebox line added for per-layer scaling.
 - 2026-09-14: P3.3. `src/watermark/weight_extraction.py` is a blind extractor: it centres each carrier tensor, projects with `P_K`, and scores against `S` with normalised correlation, amplitude, RMS and bit matches. It reports aggregates only. 27 new tests, 450 in total, all pass. They cover recovery, invariances and unit-level wrong-key checks. No real-model numbers; those are P3.4 and P3.7.
+- 2026-09-14: P3.4. The owner fixed the owner id as `blacktensor-zkcrown-owner` (`PROJECT_OWNER_ID`).
+  - `experiments/p3_4_key_specificity.py` watermarks `W*` and `W` post-hoc at alpha 0 to 0.1 and extracts with `K`, with 100 wrong keys, and with a wrong `P_K'` against the true `S`. The code was committed first (`2a2eee9`), so the run is on a clean tree.
+  - `W*`: correct-key correlation +0.12 (control) to +0.91, against wrong keys at mean +0.001, sd 0.095, max |z| 2.71. The gap is 5.0 wrong-key sd at alpha 0.02 and 9.6 at 0.1.
+  - Finding: z is capped at sqrt(128) = 11.3 by construction.
+  - 10 new tests, 460 in total, all pass.
