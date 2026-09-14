@@ -312,7 +312,22 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
   - Reading: extraction is key-specific. A wrong key gives a null-looking correlation whether or not the model carries our watermark. The correct key separates from 100 wrong keys once alpha is about 0.02 or more. Below that, the host term (projected RMS 0.049 on `W*`, 0.041 on `W`) dominates.
   - Finding: normalised correlation is at most 1, so z = corr·sqrt(128) cannot exceed 11.3. At alpha 0.1 it is already at 10.3 to 10.5, so the evidence this statistic can give is capped. This matters for P3.7.
   - No threshold or p-value (P3.7), no accuracy (P3.5). 10 new tests, 460 in total, all pass.
-- [ ] **P3.5** Sweep embedding strength `alpha`, plot detection confidence vs accuracy drop.
+- [x] **P3.5** Sweep embedding strength `alpha`, plot detection confidence vs accuracy drop.
+  - `experiments/p3_5_alpha_sweep.py`, CPU, 457 s. Committed result from a clean tree at `e943c19`. Setup:
+    - Host `W*` (P2.3), embedded post-hoc (P3.2) with `K` and the project owner id, no BN recalibration.
+    - 12 alphas, fixed before the run: 0, 0.005, 0.01, 0.02, 0.03, 0.05, 0.075, 0.1, 0.15, 0.2, 0.3, 0.5.
+    - Detection by blind extraction (P3.3), with a reference from 50 wrong keys, the first 50 of P3.4's family.
+    - Accuracy scored per image on test (10,000) and holdout (5,000). Drops use P2.5's paired method against `W*` (the weight watermark's own cost) and against `W` (total vs P0.6).
+  - Built-in checks passed: alpha 0 reproduces `W*`'s recorded 90.73% / 91.14% exactly, and the correct-key correlations at the six alphas shared with P3.4 equal P3.4's committed values exactly.
+  - **Detection z (corr·sqrt(128)) by alpha:** 1.39, 2.50, 3.55, 5.35, 6.75, 8.55, 9.71, 10.29, 10.80, 11.01, 11.17, 11.26. All 128 bits are recovered from alpha 0.15 up. Wrong keys: max |z| 2.03 to 2.12, sd of correlation 0.095 to 0.098 at every alpha.
+  - **Test drop vs `W*`, same order:** 0, -0.02, -0.06, -0.08, -0.09, -0.09, -0.11, -0.12, -0.04, 0.00, +0.19, +1.22 pp. Only alpha 0.5 is distinguishable from zero: 95% CI [+0.79, +1.65], McNemar p = 2.6e-8.
+  - **Holdout drop vs `W*`:** within ±0.22 pp and not significant up to alpha 0.2. It is +0.54 pp at 0.3 (CI [+0.08, +1.00], p = 0.027) and +1.74 pp at 0.5 (p = 1.6e-8).
+  - Reading: in this run, detection rises steeply up to alpha 0.1 and then saturates against the z cap of 11.31. Accuracy shows no measurable cost up to 0.2 on either split. The cost appears at 0.3 on the holdout and at 0.5 on both.
+    - At 0.1 the change is 4.6% of the carrier L2 norm, and 7.1% relative RMS in `features.17`.
+    - Test loss rises from alpha 0.15 on: 0.3078 at 0.1, 0.3089, 0.3111, 0.3188, then 0.3509 at 0.5.
+  - Limits: one host, one key, one run. The intervals cover image sampling only.
+  - No alpha selected; that is P3.6. Picking alpha from these test drops would bias that model's test accuracy, and the ledger would have to say so.
+  - Figure `figures/p3.5_alpha_sweep.png`. A first run of the same code was flagged dirty only because its new figure was untracked when the record was written. It gave identical metrics and was discarded, not committed. 6 new tests, 466 in total, all pass.
 - [ ] **P3.6** `[GPU]` Decide whether the weight watermark is embedded post-hoc or during training, document the choice, and produce the final dual-watermarked model `W*`.
 - [ ] **P3.7** Null distribution: extract with 1000 random wrong keys, fit the correlation null distribution, derive a detection threshold with a stated false positive rate.
 
@@ -750,6 +765,54 @@ sqrt(128) = 11.3, and at alpha 0.1 it is already about 10.4. Any p-value built
 on this statistic will have a floor, and P3.7 has to state it. Separation
 from 100 keys is not a false positive rate; that is P3.7's 1,000-key null.
 
+Weight watermark strength sweep from `experiments/p3_5_alpha_sweep.py` (P3.5),
+result file `results/p3.5_alpha_sweep__seed1337__20260914T084524+0000.json`,
+CPU, seed 1337, commit `e943c19`, clean tree.
+- **Host:** `W*` (P2.3), embedded post-hoc with `K` and owner id
+  `blacktensor-zkcrown-owner`, BN statistics not recalibrated.
+- **Detection:** blind extraction. The wrong-key reference is the first 50
+  keys of P3.4's family, recomputed at every alpha.
+- **Accuracy:** eval-mode top-1, per image. Drop = acc(reference) -
+  acc(embedded), with P2.5's paired 95% CI and exact McNemar test.
+- **Checks:** alpha 0 reproduces `W*`'s recorded accuracy exactly (9,073 /
+  10,000 test, 4,557 / 5,000 holdout), and the six alphas shared with P3.4
+  give P3.4's correlations exactly.
+- **Alpha grid:** fixed before the run; no alpha is selected here.
+
+| alpha | z | Bits /128 | Change RMS | Change / carrier L2 | Test acc | Test drop vs `W*` (95% CI) | p | Holdout drop vs `W*` (95% CI) | p | Test drop vs `W` | Test loss |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 1.39 | 68 | 0 | 0 | 90.73% | 0 | 1 | 0 | 1 | +0.47 | 0.3089 |
+| 0.005 | 2.50 | 75 | 0.00010 | 0.23% | 90.75% | -0.02 [-0.05, +0.01] | 0.50 | 0.00 [-0.06, +0.06] | 1 | +0.45 | 0.3088 |
+| 0.01 | 3.55 | 80 | 0.00020 | 0.46% | 90.79% | -0.06 [-0.12, +0.00] | 0.11 | +0.04 [-0.06, +0.14] | 0.69 | +0.41 | 0.3086 |
+| 0.02 | 5.35 | 94 | 0.00041 | 0.91% | 90.81% | -0.08 [-0.18, +0.02] | 0.15 | +0.04 [-0.08, +0.16] | 0.75 | +0.39 | 0.3084 |
+| 0.03 | 6.75 | 100 | 0.00061 | 1.37% | 90.82% | -0.09 [-0.20, +0.02] | 0.15 | +0.04 [-0.11, +0.19] | 0.79 | +0.38 | 0.3082 |
+| 0.05 | 8.55 | 110 | 0.00102 | 2.28% | 90.82% | -0.09 [-0.23, +0.05] | 0.25 | +0.10 [-0.10, +0.30] | 0.42 | +0.38 | 0.3079 |
+| 0.075 | 9.71 | 122 | 0.00153 | 3.42% | 90.84% | -0.11 [-0.28, +0.06] | 0.25 | +0.06 [-0.18, +0.30] | 0.74 | +0.36 | 0.3077 |
+| 0.1 | 10.29 | 126 | 0.00204 | 4.56% | 90.85% | -0.12 [-0.32, +0.08] | 0.27 | -0.02 [-0.29, +0.25] | 1 | +0.35 | 0.3078 |
+| 0.15 | 10.80 | 128 | 0.00306 | 6.84% | 90.77% | -0.04 [-0.28, +0.20] | 0.80 | +0.10 [-0.23, +0.43] | 0.64 | +0.43 | 0.3089 |
+| 0.2 | 11.01 | 128 | 0.00409 | 9.12% | 90.73% | 0.00 [-0.27, +0.27] | 1 | +0.22 [-0.17, +0.61] | 0.31 | +0.47 | 0.3111 |
+| 0.3 | 11.17 | 128 | 0.00613 | 13.69% | 90.54% | +0.19 [-0.14, +0.52] | 0.28 | +0.54 [+0.08, +1.00] | 0.027 | +0.66 [+0.13, +1.19] | 0.3188 |
+| 0.5 | 11.26 | 128 | 0.01021 | 22.81% | 89.51% | +1.22 [+0.79, +1.65] | 2.6e-8 | +1.74 [+1.14, +2.34] | 1.6e-8 | +1.69 [+1.12, +2.26] | 0.3509 |
+
+Wrong keys (50) at every alpha: correlation mean within ±0.0011 of zero, sd
+0.095 to 0.098, max |z| 2.03 at alpha 0 rising to 2.12 at 0.5. The correct key
+is above all 50 from alpha 0.005 up. With P3.4's 100 keys that happened only
+from 0.01, so "above every wrong key" depends on how many keys are tried and
+is not a threshold. The largest float32 rounding error was 3.0e-8.
+
+How to read it. Detection rises steeply up to alpha 0.1, where z = 10.29 and
+126 of 128 bits are right, then saturates towards the z cap of 11.31. On both
+splits accuracy shows no cost that the paired test can detect up to alpha 0.2.
+The small negative test drops are inside their intervals. The first
+significant cost is on the holdout at 0.3 (+0.54 pp), and at 0.5 it is
+significant on both splits (+1.22 pp test, +1.74 pp holdout). Test loss is
+flat to 0.1 and then climbs, so the change starts to matter to the model
+somewhere between 0.1 and 0.3. Every row is one host, one key and one
+embedding. The intervals cover which images were sampled, not other keys or
+other training seeds. Choosing alpha from this table is P3.6. A choice made
+by looking at the test drops makes the chosen model's test accuracy an
+optimistic estimate, and the ledger will have to say so.
+
 ## 8.4 Attack survival
 
 | Attack | Strength | Clean acc | Behavioral WDR | Weight corr | Verdict |
@@ -845,3 +908,8 @@ Append one line per session: date, tasks touched, key outcome.
   - `W*`: correct-key correlation +0.12 (control) to +0.91, against wrong keys at mean +0.001, sd 0.095, max |z| 2.71. The gap is 5.0 wrong-key sd at alpha 0.02 and 9.6 at 0.1.
   - Finding: z is capped at sqrt(128) = 11.3 by construction.
   - 10 new tests, 460 in total, all pass.
+- 2026-09-14: P3.5. `experiments/p3_5_alpha_sweep.py`: 12 alphas post-hoc on `W*`, with detection (correct key plus 50 wrong keys) and paired accuracy drops on test and holdout against `W*` and `W`.
+  - z runs from 1.39 (alpha 0) to 10.29 (0.1) and saturates towards 11.31. No significant accuracy cost up to 0.2 on either split. Holdout +0.54 pp at 0.3; +1.22 pp test and +1.74 pp holdout at 0.5.
+  - Checks: alpha 0 reproduced `W*` exactly, and the shared alphas reproduced P3.4 exactly.
+  - The first run was flagged dirty only because its fresh figure was untracked. I fixed overlapping figure labels (`e943c19`) and re-ran from the clean tree, writing the figure outside the repo. Metrics were identical, and the figure was byte-identical to one rendered from the first run.
+  - No alpha selected. 6 new tests, 466 in total, all pass.

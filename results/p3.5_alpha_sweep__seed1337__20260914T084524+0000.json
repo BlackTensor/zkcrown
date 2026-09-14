@@ -1,0 +1,2027 @@
+{
+  "schema_version": 1,
+  "name": "p3.5_alpha_sweep",
+  "task": "P3.5",
+  "timestamp_utc": "2026-09-14T08:45:24+00:00",
+  "git": {
+    "commit": "e943c190f67865c3157f644fb8ff0490930872be",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "host": {
+      "task": "P2.3",
+      "weights_sha256": "be00f2b556979457b045b9a4925dd3e547ee586f984b6969b9266e61a7197222"
+    },
+    "baseline": {
+      "task": "P0.5/P0.6",
+      "weights_sha256": "54f112f4d7edc2ddacc181f8f4db25da27874e7e65aaf9407778a3ce5122fdcf"
+    },
+    "owner_id": "blacktensor-zkcrown-owner",
+    "embedding": "post-hoc W* + alpha * P_K^T * S on the carrier (P3.2); BatchNorm statistics not recalibrated",
+    "extraction": "blind, per-tensor centred, normalised correlation (P3.3)",
+    "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+    "alphas": [
+      0.0,
+      0.005,
+      0.01,
+      0.02,
+      0.03,
+      0.05,
+      0.075,
+      0.1,
+      0.15,
+      0.2,
+      0.3,
+      0.5
+    ],
+    "alphas_note": "fixed before running; no alpha selected here (P3.6)",
+    "wrong_keys": {
+      "count": 50,
+      "derivation": "first N of P3.4's family, SHA-256('zk-crown/p3.4/wrong-key/v1' || u64 seed || u64 j)"
+    },
+    "accuracy": "eval-mode top-1, per image; paired drop with exact McNemar and 95% normal CI (P2.5 method)",
+    "drop_definition": "acc(reference) - acc(embedded); positive means the embedded model is worse",
+    "splits": {
+      "test": "official CIFAR-10 test, 10,000",
+      "holdout": "attacker holdout, 5,000"
+    },
+    "figure": "figures/p3.5_alpha_sweep.png",
+    "device": "cpu"
+  },
+  "metrics": {
+    "rows": [
+      {
+        "alpha": 0.0,
+        "embedding": {
+          "version": "weight-embedding/v1",
+          "alpha": 0.0,
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "delta_l2": 0.0,
+          "delta_rms": 0.0,
+          "delta_max_abs": 0.0,
+          "carrier_l2": 24.812374736047268,
+          "relative_l2": 0.0,
+          "zero_fraction": 1.0,
+          "float32_rounding_max_abs": 0.0,
+          "tensors": [
+            {
+              "name": "features.0.weight",
+              "numel": 864,
+              "delta_rms": 0.0,
+              "weight_rms": 0.19299925880427415,
+              "relative_rms": 0.0,
+              "energy_share": 0.0,
+              "zero_fraction": 1.0
+            },
+            {
+              "name": "features.3.weight",
+              "numel": 9216,
+              "delta_rms": 0.0,
+              "weight_rms": 0.07112931916849381,
+              "relative_rms": 0.0,
+              "energy_share": 0.0,
+              "zero_fraction": 1.0
+            },
+            {
+              "name": "features.7.weight",
+              "numel": 18432,
+              "delta_rms": 0.0,
+              "weight_rms": 0.06662168601408265,
+              "relative_rms": 0.0,
+              "energy_share": 0.0,
+              "zero_fraction": 1.0
+            },
+            {
+              "name": "features.10.weight",
+              "numel": 36864,
+              "delta_rms": 0.0,
+              "weight_rms": 0.053204875942681716,
+              "relative_rms": 0.0,
+              "energy_share": 0.0,
+              "zero_fraction": 1.0
+            },
+            {
+              "name": "features.14.weight",
+              "numel": 73728,
+              "delta_rms": 0.0,
+              "weight_rms": 0.04484229886706298,
+              "relative_rms": 0.0,
+              "energy_share": 0.0,
+              "zero_fraction": 1.0
+            },
+            {
+              "name": "features.17.weight",
+              "numel": 147456,
+              "delta_rms": 0.0,
+              "weight_rms": 0.028727427133763018,
+              "relative_rms": 0.0,
+              "energy_share": 0.0,
+              "zero_fraction": 1.0
+            },
+            {
+              "name": "classifier.2.weight",
+              "numel": 20480,
+              "delta_rms": 0.0,
+              "weight_rms": 0.06278696928056997,
+              "relative_rms": 0.0,
+              "energy_share": 0.0,
+              "zero_fraction": 1.0
+            }
+          ]
+        },
+        "detection": {
+          "version": "weight-extraction/v1",
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "centered": true,
+          "correlation": 0.12263756066325872,
+          "amplitude": 0.0059906381090526675,
+          "projected_rms": 0.04884831430642942,
+          "bit_matches": 68,
+          "z": 1.3874856123706694
+        },
+        "test": {
+          "accuracy": 0.9073,
+          "correct": 9073,
+          "n": 10000,
+          "loss": 0.30892910614013674,
+          "vs_W_star": {
+            "drop_pp": 0.0,
+            "ci95_pp": [
+              0.0,
+              0.0
+            ],
+            "reference_only_right": 0,
+            "other_only_right": 0,
+            "mcnemar_exact_p": 1.0
+          },
+          "vs_W": {
+            "drop_pp": 0.47000000000000003,
+            "ci95_pp": [
+              -0.039884206791741206,
+              0.9798842067917414
+            ],
+            "reference_only_right": 362,
+            "other_only_right": 315,
+            "mcnemar_exact_p": 0.07699629402538403
+          }
+        },
+        "holdout": {
+          "accuracy": 0.9114,
+          "correct": 4557,
+          "n": 5000,
+          "loss": 0.301597021484375,
+          "vs_W_star": {
+            "drop_pp": 0.0,
+            "ci95_pp": [
+              0.0,
+              0.0
+            ],
+            "reference_only_right": 0,
+            "other_only_right": 0,
+            "mcnemar_exact_p": 1.0
+          },
+          "vs_W": {
+            "drop_pp": -0.26,
+            "ci95_pp": [
+              -1.0129590861469149,
+              0.49295908614691486
+            ],
+            "reference_only_right": 178,
+            "other_only_right": 191,
+            "mcnemar_exact_p": 0.5322280622485493
+          }
+        },
+        "wrong_keys": {
+          "correlation": {
+            "count": 50,
+            "mean": 8.944130547793701e-05,
+            "sd": 0.09761085442934551,
+            "min": -0.1795270208905774,
+            "max": 0.161295089892839,
+            "max_abs": 0.1795270208905774
+          },
+          "z_max_abs": 2.03111638204714
+        },
+        "gap_in_wrong_key_sd": 1.2554763512134384,
+        "correct_above_every_wrong_key": false
+      },
+      {
+        "alpha": 0.005,
+        "embedding": {
+          "version": "weight-embedding/v1",
+          "alpha": 0.005,
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "delta_l2": 0.056600513207586745,
+          "delta_rms": 0.00010214635888091325,
+          "delta_max_abs": 0.00048726619839464303,
+          "carrier_l2": 24.812374736047268,
+          "relative_l2": 0.0022811405119300353,
+          "zero_fraction": 0.07092561229807191,
+          "float32_rounding_max_abs": 2.6622260209454044e-08,
+          "tensors": [
+            {
+              "name": "features.0.weight",
+              "numel": 864,
+              "delta_rms": 0.000100754354915082,
+              "weight_rms": 0.19299925880427415,
+              "relative_rms": 0.0005220452945742126,
+              "energy_share": 0.002737793310126278,
+              "zero_fraction": 0.0763888888888889
+            },
+            {
+              "name": "features.3.weight",
+              "numel": 9216,
+              "delta_rms": 0.00010200658720953614,
+              "weight_rms": 0.07112931916849381,
+              "relative_rms": 0.0014341004300617455,
+              "energy_share": 0.02993354573512667,
+              "zero_fraction": 0.07183159722222222
+            },
+            {
+              "name": "features.7.weight",
+              "numel": 18432,
+              "delta_rms": 0.00010171567821976806,
+              "weight_rms": 0.06662168601408265,
+              "relative_rms": 0.0015267652967874028,
+              "energy_share": 0.059526112682204195,
+              "zero_fraction": 0.06949869791666667
+            },
+            {
+              "name": "features.10.weight",
+              "numel": 36864,
+              "delta_rms": 0.00010254570345168949,
+              "weight_rms": 0.053204875942681716,
+              "relative_rms": 0.0019273741670249034,
+              "energy_share": 0.12100314454826738,
+              "zero_fraction": 0.069091796875
+            },
+            {
+              "name": "features.14.weight",
+              "numel": 73728,
+              "delta_rms": 0.00010253702287549582,
+              "weight_rms": 0.04484229886706298,
+              "relative_rms": 0.002286613877211591,
+              "energy_share": 0.2419653187770405,
+              "zero_fraction": 0.0707736545138889
+            },
+            {
+              "name": "features.17.weight",
+              "numel": 147456,
+              "delta_rms": 0.0001019461146235737,
+              "weight_rms": 0.028727427133763018,
+              "relative_rms": 0.003548738080472149,
+              "energy_share": 0.47836904376188766,
+              "zero_fraction": 0.07143147786458333
+            },
+            {
+              "name": "classifier.2.weight",
+              "numel": 20480,
+              "delta_rms": 0.00010196521328009282,
+              "weight_rms": 0.06278696928056997,
+              "relative_rms": 0.001623986863013739,
+              "energy_share": 0.06646504118533672,
+              "zero_fraction": 0.07177734375
+            }
+          ]
+        },
+        "detection": {
+          "version": "weight-extraction/v1",
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "centered": true,
+          "correlation": 0.22118223993345487,
+          "amplitude": 0.010996161883684031,
+          "projected_rms": 0.04971539255137459,
+          "bit_matches": 75,
+          "z": 2.502391387759615
+        },
+        "test": {
+          "accuracy": 0.9075,
+          "correct": 9075,
+          "n": 10000,
+          "loss": 0.30877764892578125,
+          "vs_W_star": {
+            "drop_pp": -0.02,
+            "ci95_pp": [
+              -0.04771530454074061,
+              0.0077153045407406156
+            ],
+            "reference_only_right": 0,
+            "other_only_right": 2,
+            "mcnemar_exact_p": 0.5
+          },
+          "vs_W": {
+            "drop_pp": 0.44999999999999996,
+            "ci95_pp": [
+              -0.05989113800876477,
+              0.9598911380087647
+            ],
+            "reference_only_right": 361,
+            "other_only_right": 316,
+            "mcnemar_exact_p": 0.0907518950250319
+          }
+        },
+        "holdout": {
+          "accuracy": 0.9114,
+          "correct": 4557,
+          "n": 5000,
+          "loss": 0.3014874038696289,
+          "vs_W_star": {
+            "drop_pp": 0.0,
+            "ci95_pp": [
+              -0.055436152973987116,
+              0.055436152973987116
+            ],
+            "reference_only_right": 1,
+            "other_only_right": 1,
+            "mcnemar_exact_p": 1.0
+          },
+          "vs_W": {
+            "drop_pp": -0.26,
+            "ci95_pp": [
+              -1.010915586703753,
+              0.4909155867037531
+            ],
+            "reference_only_right": 177,
+            "other_only_right": 190,
+            "mcnemar_exact_p": 0.5311129992082378
+          }
+        },
+        "wrong_keys": {
+          "correlation": {
+            "count": 50,
+            "mean": 7.857152724526896e-05,
+            "sd": 0.09758509264383178,
+            "min": -0.17965849796631492,
+            "max": 0.16115192756855742,
+            "max_abs": 0.17965849796631492
+          },
+          "z_max_abs": 2.0326038753563336
+        },
+        "gap_in_wrong_key_sd": 2.2657525080516,
+        "correct_above_every_wrong_key": true
+      },
+      {
+        "alpha": 0.01,
+        "embedding": {
+          "version": "weight-embedding/v1",
+          "alpha": 0.01,
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "delta_l2": 0.11320102641517349,
+          "delta_rms": 0.0002042927177618265,
+          "delta_max_abs": 0.0009745323967892861,
+          "carrier_l2": 24.812374736047268,
+          "relative_l2": 0.004562281023860071,
+          "zero_fraction": 0.07092561229807191,
+          "float32_rounding_max_abs": 2.6622260209454044e-08,
+          "tensors": [
+            {
+              "name": "features.0.weight",
+              "numel": 864,
+              "delta_rms": 0.000201508709830164,
+              "weight_rms": 0.19299925880427415,
+              "relative_rms": 0.0010440905891484253,
+              "energy_share": 0.002737793310126278,
+              "zero_fraction": 0.0763888888888889
+            },
+            {
+              "name": "features.3.weight",
+              "numel": 9216,
+              "delta_rms": 0.00020401317441907227,
+              "weight_rms": 0.07112931916849381,
+              "relative_rms": 0.002868200860123491,
+              "energy_share": 0.02993354573512667,
+              "zero_fraction": 0.07183159722222222
+            },
+            {
+              "name": "features.7.weight",
+              "numel": 18432,
+              "delta_rms": 0.00020343135643953613,
+              "weight_rms": 0.06662168601408265,
+              "relative_rms": 0.0030535305935748057,
+              "energy_share": 0.059526112682204195,
+              "zero_fraction": 0.06949869791666667
+            },
+            {
+              "name": "features.10.weight",
+              "numel": 36864,
+              "delta_rms": 0.00020509140690337898,
+              "weight_rms": 0.053204875942681716,
+              "relative_rms": 0.0038547483340498068,
+              "energy_share": 0.12100314454826738,
+              "zero_fraction": 0.069091796875
+            },
+            {
+              "name": "features.14.weight",
+              "numel": 73728,
+              "delta_rms": 0.00020507404575099164,
+              "weight_rms": 0.04484229886706298,
+              "relative_rms": 0.004573227754423182,
+              "energy_share": 0.2419653187770405,
+              "zero_fraction": 0.0707736545138889
+            },
+            {
+              "name": "features.17.weight",
+              "numel": 147456,
+              "delta_rms": 0.0002038922292471474,
+              "weight_rms": 0.028727427133763018,
+              "relative_rms": 0.007097476160944298,
+              "energy_share": 0.47836904376188766,
+              "zero_fraction": 0.07143147786458333
+            },
+            {
+              "name": "classifier.2.weight",
+              "numel": 20480,
+              "delta_rms": 0.00020393042656018565,
+              "weight_rms": 0.06278696928056997,
+              "relative_rms": 0.003247973726027478,
+              "energy_share": 0.06646504118533672,
+              "zero_fraction": 0.07177734375
+            }
+          ]
+        },
+        "detection": {
+          "version": "weight-extraction/v1",
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "centered": true,
+          "correlation": 0.3133843757403552,
+          "amplitude": 0.016001687844389514,
+          "projected_rms": 0.05106089863793085,
+          "bit_matches": 80,
+          "z": 3.5455394752626908
+        },
+        "test": {
+          "accuracy": 0.9079,
+          "correct": 9079,
+          "n": 10000,
+          "loss": 0.30863832168579103,
+          "vs_W_star": {
+            "drop_pp": -0.06,
+            "ci95_pp": [
+              -0.12196834591562596,
+              0.0019683459156259503
+            ],
+            "reference_only_right": 2,
+            "other_only_right": 8,
+            "mcnemar_exact_p": 0.109375
+          },
+          "vs_W": {
+            "drop_pp": 0.41000000000000003,
+            "ci95_pp": [
+              -0.10065690928680793,
+              0.9206569092868079
+            ],
+            "reference_only_right": 360,
+            "other_only_right": 319,
+            "mcnemar_exact_p": 0.12470655495815433
+          }
+        },
+        "holdout": {
+          "accuracy": 0.911,
+          "correct": 4555,
+          "n": 5000,
+          "loss": 0.3013960998535156,
+          "vs_W_star": {
+            "drop_pp": 0.04,
+            "ci95_pp": [
+              -0.056011832098149646,
+              0.13601183209814965
+            ],
+            "reference_only_right": 4,
+            "other_only_right": 2,
+            "mcnemar_exact_p": 0.6875
+          },
+          "vs_W": {
+            "drop_pp": -0.22,
+            "ci95_pp": [
+              -0.9729688815701939,
+              0.5329688815701937
+            ],
+            "reference_only_right": 179,
+            "other_only_right": 190,
+            "mcnemar_exact_p": 0.6027199804841066
+          }
+        },
+        "wrong_keys": {
+          "correlation": {
+            "count": 50,
+            "mean": 6.768516467050297e-05,
+            "sd": 0.09755932924450042,
+            "min": -0.17978894923520522,
+            "max": 0.1610080562854636,
+            "max_abs": 0.17978894923520522
+          },
+          "z_max_abs": 2.034079762985881
+        },
+        "gap_in_wrong_key_sd": 3.2115502740948467,
+        "correct_above_every_wrong_key": true
+      },
+      {
+        "alpha": 0.02,
+        "embedding": {
+          "version": "weight-embedding/v1",
+          "alpha": 0.02,
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "delta_l2": 0.22640205283034698,
+          "delta_rms": 0.000408585435523653,
+          "delta_max_abs": 0.0019490647935785721,
+          "carrier_l2": 24.812374736047268,
+          "relative_l2": 0.009124562047720141,
+          "zero_fraction": 0.07092561229807191,
+          "float32_rounding_max_abs": 2.7804022992977944e-08,
+          "tensors": [
+            {
+              "name": "features.0.weight",
+              "numel": 864,
+              "delta_rms": 0.000403017419660328,
+              "weight_rms": 0.19299925880427415,
+              "relative_rms": 0.0020881811782968505,
+              "energy_share": 0.002737793310126278,
+              "zero_fraction": 0.0763888888888889
+            },
+            {
+              "name": "features.3.weight",
+              "numel": 9216,
+              "delta_rms": 0.00040802634883814454,
+              "weight_rms": 0.07112931916849381,
+              "relative_rms": 0.005736401720246982,
+              "energy_share": 0.02993354573512667,
+              "zero_fraction": 0.07183159722222222
+            },
+            {
+              "name": "features.7.weight",
+              "numel": 18432,
+              "delta_rms": 0.00040686271287907226,
+              "weight_rms": 0.06662168601408265,
+              "relative_rms": 0.006107061187149611,
+              "energy_share": 0.059526112682204195,
+              "zero_fraction": 0.06949869791666667
+            },
+            {
+              "name": "features.10.weight",
+              "numel": 36864,
+              "delta_rms": 0.00041018281380675797,
+              "weight_rms": 0.053204875942681716,
+              "relative_rms": 0.0077094966680996135,
+              "energy_share": 0.12100314454826738,
+              "zero_fraction": 0.069091796875
+            },
+            {
+              "name": "features.14.weight",
+              "numel": 73728,
+              "delta_rms": 0.0004101480915019833,
+              "weight_rms": 0.04484229886706298,
+              "relative_rms": 0.009146455508846364,
+              "energy_share": 0.2419653187770405,
+              "zero_fraction": 0.0707736545138889
+            },
+            {
+              "name": "features.17.weight",
+              "numel": 147456,
+              "delta_rms": 0.0004077844584942948,
+              "weight_rms": 0.028727427133763018,
+              "relative_rms": 0.014194952321888596,
+              "energy_share": 0.47836904376188766,
+              "zero_fraction": 0.07143147786458333
+            },
+            {
+              "name": "classifier.2.weight",
+              "numel": 20480,
+              "delta_rms": 0.0004078608531203713,
+              "weight_rms": 0.06278696928056997,
+              "relative_rms": 0.006495947452054956,
+              "energy_share": 0.06646504118533672,
+              "zero_fraction": 0.07177734375
+            }
+          ]
+        },
+        "detection": {
+          "version": "weight-extraction/v1",
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "centered": true,
+          "correlation": 0.4726617718270258,
+          "amplitude": 0.026012736182555434,
+          "projected_rms": 0.05503456749211145,
+          "bit_matches": 94,
+          "z": 5.347557505064618
+        },
+        "test": {
+          "accuracy": 0.9081,
+          "correct": 9081,
+          "n": 10000,
+          "loss": 0.30839254760742185,
+          "vs_W_star": {
+            "drop_pp": -0.08,
+            "ci95_pp": [
+              -0.17600543024236,
+              0.01600543024236001
+            ],
+            "reference_only_right": 8,
+            "other_only_right": 16,
+            "mcnemar_exact_p": 0.15158963203430176
+          },
+          "vs_W": {
+            "drop_pp": 0.38999999999999996,
+            "ci95_pp": [
+              -0.12141462347160853,
+              0.9014146234716084
+            ],
+            "reference_only_right": 360,
+            "other_only_right": 321,
+            "mcnemar_exact_p": 0.1452923733612528
+          }
+        },
+        "holdout": {
+          "accuracy": 0.911,
+          "correct": 4555,
+          "n": 5000,
+          "loss": 0.3012669952392578,
+          "vs_W_star": {
+            "drop_pp": 0.04,
+            "ci95_pp": [
+              -0.0839540480014827,
+              0.1639540480014827
+            ],
+            "reference_only_right": 6,
+            "other_only_right": 4,
+            "mcnemar_exact_p": 0.75390625
+          },
+          "vs_W": {
+            "drop_pp": -0.22,
+            "ci95_pp": [
+              -0.9729688815701939,
+              0.5329688815701937
+            ],
+            "reference_only_right": 179,
+            "other_only_right": 190,
+            "mcnemar_exact_p": 0.6027199804841066
+          }
+        },
+        "wrong_keys": {
+          "correlation": {
+            "count": 50,
+            "mean": 4.585583744048563e-05,
+            "sd": 0.0975078066690398,
+            "min": -0.18004680415906882,
+            "max": 0.16071822902791852,
+            "max_abs": 0.18004680415906882
+          },
+          "z_max_abs": 2.0369970584295016
+        },
+        "gap_in_wrong_key_sd": 4.846954640193419,
+        "correct_above_every_wrong_key": true
+      },
+      {
+        "alpha": 0.03,
+        "embedding": {
+          "version": "weight-embedding/v1",
+          "alpha": 0.03,
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "delta_l2": 0.339603079245519,
+          "delta_rms": 0.0006128781532854769,
+          "delta_max_abs": 0.002923597190367858,
+          "carrier_l2": 24.812374736047268,
+          "relative_l2": 0.013686843071580156,
+          "zero_fraction": 0.07092561229807191,
+          "float32_rounding_max_abs": 2.2625661420046413e-08,
+          "tensors": [
+            {
+              "name": "features.0.weight",
+              "numel": 864,
+              "delta_rms": 0.000604526129490492,
+              "weight_rms": 0.19299925880427415,
+              "relative_rms": 0.0031322717674452756,
+              "energy_share": 0.002737793310126301,
+              "zero_fraction": 0.0763888888888889
+            },
+            {
+              "name": "features.3.weight",
+              "numel": 9216,
+              "delta_rms": 0.0006120395232572168,
+              "weight_rms": 0.07112931916849381,
+              "relative_rms": 0.008604602580370473,
+              "energy_share": 0.029933545735126917,
+              "zero_fraction": 0.07183159722222222
+            },
+            {
+              "name": "features.7.weight",
+              "numel": 18432,
+              "delta_rms": 0.0006102940693186083,
+              "weight_rms": 0.06662168601408265,
+              "relative_rms": 0.009160591780724417,
+              "energy_share": 0.059526112682204674,
+              "zero_fraction": 0.06949869791666667
+            },
+            {
+              "name": "features.10.weight",
+              "numel": 36864,
+              "delta_rms": 0.0006152742207101369,
+              "weight_rms": 0.053204875942681716,
+              "relative_rms": 0.011564245002149419,
+              "energy_share": 0.12100314454826838,
+              "zero_fraction": 0.069091796875
+            },
+            {
+              "name": "features.14.weight",
+              "numel": 73728,
+              "delta_rms": 0.000615222137252975,
+              "weight_rms": 0.04484229886706298,
+              "relative_rms": 0.013719683263269547,
+              "energy_share": 0.2419653187770425,
+              "zero_fraction": 0.0707736545138889
+            },
+            {
+              "name": "features.17.weight",
+              "numel": 147456,
+              "delta_rms": 0.0006116766877414422,
+              "weight_rms": 0.028727427133763018,
+              "relative_rms": 0.021292428482832894,
+              "energy_share": 0.47836904376189154,
+              "zero_fraction": 0.07143147786458333
+            },
+            {
+              "name": "classifier.2.weight",
+              "numel": 20480,
+              "delta_rms": 0.0006117912796805569,
+              "weight_rms": 0.06278696928056997,
+              "relative_rms": 0.009743921178082433,
+              "energy_share": 0.06646504118533726,
+              "zero_fraction": 0.07177734375
+            }
+          ]
+        },
+        "detection": {
+          "version": "weight-extraction/v1",
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "centered": true,
+          "correlation": 0.5961945782506891,
+          "amplitude": 0.03602378312922315,
+          "projected_rms": 0.06042286267500371,
+          "bit_matches": 100,
+          "z": 6.745171667003457
+        },
+        "test": {
+          "accuracy": 0.9082,
+          "correct": 9082,
+          "n": 10000,
+          "loss": 0.30819492950439453,
+          "vs_W_star": {
+            "drop_pp": -0.09,
+            "ci95_pp": [
+              -0.19911191851721347,
+              0.019111918517213458
+            ],
+            "reference_only_right": 11,
+            "other_only_right": 20,
+            "mcnemar_exact_p": 0.14961278438568115
+          },
+          "vs_W": {
+            "drop_pp": 0.38,
+            "ci95_pp": [
+              -0.1310418076261763,
+              0.8910418076261762
+            ],
+            "reference_only_right": 359,
+            "other_only_right": 321,
+            "mcnemar_exact_p": 0.15588114530838365
+          }
+        },
+        "holdout": {
+          "accuracy": 0.911,
+          "correct": 4555,
+          "n": 5000,
+          "loss": 0.3011785614013672,
+          "vs_W_star": {
+            "drop_pp": 0.04,
+            "ci95_pp": [
+              -0.1066660837721676,
+              0.1866660837721676
+            ],
+            "reference_only_right": 8,
+            "other_only_right": 6,
+            "mcnemar_exact_p": 0.79052734375
+          },
+          "vs_W": {
+            "drop_pp": -0.22,
+            "ci95_pp": [
+              -0.9709254087833981,
+              0.5309254087833979
+            ],
+            "reference_only_right": 178,
+            "other_only_right": 189,
+            "mcnemar_exact_p": 0.6017336584279651
+          }
+        },
+        "wrong_keys": {
+          "correlation": {
+            "count": 50,
+            "mean": 2.3952947073726318e-05,
+            "sd": 0.09745629352407655,
+            "min": -0.1803005765282445,
+            "max": 0.16042562390334147,
+            "max_abs": 0.1803005765282445
+          },
+          "z_max_abs": 2.039868165039452
+        },
+        "gap_in_wrong_key_sd": 6.117312733182611,
+        "correct_above_every_wrong_key": true
+      },
+      {
+        "alpha": 0.05,
+        "embedding": {
+          "version": "weight-embedding/v1",
+          "alpha": 0.05,
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "delta_l2": 0.5660051320758642,
+          "delta_rms": 0.0010214635888091267,
+          "delta_max_abs": 0.004872661983946431,
+          "carrier_l2": 24.812374736047268,
+          "relative_l2": 0.022811405119300226,
+          "zero_fraction": 0.07092561229807191,
+          "float32_rounding_max_abs": 2.7804022992977944e-08,
+          "tensors": [
+            {
+              "name": "features.0.weight",
+              "numel": 864,
+              "delta_rms": 0.0010075435491508202,
+              "weight_rms": 0.19299925880427415,
+              "relative_rms": 0.005220452945742127,
+              "energy_share": 0.0027377933101263097,
+              "zero_fraction": 0.0763888888888889
+            },
+            {
+              "name": "features.3.weight",
+              "numel": 9216,
+              "delta_rms": 0.0010200658720953615,
+              "weight_rms": 0.07112931916849381,
+              "relative_rms": 0.014341004300617457,
+              "energy_share": 0.02993354573512701,
+              "zero_fraction": 0.07183159722222222
+            },
+            {
+              "name": "features.7.weight",
+              "numel": 18432,
+              "delta_rms": 0.0010171567821976807,
+              "weight_rms": 0.06662168601408265,
+              "relative_rms": 0.015267652967874029,
+              "energy_share": 0.05952611268220486,
+              "zero_fraction": 0.06949869791666667
+            },
+            {
+              "name": "features.10.weight",
+              "numel": 36864,
+              "delta_rms": 0.001025457034516895,
+              "weight_rms": 0.053204875942681716,
+              "relative_rms": 0.019273741670249034,
+              "energy_share": 0.12100314454826878,
+              "zero_fraction": 0.069091796875
+            },
+            {
+              "name": "features.14.weight",
+              "numel": 73728,
+              "delta_rms": 0.0010253702287549584,
+              "weight_rms": 0.04484229886706298,
+              "relative_rms": 0.022866138772115914,
+              "energy_share": 0.2419653187770433,
+              "zero_fraction": 0.0707736545138889
+            },
+            {
+              "name": "features.17.weight",
+              "numel": 147456,
+              "delta_rms": 0.001019461146235737,
+              "weight_rms": 0.028727427133763018,
+              "relative_rms": 0.03548738080472149,
+              "energy_share": 0.47836904376189304,
+              "zero_fraction": 0.07143147786458333
+            },
+            {
+              "name": "classifier.2.weight",
+              "numel": 20480,
+              "delta_rms": 0.0010196521328009285,
+              "weight_rms": 0.06278696928056997,
+              "relative_rms": 0.016239868630137395,
+              "energy_share": 0.06646504118533748,
+              "zero_fraction": 0.07177734375
+            }
+          ]
+        },
+        "detection": {
+          "version": "weight-extraction/v1",
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "centered": true,
+          "correlation": 0.7559457581995304,
+          "amplitude": 0.05604588340960173,
+          "projected_rms": 0.07414008584834009,
+          "bit_matches": 110,
+          "z": 8.552549949313505
+        },
+        "test": {
+          "accuracy": 0.9082,
+          "correct": 9082,
+          "n": 10000,
+          "loss": 0.30788857650756835,
+          "vs_W_star": {
+            "drop_pp": -0.09,
+            "ci95_pp": [
+              -0.22718613865750592,
+              0.047186138657505955
+            ],
+            "reference_only_right": 20,
+            "other_only_right": 29,
+            "mcnemar_exact_p": 0.2528697301676033
+          },
+          "vs_W": {
+            "drop_pp": 0.38,
+            "ci95_pp": [
+              -0.13179294729994914,
+              0.8917929472999492
+            ],
+            "reference_only_right": 360,
+            "other_only_right": 322,
+            "mcnemar_exact_p": 0.15648950642956974
+          }
+        },
+        "holdout": {
+          "accuracy": 0.9104,
+          "correct": 4552,
+          "n": 5000,
+          "loss": 0.3011342956542969,
+          "vs_W_star": {
+            "drop_pp": 0.1,
+            "ci95_pp": [
+              -0.09597679783408002,
+              0.29597679783408004
+            ],
+            "reference_only_right": 15,
+            "other_only_right": 10,
+            "mcnemar_exact_p": 0.42435622215270996
+          },
+          "vs_W": {
+            "drop_pp": -0.16,
+            "ci95_pp": [
+              -0.9078614417282808,
+              0.5878614417282808
+            ],
+            "reference_only_right": 178,
+            "other_only_right": 186,
+            "mcnemar_exact_p": 0.7137483135373334
+          }
+        },
+        "wrong_keys": {
+          "correlation": {
+            "count": 50,
+            "mean": -2.00824171055837e-05,
+            "sd": 0.09735333416918333,
+            "min": -0.18079587020962004,
+            "max": 0.15983213447962033,
+            "max_abs": 0.18079587020962004
+          },
+          "z_max_abs": 2.045471773371924
+        },
+        "gap_in_wrong_key_sd": 7.7651766841687975,
+        "correct_above_every_wrong_key": true
+      },
+      {
+        "alpha": 0.075,
+        "embedding": {
+          "version": "weight-embedding/v1",
+          "alpha": 0.075,
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "delta_l2": 0.8490076981138007,
+          "delta_rms": 0.001532195383213698,
+          "delta_max_abs": 0.007308992975919645,
+          "carrier_l2": 24.812374736047268,
+          "relative_l2": 0.03421710767895052,
+          "zero_fraction": 0.07092561229807191,
+          "float32_rounding_max_abs": 2.676183116258335e-08,
+          "tensors": [
+            {
+              "name": "features.0.weight",
+              "numel": 864,
+              "delta_rms": 0.0015113153237262301,
+              "weight_rms": 0.19299925880427415,
+              "relative_rms": 0.00783067941861319,
+              "energy_share": 0.002737793310126281,
+              "zero_fraction": 0.0763888888888889
+            },
+            {
+              "name": "features.3.weight",
+              "numel": 9216,
+              "delta_rms": 0.001530098808143042,
+              "weight_rms": 0.07112931916849381,
+              "relative_rms": 0.02151150645092618,
+              "energy_share": 0.029933545735126695,
+              "zero_fraction": 0.07183159722222222
+            },
+            {
+              "name": "features.7.weight",
+              "numel": 18432,
+              "delta_rms": 0.0015257351732965209,
+              "weight_rms": 0.06662168601408265,
+              "relative_rms": 0.022901479451811042,
+              "energy_share": 0.05952611268220425,
+              "zero_fraction": 0.06949869791666667
+            },
+            {
+              "name": "features.10.weight",
+              "numel": 36864,
+              "delta_rms": 0.001538185551775342,
+              "weight_rms": 0.053204875942681716,
+              "relative_rms": 0.028910612505373544,
+              "energy_share": 0.1210031445482675,
+              "zero_fraction": 0.069091796875
+            },
+            {
+              "name": "features.14.weight",
+              "numel": 73728,
+              "delta_rms": 0.0015380553431324374,
+              "weight_rms": 0.04484229886706298,
+              "relative_rms": 0.03429920815817387,
+              "energy_share": 0.24196531877704072,
+              "zero_fraction": 0.0707736545138889
+            },
+            {
+              "name": "features.17.weight",
+              "numel": 147456,
+              "delta_rms": 0.0015291917193536054,
+              "weight_rms": 0.028727427133763018,
+              "relative_rms": 0.05323107120708223,
+              "energy_share": 0.47836904376188805,
+              "zero_fraction": 0.07143147786458333
+            },
+            {
+              "name": "classifier.2.weight",
+              "numel": 20480,
+              "delta_rms": 0.0015294781992013923,
+              "weight_rms": 0.06278696928056997,
+              "relative_rms": 0.024359802945206083,
+              "energy_share": 0.06646504118533678,
+              "zero_fraction": 0.07177734375
+            }
+          ]
+        },
+        "detection": {
+          "version": "weight-extraction/v1",
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "centered": true,
+          "correlation": 0.8578354608944616,
+          "amplitude": 0.08107350388485318,
+          "projected_rms": 0.09450938738335456,
+          "bit_matches": 122,
+          "z": 9.70530034465218
+        },
+        "test": {
+          "accuracy": 0.9084,
+          "correct": 9084,
+          "n": 10000,
+          "loss": 0.3077035499572754,
+          "vs_W_star": {
+            "drop_pp": -0.11,
+            "ci95_pp": [
+              -0.2797241673717473,
+              0.059724167371747315
+            ],
+            "reference_only_right": 32,
+            "other_only_right": 43,
+            "mcnemar_exact_p": 0.24804574189252795
+          },
+          "vs_W": {
+            "drop_pp": 0.36,
+            "ci95_pp": [
+              -0.15179850162444114,
+              0.8717985016244412
+            ],
+            "reference_only_right": 359,
+            "other_only_right": 323,
+            "mcnemar_exact_p": 0.18013175024564448
+          }
+        },
+        "holdout": {
+          "accuracy": 0.9108,
+          "correct": 4554,
+          "n": 5000,
+          "loss": 0.30130935821533206,
+          "vs_W_star": {
+            "drop_pp": 0.06,
+            "ci95_pp": [
+              -0.1784341097576481,
+              0.29843410975764806
+            ],
+            "reference_only_right": 20,
+            "other_only_right": 17,
+            "mcnemar_exact_p": 0.7428293587290682
+          },
+          "vs_W": {
+            "drop_pp": -0.2,
+            "ci95_pp": [
+              -0.9499058872145586,
+              0.5499058872145587
+            ],
+            "reference_only_right": 178,
+            "other_only_right": 188,
+            "mcnemar_exact_p": 0.638102335791803
+          }
+        },
+        "wrong_keys": {
+          "correlation": {
+            "count": 50,
+            "mean": -7.557337454034162e-05,
+            "sd": 0.09722484770974946,
+            "min": -0.18139199995624283,
+            "max": 0.15907493198028505,
+            "max_abs": 0.18139199995624283
+          },
+          "z_max_abs": 2.0522162115527878
+        },
+        "gap_in_wrong_key_sd": 8.82398948908791,
+        "correct_above_every_wrong_key": true
+      },
+      {
+        "alpha": 0.1,
+        "embedding": {
+          "version": "weight-embedding/v1",
+          "alpha": 0.1,
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "delta_l2": 1.1320102641517285,
+          "delta_rms": 0.0020429271776182534,
+          "delta_max_abs": 0.009745323967892862,
+          "carrier_l2": 24.812374736047268,
+          "relative_l2": 0.04562281023860045,
+          "zero_fraction": 0.07092561229807191,
+          "float32_rounding_max_abs": 2.7804022992977944e-08,
+          "tensors": [
+            {
+              "name": "features.0.weight",
+              "numel": 864,
+              "delta_rms": 0.0020150870983016403,
+              "weight_rms": 0.19299925880427415,
+              "relative_rms": 0.010440905891484255,
+              "energy_share": 0.0027377933101263097,
+              "zero_fraction": 0.0763888888888889
+            },
+            {
+              "name": "features.3.weight",
+              "numel": 9216,
+              "delta_rms": 0.002040131744190723,
+              "weight_rms": 0.07112931916849381,
+              "relative_rms": 0.028682008601234914,
+              "energy_share": 0.02993354573512701,
+              "zero_fraction": 0.07183159722222222
+            },
+            {
+              "name": "features.7.weight",
+              "numel": 18432,
+              "delta_rms": 0.0020343135643953614,
+              "weight_rms": 0.06662168601408265,
+              "relative_rms": 0.030535305935748058,
+              "energy_share": 0.05952611268220486,
+              "zero_fraction": 0.06949869791666667
+            },
+            {
+              "name": "features.10.weight",
+              "numel": 36864,
+              "delta_rms": 0.00205091406903379,
+              "weight_rms": 0.053204875942681716,
+              "relative_rms": 0.03854748334049807,
+              "energy_share": 0.12100314454826878,
+              "zero_fraction": 0.069091796875
+            },
+            {
+              "name": "features.14.weight",
+              "numel": 73728,
+              "delta_rms": 0.002050740457509917,
+              "weight_rms": 0.04484229886706298,
+              "relative_rms": 0.04573227754423183,
+              "energy_share": 0.2419653187770433,
+              "zero_fraction": 0.0707736545138889
+            },
+            {
+              "name": "features.17.weight",
+              "numel": 147456,
+              "delta_rms": 0.002038922292471474,
+              "weight_rms": 0.028727427133763018,
+              "relative_rms": 0.07097476160944298,
+              "energy_share": 0.47836904376189304,
+              "zero_fraction": 0.07143147786458333
+            },
+            {
+              "name": "classifier.2.weight",
+              "numel": 20480,
+              "delta_rms": 0.002039304265601857,
+              "weight_rms": 0.06278696928056997,
+              "relative_rms": 0.03247973726027479,
+              "energy_share": 0.06646504118533748,
+              "zero_fraction": 0.07177734375
+            }
+          ]
+        },
+        "detection": {
+          "version": "weight-extraction/v1",
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "centered": true,
+          "correlation": 0.9091209522245879,
+          "amplitude": 0.10610112901917498,
+          "projected_rms": 0.1167073850399654,
+          "bit_matches": 126,
+          "z": 10.28552944378844
+        },
+        "test": {
+          "accuracy": 0.9085,
+          "correct": 9085,
+          "n": 10000,
+          "loss": 0.30779504318237305,
+          "vs_W_star": {
+            "drop_pp": -0.12,
+            "ci95_pp": [
+              -0.3159822862052575,
+              0.07598228620525747
+            ],
+            "reference_only_right": 44,
+            "other_only_right": 56,
+            "mcnemar_exact_p": 0.2712530240738347
+          },
+          "vs_W": {
+            "drop_pp": 0.35000000000000003,
+            "ci95_pp": [
+              -0.1621763168898531,
+              0.8621763168898532
+            ],
+            "reference_only_right": 359,
+            "other_only_right": 324,
+            "mcnemar_exact_p": 0.19322984519930317
+          }
+        },
+        "holdout": {
+          "accuracy": 0.9116,
+          "correct": 4558,
+          "n": 5000,
+          "loss": 0.3017552261352539,
+          "vs_W_star": {
+            "drop_pp": -0.02,
+            "ci95_pp": [
+              -0.2943943978453263,
+              0.25439439784532625
+            ],
+            "reference_only_right": 24,
+            "other_only_right": 25,
+            "mcnemar_exact_p": 1.0
+          },
+          "vs_W": {
+            "drop_pp": -0.27999999999999997,
+            "ci95_pp": [
+              -1.0298862162190419,
+              0.4698862162190417
+            ],
+            "reference_only_right": 176,
+            "other_only_right": 190,
+            "mcnemar_exact_p": 0.4968610173523483
+          }
+        },
+        "wrong_keys": {
+          "correlation": {
+            "count": 50,
+            "mean": -0.00013158290354749983,
+            "sd": 0.09709672240170732,
+            "min": -0.18196259506492335,
+            "max": 0.15830093920106136,
+            "max_abs": 0.18196259506492335
+          },
+          "z_max_abs": 2.058671758283346
+        },
+        "gap_in_wrong_key_sd": 9.364399875068774,
+        "correct_above_every_wrong_key": true
+      },
+      {
+        "alpha": 0.15,
+        "embedding": {
+          "version": "weight-embedding/v1",
+          "alpha": 0.15,
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "delta_l2": 1.6980153962276014,
+          "delta_rms": 0.003064390766427396,
+          "delta_max_abs": 0.01461798595183929,
+          "carrier_l2": 24.812374736047268,
+          "relative_l2": 0.06843421535790103,
+          "zero_fraction": 0.07092561229807191,
+          "float32_rounding_max_abs": 2.971623812124402e-08,
+          "tensors": [
+            {
+              "name": "features.0.weight",
+              "numel": 864,
+              "delta_rms": 0.0030226306474524602,
+              "weight_rms": 0.19299925880427415,
+              "relative_rms": 0.01566135883722638,
+              "energy_share": 0.002737793310126281,
+              "zero_fraction": 0.0763888888888889
+            },
+            {
+              "name": "features.3.weight",
+              "numel": 9216,
+              "delta_rms": 0.003060197616286084,
+              "weight_rms": 0.07112931916849381,
+              "relative_rms": 0.04302301290185236,
+              "energy_share": 0.029933545735126695,
+              "zero_fraction": 0.07183159722222222
+            },
+            {
+              "name": "features.7.weight",
+              "numel": 18432,
+              "delta_rms": 0.0030514703465930417,
+              "weight_rms": 0.06662168601408265,
+              "relative_rms": 0.045802958903622085,
+              "energy_share": 0.05952611268220425,
+              "zero_fraction": 0.06949869791666667
+            },
+            {
+              "name": "features.10.weight",
+              "numel": 36864,
+              "delta_rms": 0.003076371103550684,
+              "weight_rms": 0.053204875942681716,
+              "relative_rms": 0.05782122501074709,
+              "energy_share": 0.1210031445482675,
+              "zero_fraction": 0.069091796875
+            },
+            {
+              "name": "features.14.weight",
+              "numel": 73728,
+              "delta_rms": 0.0030761106862648747,
+              "weight_rms": 0.04484229886706298,
+              "relative_rms": 0.06859841631634774,
+              "energy_share": 0.24196531877704072,
+              "zero_fraction": 0.0707736545138889
+            },
+            {
+              "name": "features.17.weight",
+              "numel": 147456,
+              "delta_rms": 0.0030583834387072108,
+              "weight_rms": 0.028727427133763018,
+              "relative_rms": 0.10646214241416446,
+              "energy_share": 0.47836904376188805,
+              "zero_fraction": 0.07143147786458333
+            },
+            {
+              "name": "classifier.2.weight",
+              "numel": 20480,
+              "delta_rms": 0.0030589563984027845,
+              "weight_rms": 0.06278696928056997,
+              "relative_rms": 0.04871960589041217,
+              "energy_share": 0.06646504118533678,
+              "zero_fraction": 0.07177734375
+            }
+          ]
+        },
+        "detection": {
+          "version": "weight-extraction/v1",
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "centered": true,
+          "correlation": 0.9546297964914774,
+          "amplitude": 0.15615637038004065,
+          "projected_rms": 0.1635779345605569,
+          "bit_matches": 128,
+          "z": 10.80040324194972
+        },
+        "test": {
+          "accuracy": 0.9077,
+          "correct": 9077,
+          "n": 10000,
+          "loss": 0.30885143966674805,
+          "vs_W_star": {
+            "drop_pp": -0.04,
+            "ci95_pp": [
+              -0.2768220516521275,
+              0.19682205165212743
+            ],
+            "reference_only_right": 71,
+            "other_only_right": 75,
+            "mcnemar_exact_p": 0.8040203645137731
+          },
+          "vs_W": {
+            "drop_pp": 0.43,
+            "ci95_pp": [
+              -0.08514442240634759,
+              0.9451444224063476
+            ],
+            "reference_only_right": 367,
+            "other_only_right": 324,
+            "mcnemar_exact_p": 0.11003082751368945
+          }
+        },
+        "holdout": {
+          "accuracy": 0.9104,
+          "correct": 4552,
+          "n": 5000,
+          "loss": 0.3033847991943359,
+          "vs_W_star": {
+            "drop_pp": 0.1,
+            "ci95_pp": [
+              -0.2302873712240172,
+              0.43028737122401717
+            ],
+            "reference_only_right": 38,
+            "other_only_right": 33,
+            "mcnemar_exact_p": 0.6353076420876662
+          },
+          "vs_W": {
+            "drop_pp": -0.16,
+            "ci95_pp": [
+              -0.9221081979744018,
+              0.6021081979744017
+            ],
+            "reference_only_right": 185,
+            "other_only_right": 193,
+            "mcnemar_exact_p": 0.7188682514270516
+          }
+        },
+        "wrong_keys": {
+          "correlation": {
+            "count": 50,
+            "mean": -0.0002452537620002182,
+            "sd": 0.09684209149711462,
+            "min": -0.18302730193413966,
+            "max": 0.1567037572361722,
+            "max_abs": 0.18302730193413966
+          },
+          "z_max_abs": 2.0707175414385257
+        },
+        "gap_in_wrong_key_sd": 9.86012420314082,
+        "correct_above_every_wrong_key": true
+      },
+      {
+        "alpha": 0.2,
+        "embedding": {
+          "version": "weight-embedding/v1",
+          "alpha": 0.2,
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "delta_l2": 2.264020528303457,
+          "delta_rms": 0.004085854355236507,
+          "delta_max_abs": 0.019490647935785723,
+          "carrier_l2": 24.812374736047268,
+          "relative_l2": 0.0912456204772009,
+          "zero_fraction": 0.07092561229807191,
+          "float32_rounding_max_abs": 2.797619152658526e-08,
+          "tensors": [
+            {
+              "name": "features.0.weight",
+              "numel": 864,
+              "delta_rms": 0.004030174196603281,
+              "weight_rms": 0.19299925880427415,
+              "relative_rms": 0.02088181178296851,
+              "energy_share": 0.0027377933101263097,
+              "zero_fraction": 0.0763888888888889
+            },
+            {
+              "name": "features.3.weight",
+              "numel": 9216,
+              "delta_rms": 0.004080263488381446,
+              "weight_rms": 0.07112931916849381,
+              "relative_rms": 0.05736401720246983,
+              "energy_share": 0.02993354573512701,
+              "zero_fraction": 0.07183159722222222
+            },
+            {
+              "name": "features.7.weight",
+              "numel": 18432,
+              "delta_rms": 0.004068627128790723,
+              "weight_rms": 0.06662168601408265,
+              "relative_rms": 0.061070611871496115,
+              "energy_share": 0.05952611268220486,
+              "zero_fraction": 0.06949869791666667
+            },
+            {
+              "name": "features.10.weight",
+              "numel": 36864,
+              "delta_rms": 0.00410182813806758,
+              "weight_rms": 0.053204875942681716,
+              "relative_rms": 0.07709496668099614,
+              "energy_share": 0.12100314454826878,
+              "zero_fraction": 0.069091796875
+            },
+            {
+              "name": "features.14.weight",
+              "numel": 73728,
+              "delta_rms": 0.004101480915019834,
+              "weight_rms": 0.04484229886706298,
+              "relative_rms": 0.09146455508846366,
+              "energy_share": 0.2419653187770433,
+              "zero_fraction": 0.0707736545138889
+            },
+            {
+              "name": "features.17.weight",
+              "numel": 147456,
+              "delta_rms": 0.004077844584942948,
+              "weight_rms": 0.028727427133763018,
+              "relative_rms": 0.14194952321888596,
+              "energy_share": 0.47836904376189304,
+              "zero_fraction": 0.07143147786458333
+            },
+            {
+              "name": "classifier.2.weight",
+              "numel": 20480,
+              "delta_rms": 0.004078608531203714,
+              "weight_rms": 0.06278696928056997,
+              "relative_rms": 0.06495947452054958,
+              "energy_share": 0.06646504118533748,
+              "zero_fraction": 0.07177734375
+            }
+          ]
+        },
+        "detection": {
+          "version": "weight-extraction/v1",
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "centered": true,
+          "correlation": 0.9730846330351993,
+          "amplitude": 0.20621161783530134,
+          "projected_rms": 0.21191539855284308,
+          "bit_matches": 128,
+          "z": 11.009195883001802
+        },
+        "test": {
+          "accuracy": 0.9073,
+          "correct": 9073,
+          "n": 10000,
+          "loss": 0.3110595230102539,
+          "vs_W_star": {
+            "drop_pp": 0.0,
+            "ci95_pp": [
+              -0.27016239115241114,
+              0.27016239115241114
+            ],
+            "reference_only_right": 95,
+            "other_only_right": 95,
+            "mcnemar_exact_p": 1.0
+          },
+          "vs_W": {
+            "drop_pp": 0.47000000000000003,
+            "ci95_pp": [
+              -0.050324887962882855,
+              0.9903248879628828
+            ],
+            "reference_only_right": 376,
+            "other_only_right": 329,
+            "mcnemar_exact_p": 0.08311870585312064
+          }
+        },
+        "holdout": {
+          "accuracy": 0.9092,
+          "correct": 4546,
+          "n": 5000,
+          "loss": 0.3061651077270508,
+          "vs_W_star": {
+            "drop_pp": 0.22,
+            "ci95_pp": [
+              -0.1660199695890716,
+              0.6060199695890717
+            ],
+            "reference_only_right": 54,
+            "other_only_right": 43,
+            "mcnemar_exact_p": 0.30993353423900705
+          },
+          "vs_W": {
+            "drop_pp": -0.04,
+            "ci95_pp": [
+              -0.8200550287839485,
+              0.7400550287839486
+            ],
+            "reference_only_right": 197,
+            "other_only_right": 199,
+            "mcnemar_exact_p": 0.9599300968249602
+          }
+        },
+        "wrong_keys": {
+          "correlation": {
+            "count": 50,
+            "mean": -0.00036126827423736636,
+            "sd": 0.09659047768042081,
+            "min": -0.18399057385526857,
+            "max": 0.155043095215304,
+            "max_abs": 0.18399057385526857
+          },
+          "z_max_abs": 2.0816157191594353
+        },
+        "gap_in_wrong_key_sd": 10.07807316711052,
+        "correct_above_every_wrong_key": true
+      },
+      {
+        "alpha": 0.3,
+        "embedding": {
+          "version": "weight-embedding/v1",
+          "alpha": 0.3,
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "delta_l2": 3.396030792455203,
+          "delta_rms": 0.006128781532854792,
+          "delta_max_abs": 0.02923597190367858,
+          "carrier_l2": 24.812374736047268,
+          "relative_l2": 0.13686843071580207,
+          "zero_fraction": 0.07092561229807191,
+          "float32_rounding_max_abs": 2.4151761269727845e-08,
+          "tensors": [
+            {
+              "name": "features.0.weight",
+              "numel": 864,
+              "delta_rms": 0.0060452612949049205,
+              "weight_rms": 0.19299925880427415,
+              "relative_rms": 0.03132271767445276,
+              "energy_share": 0.002737793310126281,
+              "zero_fraction": 0.0763888888888889
+            },
+            {
+              "name": "features.3.weight",
+              "numel": 9216,
+              "delta_rms": 0.006120395232572168,
+              "weight_rms": 0.07112931916849381,
+              "relative_rms": 0.08604602580370473,
+              "energy_share": 0.029933545735126695,
+              "zero_fraction": 0.07183159722222222
+            },
+            {
+              "name": "features.7.weight",
+              "numel": 18432,
+              "delta_rms": 0.0061029406931860835,
+              "weight_rms": 0.06662168601408265,
+              "relative_rms": 0.09160591780724417,
+              "energy_share": 0.05952611268220425,
+              "zero_fraction": 0.06949869791666667
+            },
+            {
+              "name": "features.10.weight",
+              "numel": 36864,
+              "delta_rms": 0.006152742207101368,
+              "weight_rms": 0.053204875942681716,
+              "relative_rms": 0.11564245002149418,
+              "energy_share": 0.1210031445482675,
+              "zero_fraction": 0.069091796875
+            },
+            {
+              "name": "features.14.weight",
+              "numel": 73728,
+              "delta_rms": 0.0061522213725297495,
+              "weight_rms": 0.04484229886706298,
+              "relative_rms": 0.13719683263269547,
+              "energy_share": 0.24196531877704072,
+              "zero_fraction": 0.0707736545138889
+            },
+            {
+              "name": "features.17.weight",
+              "numel": 147456,
+              "delta_rms": 0.0061167668774144215,
+              "weight_rms": 0.028727427133763018,
+              "relative_rms": 0.21292428482832892,
+              "energy_share": 0.47836904376188805,
+              "zero_fraction": 0.07143147786458333
+            },
+            {
+              "name": "classifier.2.weight",
+              "numel": 20480,
+              "delta_rms": 0.006117912796805569,
+              "weight_rms": 0.06278696928056997,
+              "relative_rms": 0.09743921178082433,
+              "energy_share": 0.06646504118533678,
+              "zero_fraction": 0.07177734375
+            }
+          ]
+        },
+        "detection": {
+          "version": "weight-extraction/v1",
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "centered": true,
+          "correlation": 0.987372091048708,
+          "amplitude": 0.30632210488577943,
+          "projected_rms": 0.31023978463927254,
+          "bit_matches": 128,
+          "z": 11.170840018158124
+        },
+        "test": {
+          "accuracy": 0.9054,
+          "correct": 9054,
+          "n": 10000,
+          "loss": 0.3187845893859863,
+          "vs_W_star": {
+            "drop_pp": 0.19,
+            "ci95_pp": [
+              -0.13735734821601822,
+              0.5173573482160182
+            ],
+            "reference_only_right": 149,
+            "other_only_right": 130,
+            "mcnemar_exact_p": 0.2811755494416065
+          },
+          "vs_W": {
+            "drop_pp": 0.66,
+            "ci95_pp": [
+              0.13133104100930712,
+              1.1886689589906927
+            ],
+            "reference_only_right": 397,
+            "other_only_right": 331,
+            "mcnemar_exact_p": 0.015935543382553208
+          }
+        },
+        "holdout": {
+          "accuracy": 0.906,
+          "correct": 4530,
+          "n": 5000,
+          "loss": 0.31531891021728514,
+          "vs_W_star": {
+            "drop_pp": 0.54,
+            "ci95_pp": [
+              0.07808975270928399,
+              1.001910247290716
+            ],
+            "reference_only_right": 83,
+            "other_only_right": 56,
+            "mcnemar_exact_p": 0.027073529093989804
+          },
+          "vs_W": {
+            "drop_pp": 0.27999999999999997,
+            "ci95_pp": [
+              -0.5019846610900985,
+              1.0619846610900987
+            ],
+            "reference_only_right": 206,
+            "other_only_right": 192,
+            "mcnemar_exact_p": 0.5146901469190287
+          }
+        },
+        "wrong_keys": {
+          "correlation": {
+            "count": 50,
+            "mean": -0.000600891716562737,
+            "sd": 0.09610020607705644,
+            "min": -0.18561736502777526,
+            "max": 0.15496335226210417,
+            "max_abs": 0.18561736502777526
+          },
+          "z_max_abs": 2.100020760273898
+        },
+        "gap_in_wrong_key_sd": 10.280654153572575,
+        "correct_above_every_wrong_key": true
+      },
+      {
+        "alpha": 0.5,
+        "embedding": {
+          "version": "weight-embedding/v1",
+          "alpha": 0.5,
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "delta_l2": 5.660051320758615,
+          "delta_rms": 0.010214635888091218,
+          "delta_max_abs": 0.0487266198394643,
+          "carrier_l2": 24.812374736047268,
+          "relative_l2": 0.22811405119300118,
+          "zero_fraction": 0.07092561229807191,
+          "float32_rounding_max_abs": 2.032733101287043e-08,
+          "tensors": [
+            {
+              "name": "features.0.weight",
+              "numel": 864,
+              "delta_rms": 0.010075435491508201,
+              "weight_rms": 0.19299925880427415,
+              "relative_rms": 0.05220452945742127,
+              "energy_share": 0.0027377933101263353,
+              "zero_fraction": 0.0763888888888889
+            },
+            {
+              "name": "features.3.weight",
+              "numel": 9216,
+              "delta_rms": 0.010200658720953614,
+              "weight_rms": 0.07112931916849381,
+              "relative_rms": 0.14341004300617455,
+              "energy_share": 0.02993354573512729,
+              "zero_fraction": 0.07183159722222222
+            },
+            {
+              "name": "features.7.weight",
+              "numel": 18432,
+              "delta_rms": 0.010171567821976805,
+              "weight_rms": 0.06662168601408265,
+              "relative_rms": 0.15267652967874026,
+              "energy_share": 0.05952611268220543,
+              "zero_fraction": 0.06949869791666667
+            },
+            {
+              "name": "features.10.weight",
+              "numel": 36864,
+              "delta_rms": 0.010254570345168948,
+              "weight_rms": 0.053204875942681716,
+              "relative_rms": 0.1927374167024903,
+              "energy_share": 0.1210031445482699,
+              "zero_fraction": 0.069091796875
+            },
+            {
+              "name": "features.14.weight",
+              "numel": 73728,
+              "delta_rms": 0.010253702287549583,
+              "weight_rms": 0.04484229886706298,
+              "relative_rms": 0.22866138772115913,
+              "energy_share": 0.24196531877704555,
+              "zero_fraction": 0.0707736545138889
+            },
+            {
+              "name": "features.17.weight",
+              "numel": 147456,
+              "delta_rms": 0.01019461146235737,
+              "weight_rms": 0.028727427133763018,
+              "relative_rms": 0.3548738080472149,
+              "energy_share": 0.4783690437618976,
+              "zero_fraction": 0.07143147786458333
+            },
+            {
+              "name": "classifier.2.weight",
+              "numel": 20480,
+              "delta_rms": 0.010196521328009283,
+              "weight_rms": 0.06278696928056997,
+              "relative_rms": 0.1623986863013739,
+              "energy_share": 0.0664650411853381,
+              "zero_fraction": 0.07177734375
+            }
+          ]
+        },
+        "detection": {
+          "version": "weight-extraction/v1",
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "centered": true,
+          "correlation": 0.9951574926801035,
+          "amplitude": 0.5065430841537917,
+          "projected_rms": 0.509007958920751,
+          "bit_matches": 128,
+          "z": 11.258921782763252
+        },
+        "test": {
+          "accuracy": 0.8951,
+          "correct": 8951,
+          "n": 10000,
+          "loss": 0.3508973266601563,
+          "vs_W_star": {
+            "drop_pp": 1.22,
+            "ci95_pp": [
+              0.7921566070414233,
+              1.647843392958577
+            ],
+            "reference_only_right": 300,
+            "other_only_right": 178,
+            "mcnemar_exact_p": 2.641388526830481e-08
+          },
+          "vs_W": {
+            "drop_pp": 1.69,
+            "ci95_pp": [
+              1.1218998155864264,
+              2.2581001844135735
+            ],
+            "reference_only_right": 506,
+            "other_only_right": 337,
+            "mcnemar_exact_p": 6.43362004272934e-09
+          }
+        },
+        "holdout": {
+          "accuracy": 0.894,
+          "correct": 4470,
+          "n": 5000,
+          "loss": 0.3483850830078125,
+          "vs_W_star": {
+            "drop_pp": 1.7399999999999998,
+            "ci95_pp": [
+              1.1384651165088624,
+              2.3415348834911374
+            ],
+            "reference_only_right": 162,
+            "other_only_right": 75,
+            "mcnemar_exact_p": 1.61702359822795e-08
+          },
+          "vs_W": {
+            "drop_pp": 1.48,
+            "ci95_pp": [
+              0.6476221479992827,
+              2.312377852000717
+            ],
+            "reference_only_right": 263,
+            "other_only_right": 189,
+            "mcnemar_exact_p": 0.0005805838814947551
+          }
+        },
+        "wrong_keys": {
+          "correlation": {
+            "count": 50,
+            "mean": -0.0011127651379649285,
+            "sd": 0.09519502918480334,
+            "min": -0.18772532361211935,
+            "max": 0.156237824935819,
+            "max_abs": 0.18772532361211935
+          },
+          "z_max_abs": 2.1238695892250994
+        },
+        "gap_in_wrong_key_sd": 10.465570170518001,
+        "correct_above_every_wrong_key": true
+      }
+    ],
+    "baseline_W": {
+      "test": {
+        "accuracy": 0.912,
+        "correct": 9120
+      },
+      "holdout": {
+        "accuracy": 0.9088,
+        "correct": 4544
+      }
+    },
+    "p3_4_cross_check": [
+      {
+        "alpha": 0.0,
+        "p3_4": 0.12263756066325872,
+        "here": 0.12263756066325872
+      },
+      {
+        "alpha": 0.005,
+        "p3_4": 0.22118223993345487,
+        "here": 0.22118223993345487
+      },
+      {
+        "alpha": 0.01,
+        "p3_4": 0.3133843757403552,
+        "here": 0.3133843757403552
+      },
+      {
+        "alpha": 0.02,
+        "p3_4": 0.4726617718270258,
+        "here": 0.4726617718270258
+      },
+      {
+        "alpha": 0.05,
+        "p3_4": 0.7559457581995304,
+        "here": 0.7559457581995304
+      },
+      {
+        "alpha": 0.1,
+        "p3_4": 0.9091209522245879,
+        "here": 0.9091209522245879
+      }
+    ],
+    "z_cap": 11.313708498984761
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 457.3876012999972,
+  "notes": "One host, one key, post-hoc embedding without BN recalibration. Paired intervals cover image sampling, not training-seed or key-to-key variation. z is a scale, not a p-value (P3.7). No alpha selected (P3.6). Aggregates only; S, P_K, fingerprints and watermarked weights are not in this file."
+}
