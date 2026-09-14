@@ -240,6 +240,7 @@ def build_record(
     notes: str | None = None,
     duration_seconds: float | None = None,
     seeded_backends: dict[str, bool] | None = None,
+    git: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Assemble a result record without writing it.
 
@@ -253,6 +254,10 @@ def build_record(
         notes: free text. Caveats belong here, not in a README.
         duration_seconds: wall clock time of the run.
         seeded_backends: the return value of `set_seed`.
+        git: a `git_info()` snapshot taken at the start of the run. A run that
+            writes several records passes it, so a record it has just written,
+            still untracked, cannot mark its own later records dirty. Default:
+            read git now.
 
     Returns:
         A JSON-safe dict.
@@ -265,7 +270,7 @@ def build_record(
         "name": name,
         "task": task,
         "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "git": git_info(),
+        "git": dict(git) if git is not None else git_info(),
         "seed": seed,
         "seeded_backends": _json_safe(seeded_backends) if seeded_backends else None,
         "params": _json_safe(params or {}),
@@ -289,6 +294,7 @@ def write_result(
     out_dir: Path | str | None = None,
     subdir: str | None = None,
     filename: str | None = None,
+    git: dict[str, Any] | None = None,
 ) -> Path:
     """Build a record and write it to a JSON file. Returns the path written.
 
@@ -321,6 +327,7 @@ def write_result(
         notes=notes,
         duration_seconds=duration_seconds,
         seeded_backends=seeded_backends,
+        git=git,
     )
 
     if record["git"]["dirty"]:

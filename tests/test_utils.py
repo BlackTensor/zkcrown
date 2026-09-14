@@ -83,6 +83,18 @@ def test_git_info_has_a_consistent_shape():
         assert info["source"] in {"handoff", None}
 
 
+def test_a_git_snapshot_is_used_instead_of_reading_git_again(tmp_path, monkeypatch):
+    """A run writing several records passes one snapshot, so its own earlier files cannot mark later ones dirty."""
+    snapshot = {"commit": "abc", "branch": "b", "dirty": False, "available": True, "source": "git"}
+
+    def must_not_run(*a):
+        raise AssertionError("git was read despite a snapshot")
+
+    monkeypatch.setattr("src.utils.results._run_git", must_not_run)
+    record = read_result(write_result("snap", seed=1, out_dir=tmp_path, git=snapshot))
+    assert record["git"] == snapshot
+
+
 def test_records_are_writable_without_git(tmp_path, monkeypatch):
     """No git binary must not stop a result from being saved."""
     monkeypatch.setattr("src.utils.results._run_git", lambda *a: None)

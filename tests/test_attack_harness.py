@@ -360,9 +360,15 @@ def test_read_configs_inline_and_file(script, tmp_path):
     assert script.read_configs(_args(attack="none", strength=0.0))[0] == AttackConfig("none", 0)
     path = tmp_path / "c.json"
     path.write_text(json.dumps({"attack": "none", "strengths": [0]}), encoding="utf-8")
-    assert len(script.read_configs(_args(config=path))) == 1
+    assert len(script.read_configs(_args(config=[path]))) == 1
+    other = tmp_path / "d.json"
+    other.write_text(json.dumps({"attack": "magnitude_prune_global", "strengths": [0.1, 0.2]}), encoding="utf-8")
+    assert [c.attack for c in script.read_configs(_args(config=[path, other]))] == ["none", "magnitude_prune_global",
+                                                                                    "magnitude_prune_global"]
     with pytest.raises(SystemExit):
-        script.read_configs(_args(config=path, attack="none"))
+        script.read_configs(_args(config=[path, path]))
+    with pytest.raises(SystemExit):
+        script.read_configs(_args(config=[path], attack="none"))
     with pytest.raises(SystemExit):
         script.read_configs(_args(attack="none"))
 

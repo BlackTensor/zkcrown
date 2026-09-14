@@ -68,7 +68,7 @@ from src.attacks.harness import (
     load_model,
 )
 from src.utils.artifacts import require_mounted_drive
-from src.utils.results import read_result, repo_root, write_result
+from src.utils.results import git_info, read_result, repo_root, write_result
 from src.utils.seeding import DEFAULT_SEED, set_seed
 from src.watermark.signature import PROJECT_OWNER_ID
 
@@ -88,10 +88,14 @@ APPLY_RECORD_KIND = "attack-apply/v1"
 
 
 def read_configs(args) -> list[AttackConfig]:
-    if args.config is not None:
+    if args.config:
         if args.attack is not None or args.strength is not None or args.params is not None:
             raise SystemExit("give either --config or --attack/--strength/--params, not both")
-        return expand_config(json.loads(Path(args.config).read_text(encoding="utf-8")))
+        configs = [c for path in args.config for c in expand_config(json.loads(Path(path).read_text(encoding="utf-8")))]
+        keys = [(c.attack, c.strength, json.dumps(c.params, sort_keys=True)) for c in configs]
+        if len(set(keys)) != len(keys):
+            raise SystemExit("the configs repeat an attack at the same strength")
+        return configs
     if args.attack is None or args.strength is None:
         raise SystemExit("need --config, or --attack and --strength")
     params = json.loads(args.params) if args.params else {}
@@ -173,7 +177,8 @@ class Scorer:
         return row
 
 
-def write_row(row: dict, *, task: str, seed: int, out_dir: Path, backends: dict, started: float, extra_params: dict) -> Path:
+def write_row(row: dict, *, task: str, seed: int, out_dir: Path, backends: dict, started: float, extra_params: dict,
+              git: dict | None = None) -> Path:
     t = row["table"]
     return write_result(
         name=f"{task_slug(task)}_{row['config']['attack']}_{row['config']['strength']:g}",
@@ -194,6 +199,7 @@ def write_row(row: dict, *, task: str, seed: int, out_dir: Path, backends: dict,
         seeded_backends=backends,
         duration_seconds=time.perf_counter() - started,
         out_dir=out_dir,
+        git=git,
         notes=(
             f"One attack row. Behavioral and weight tests reported separately at alpha {t['detection_alpha']}; "
             "combining them is P9.3. p-values assume K was committed before the suspect was seen and a per-suspect "
@@ -226,7 +232,7 @@ def mode_run(args, backends, started) -> list[Path]:
         attacked = {"arch": output.arch, "info": output.info, "applied_in": "run"}
         row = scorer.row(config, output.state_dict, output.arch, source=source, attacked=attacked)
         path = write_row(row, task=args.task, seed=args.seed, out_dir=args.out_dir, backends=backends, started=started,
-                         extra_params={"mode": "run", "device": str(device)})
+                         extra_params={"mode": "run", "device": str(device)}, git=args.git)
         print_row(row, path)
         paths.append(path)
     return paths
@@ -258,6 +264,7 @@ def mode_apply(args, backends, started) -> list[Path]:
             seeded_backends=backends,
             duration_seconds=time.perf_counter() - started,
             out_dir=args.out_dir,
+            git=args.git,
             notes="Attacked weights only, not scored. Score locally with run_attack_suite.py evaluate.",
         )
         print(f"applied {config.label()}: {weights} sha256 {weights_sha256}  record {path}")
@@ -302,7 +309,7 @@ def mode_evaluate(args, backends, started) -> list[Path]:
         }
         row = scorer.row(config, attacked_state, arch, source=source, attacked=attacked)
         path = write_row(row, task=record["task"] or args.task, seed=record["seed"], out_dir=args.out_dir, backends=backends,
-                         started=started, extra_params={"mode": "evaluate", "device": str(device)})
+                         started=started, extra_params={"mode": "evaluate", "device": str(device)}, git=args.git)
         print_row(row, path)
         paths.append(path)
     return paths
@@ -311,7 +318,7 @@ def mode_evaluate(args, backends, started) -> list[Path]:
 def main(argv: list[str] | None = None) -> list[Path]:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("mode", choices=("run", "apply", "evaluate"))
-    parser.add_argument("--config", type=Path, default=None, help="JSON attack config")
+    parser.add_argument("--config", type=Path, nargs="+", default=None, help="one or more JSON attack configs")
     parser.add_argument("--attack", default=None, help=f"registered: {', '.join(available_attacks())}")
     parser.add_argument("--strength", type=float, default=None)
     parser.add_argument("--params", default=None, help="JSON object of attack params")
@@ -329,6 +336,9 @@ def main(argv: list[str] | None = None) -> list[Path]:
     if args.mode == "evaluate" and not args.applied:
         parser.error("evaluate needs --applied")
 
+    # One git snapshot for the whole invocation: rows written earlier in this run
+    # are untracked files and must not mark the later rows dirty.
+    args.git = git_info()
     backends = set_seed(args.seed)
     started = time.perf_counter()
     return {"run": mode_run, "apply": mode_apply, "evaluate": mode_evaluate}[args.mode](args, backends, started)
