@@ -1399,3 +1399,17 @@ Append one line per session: date, tasks touched, key outcome.
     - INT8: 90.77% (drop +0.08 pp, p = 0.40), 100/100, z 10.67.
     - Neither watermark is affected. Fusion raised the blind weight correlation (0.909 → 0.943); not investigated.
   - 27 new tests, 626 in total, all pass.
+- 2026-09-14: Icebox line added for the unexplained fusion correlation increase (P4.4). P4.5 HANDED OFF, not done.
+  - Owner decision: grid LR 0.001 / 0.01 / 0.05 / 0.1 x epochs 5 / 20 / 60, 12 runs from the dual `W*`. 0.1 is the aggressive setting, the peak LR `W*` was trained with.
+  - `src/attacks/finetune.py` (`finetune_holdout`):
+    - P0.5 recipe (SGD Nesterov, wd 5e-4, augmentation, 1-epoch warmup, cosine) on the 5,000-image attacker holdout only.
+    - Monitored on the holdout, final-epoch weights, no key and no test set.
+    - Uses `fit`, so it checkpoints every epoch; a checkpoint from other starting weights is refused.
+  - Harness additions:
+    - `AttackConfig.tag`, so labels and files differ per LR.
+    - `AttackContext.work_dir` and `smoke`.
+    - `apply` checkpoints under `<out>/checkpoints/<run>/`, skips configs already complete (weights hash checked), and has a `--smoke` path.
+    - `attacker_holdout_loaders` in `src/data/cifar10.py`.
+  - Colab runs `apply` only (no `K`); the weights come back and are scored locally with `evaluate`.
+  - Handoff bug found by testing the extracted zip: 11 tests read committed `results/` records the zip did not ship. `build_handoff.py` now ships git-tracked `results/` files (JSON only, never weights). The extracted zip then passed 650 tests (3 skipped, need CIFAR-10), and its section 6 smoke command ran all 12 configs on CPU.
+  - Estimated ~45 min on a T4 (not measured). 27 new tests, 653 in total, all pass. Checkbox stays `[ ]`.
