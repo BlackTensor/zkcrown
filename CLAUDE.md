@@ -441,7 +441,34 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - Unlike P4.2, the weight z does fall steadily, as whole carrier slices go to zero.
   - Limits: one source model, one key, one criterion (L1, layer-wise), one deterministic pruning per point, no recovery training. Global and BN-scale criteria were not run.
   - 25 new tests, 599 in total, all pass.
-- [ ] **P4.4** `[GPU]` Post-training quantization, FP32 to INT8. Also try FP16.
+- [x] **P4.4** `[GPU]` Post-training quantization, FP32 to INT8. Also try FP16.
+  - **Owner decisions:**
+    - Local CPU run.
+    - INT8 is simulated in plain PyTorch, not run on a quantized backend.
+    - Scope is the task only: FP16, INT8, plus a fused-FP32 control.
+    - Weight extraction reads the shipped fused weights; fusion is not undone.
+  - **Why simulated:** the eager `torch.ao.quantization` API warns it is deprecated and slated for removal. The only local engine is oneDNN on ARM, whose full-range kernels saturated on a seeded untrained model in an exploratory check (not a ledger number).
+  - **Attacks** (`src/attacks/quantize.py`); strength is the bit width:
+    - `ptq_fp16` (16): every floating tensor cast to float16, no fusion. Inference is float32 on the rounded values, so activations are not float16.
+    - `ptq_fused_fp32` (32): conv-BN-ReLU fusion with no rounding, the control separating fusion from quantization.
+    - `ptq_int8_static` (8): fusion, then the eager static PTQ recipe:
+      - qint8 per-channel symmetric weights;
+      - quint8 per-tensor affine activations with min/max calibration and full 8-bit range;
+      - int32 biases;
+      - calibrated on 1,000 attacker-holdout images chosen by the run seed.
+  - **Simulation runs on integer codes:** convolution sums are exact in float64, then requantized, so results do not depend on batch size.
+    - My first float32 version did depend on batch size; a test caught that before any run.
+    - Tests check it against an independent float64 dequantized reference (same codes).
+    - They also check it against `torch.ao`'s converted INT8 model, with 7-bit activations so the kernels cannot saturate: identical qparams, logits within 6 steps, same top-1. That comparison is on a seeded model only.
+  - **Harness extension:** `AttackOutput.runtime_model` (optional). Accuracy and the behavioral test are scored on it, while weight extraction still reads the `state_dict`. `apply` mode refuses such attacks. The `none` control re-run after the change (scratch dir, not committed) still reproduced P3.6 exactly.
+  - **Run** (CPU, clean tree at `ab853c5`), test accuracy vs the dual `W*` (90.85%):
+    - Fused FP32: 90.85%, 0 discordant images. Fired 100/100. Weight correlation +0.943, z 10.67, 128/128 bits.
+    - FP16: 90.85% (1 image lost, 1 gained). Fired 100/100. Weight correlation +0.9091, z 10.29, the same to 6 decimals.
+    - INT8: 90.77%, drop +0.08 pp, CI [-0.08, +0.24], p = 0.40. Fired 100/100, mean target probability 0.9994. Weight correlation +0.943, z 10.67, 128/128 bits.
+  - **Reading:** neither quantization removes either watermark or costs measurable accuracy. Both watermarks are detected at 1e-6 in every row.
+    - Fusion moves the carrier by 153% of its L2 norm (BN scales -0.09 to 5.2), yet the blind correlation rose from 0.909 to 0.943 and INT8 rounding then barely changed it. Why it rose is not investigated. It is one model; a model with different BN statistics could go the other way.
+  - Limits: one model, one key, one calibration draw; INT8 simulated rather than run on a real backend; FP16 activations not rounded.
+  - 27 new tests, 626 in total, all pass.
 - [ ] **P4.5** `[GPU]` Fine-tuning on a held-out data split, sweeping epochs and learning rate. Include an aggressive high-learning-rate run, since that is the realistic removal attack.
 - [ ] **P4.6** `[GPU]` Combined attack: prune then fine-tune. This is the strongest realistic threat and the most interesting result.
 - [ ] **P4.7** `[GPU]` Knowledge distillation to a student model. Test whether either watermark transfers. **Expect the behavioral watermark to largely NOT survive distillation.** That is a real finding, not a failure. Report it prominently and honestly.
@@ -1014,7 +1041,9 @@ the behavioral one is P9.
 | Magnitude prune, layer-wise (P4.2) | 10% → 60% → 90% | 90.83% → 74.23% → 11.63% | 100% → 71% → 15% | +0.908 → +0.897 → +0.828 | behavioral detected up to 60%; weight detected at all 9 |
 | Magnitude prune, global (P4.2) | 10% → 80% → 90% | 90.86% → 49.27% → 18.28% | 100% → 42% → 12% | +0.908 → +0.821 → +0.723 | behavioral detected up to 80%; weight detected at all 9 |
 | Structured prune, L1 filters, zero-masked (P4.3) | 5% → 10% → 20% → 70% → 90% of channels | 86.02% → 74.74% → 46.92% → 11.00% → 10.00% | 94% → 70% → 19% → 12% → 10% | +0.892 → +0.875 → +0.848 → +0.484 → +0.184 | behavioral detected up to 10%; weight detected up to 70% (assumes channel re-alignment; chance accuracy from 60%) |
-| Quantize INT8 | TBD | TBD | TBD | TBD | TBD |
+| Quantize FP16 (P4.4) | 16 bits | 90.85% | 100% (100/100), p = 3.8e-96 | +0.909 (z 10.29), p ≤ 1.1e-23 | both detected |
+| Conv-BN fusion, FP32 control (P4.4) | 32 bits, fused | 90.85% | 100% (100/100), p = 3.8e-96 | +0.943 (z 10.67), p ≤ 1.9e-25 | both detected |
+| Quantize INT8, static, simulated (P4.4) | 8 bits, fused | 90.77% | 100% (100/100), p = 3.8e-96 | +0.943 (z 10.67), p ≤ 1.9e-25 | both detected |
 | Fine-tune | TBD | TBD | TBD | TBD | TBD |
 | Prune + fine-tune | TBD | TBD | TBD | TBD | TBD |
 | Distillation | TBD | TBD | TBD | TBD | TBD |
@@ -1167,6 +1196,73 @@ layer), a single deterministic pruning per point, no fine-tuning after pruning
 (P4.6), no BN recalibration. Global or BN-scale channel criteria were not run.
 Intervals cover test-image sampling only.
 
+Post-training quantization from `experiments/run_attack_suite.py run --config
+experiments/configs/p4.4_ptq_fused_fp32.json experiments/configs/p4.4_ptq_fp16.json
+experiments/configs/p4.4_ptq_int8_static.json --task P4.4` (P4.4), result files
+`results/attacks/p4.4_ptq_fused_fp32_32__…T160757`, `p4.4_ptq_fp16_16__…T160812`
+and `p4.4_ptq_int8_static_8__…T160859` (all `seed1337`, `+0000.json`), CPU,
+seed 1337, commit `ab853c5`, clean tree.
+- **Source:** the dual `W*` (P3.6), loaded by hash, with the trigger bundle
+  digest matched to P2.3. No retraining in any row.
+- **FP16:** every floating tensor, including BN statistics, cast to float16 and
+  scored in `main_model` in float32. Activations are not rounded to float16.
+- **Fused FP32:** each conv-BN-ReLU fused (`W_f = W·gamma/sqrt(var+eps)`,
+  `b_f = beta - mean·gamma/sqrt(var+eps)`), no rounding.
+- **INT8:** the fused model, simulated static PTQ. Weights are qint8,
+  per-channel symmetric (`scale = max|W_c|/127.5`). Activations (input, every
+  conv-ReLU output, the logits) are quint8, per-tensor affine, with min/max
+  from 1,000 attacker-holdout images (index digest `2f95da01…9223fb`) and the
+  full [0, 255] range. Biases are int32. Inference runs on integer codes with
+  exact sums. It is simulated, not run on an integer backend.
+- **Weight extraction** reads the weights as shipped: fused, and for INT8
+  dequantized. Fusion is not undone with the owner's BN statistics.
+- **Scoring:** accuracy and the behavioral test run on the fused runtime for
+  the fused and INT8 rows. Otherwise as P4.2, detected means p ≤ 1e-6.
+
+| Row | Test acc | Correct | Drop pp (95% CI) | Only source right / only attacked right | McNemar p | Test loss | Fired /100 | Mean / min target prob | Behav. p | Weight corr | z | Bits /128 | Amplitude | Weight p ≤ |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| dual `W*` (P4.1 control) | 90.85% | 9,085 | 0 | 0 / 0 | 1 | 0.3078 | 100 | 0.9994 / 0.9932 | 3.8e-96 | +0.9091 | 10.29 | 126 | 0.1061 | 1.1e-23 |
+| FP16 | 90.85% | 9,085 | +0.00 [-0.03, +0.03] | 1 / 1 | 1 | 0.3078 | 100 | 0.9994 / 0.9932 | 3.8e-96 | +0.9091 | 10.29 | 126 | 0.1061 | 1.1e-23 |
+| fused FP32 | 90.85% | 9,085 | 0 | 0 / 0 | 1 | 0.3078 | 100 | 0.9994 / 0.9932 | 3.8e-96 | +0.9431 | 10.67 | 128 | 0.2786 | 1.9e-25 |
+| INT8 static | 90.77% | 9,077 | +0.08 [-0.08, +0.24] | 39 / 31 | 0.40 | 0.3090 | 100 | 0.9994 / 0.9937 | 3.8e-96 | +0.9431 | 10.67 | 128 | 0.2786 | 1.9e-25 |
+
+What each conversion does to the carrier weights:
+- **FP16:** largest rounding change 2.4e-4, change 0.021% of the carrier L2
+  norm, no weight underflowed to zero. The weight correlation is unchanged to
+  6 decimals (0.909120).
+- **Fusion:** the carrier changes by 153% of its L2 norm. The per-channel BN
+  scale ranges, by conv layer, are 0.21–0.88, 0.54–1.40, 0.52–0.89,
+  0.85–1.41, 0.64–2.20 and -0.09–5.21. The last conv has one channel with a
+  negative scale.
+- **INT8 on top of fusion:**
+  - Weight rounding error is 0.56% to 1.03% of each tensor's norm, and 1.37%
+    of carrier weights round to 0.
+  - The correlation moves from 0.943058 to 0.943050.
+  - Input qparams: scale 0.0161, zero point 123. Logit range [-17.8, 46.9],
+    scale 0.254, zero point 70.
+  - On the attacker's own 1,000 calibration images, INT8 top-1 agrees with the
+    fused FP32 model on 99.4%.
+
+How to read it:
+- **Accuracy.** Neither conversion has a measurable cost. Fusion is exact (no
+  discordant images). FP16 swaps one image each way. INT8 loses 0.08 pp, not
+  distinguishable from zero (p = 0.40).
+- **Behavioral watermark.** Unaffected: 100/100 in every row, and the target
+  probabilities barely move.
+- **Weight watermark.** Unaffected by FP16 and by INT8 rounding. Conv-BN
+  fusion rescales every channel and changes the carrier by more than its own
+  norm, yet the blind correlation went up (0.909 → 0.943, z 10.29 → 10.67)
+  rather than down, with all 128 bits recovered. Why is not investigated. It is
+  one model and one set of BN statistics, so it is not a claim that fusion
+  helps the watermark in general. The P3.7 bound applies unchanged, because it
+  holds for any model independent of `K`.
+
+Limits: one source model, one key, one calibration draw of 1,000 images;
+min/max observers only (no histogram/percentile calibration); INT8 simulated,
+not run on a real integer backend (the tests compare it with `torch.ao` on a
+seeded model only); FP16 activations computed in float32; lower bit widths not
+run. Intervals cover test-image sampling only.
+
 ## 8.5 ZK measurements
 
 | Metric | Track A (Circom) | Track B (EZKL) |
@@ -1291,3 +1387,14 @@ Append one line per session: date, tasks touched, key outcome.
     - Behavioral watermark detected at 1e-6 only at 5% and 10%. Lost from 20% (46.9% accuracy).
     - Weight watermark detected up to 70% and lost at 80% and 90%. This assumes the owner can re-align physically deleted channels (not implemented), and the model is near chance from 40%.
   - 25 new tests, 599 in total, all pass.
+- 2026-09-14: P4.4. The owner chose local CPU, simulated INT8, task scope only (FP16, INT8, fused-FP32 control), and extraction from the shipped fused weights.
+  - Local oneDNN on ARM saturated with full-range activations in an exploratory check, and `torch.ao` eager is deprecated. So `src/attacks/quantize.py` simulates static PTQ on integer codes with exact sums: fusion, per-channel qint8 weights, min/max-calibrated quint8 activations, int32 biases.
+    - My first float32 simulation depended on batch size; a test caught it and it was replaced before any run.
+    - Tests match `torch.ao`'s converted INT8 model with 7-bit activations on a seeded model.
+  - Harness: optional `AttackOutput.runtime_model` scores accuracy and the behavioral test; weights are still extracted from the `state_dict`; `apply` refuses these attacks. The control re-run reproduced P3.6.
+  - Rows from a clean tree at `ab853c5`:
+    - FP16: 90.85%, 100/100, z 10.29.
+    - Fused FP32: 90.85%, 100/100, z 10.67.
+    - INT8: 90.77% (drop +0.08 pp, p = 0.40), 100/100, z 10.67.
+    - Neither watermark is affected. Fusion raised the blind weight correlation (0.909 → 0.943); not investigated.
+  - 27 new tests, 626 in total, all pass.

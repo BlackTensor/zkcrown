@@ -1,0 +1,321 @@
+{
+  "schema_version": 1,
+  "name": "p4.4_ptq_int8_static_8",
+  "task": "P4.4",
+  "timestamp_utc": "2026-09-14T16:08:59+00:00",
+  "git": {
+    "commit": "ab853c5ed4c72cf3eac786f010065a50c5cc1c84",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "harness": "experiments/run_attack_suite.py (P4.1)",
+    "config": {
+      "attack": "ptq_int8_static",
+      "strength": 8.0,
+      "params": {
+        "calibration_images": 1000
+      }
+    },
+    "source": {
+      "name": "dual",
+      "task": "P3.6",
+      "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+      "arch": {
+        "width": 32
+      }
+    },
+    "owner_id": "blacktensor-zkcrown-owner",
+    "accuracy": "eval-mode top-1 on the 10,000-image CIFAR-10 test set; paired drop vs source (P2.5 method)",
+    "behavioral": "P2.4 WDR on the N = 100 owner triggers regenerated from K; P2.8 exact binomial p-value",
+    "weight": "P3.3 blind centred extraction with K; P3.7 bound exp(-z^2/2); not attempted if the carrier layout is gone",
+    "detection_alpha": "1e-6",
+    "mode": "run",
+    "device": "cpu"
+  },
+  "metrics": {
+    "row": {
+      "row_version": "attack-row/v1",
+      "table": {
+        "attack": "ptq_int8_static",
+        "strength": 8.0,
+        "strength_meaning": "bit width; must be 8",
+        "clean_accuracy": 0.9077,
+        "accuracy_drop_vs_source_pp": 0.08,
+        "behavioral_wdr": 1.0,
+        "behavioral_p_value": 3.764861949599026e-96,
+        "behavioral_detected": true,
+        "weight_correlation": 0.943050291574556,
+        "weight_z": 10.669396098757112,
+        "weight_p_value": 1.9090786982778142e-25,
+        "weight_detected": true,
+        "weight_applicable": true,
+        "detection_alpha": "1e-6"
+      },
+      "config": {
+        "attack": "ptq_int8_static",
+        "strength": 8.0,
+        "params": {
+          "calibration_images": 1000
+        }
+      },
+      "attack": {
+        "name": "ptq_int8_static",
+        "strength_meaning": "bit width; must be 8",
+        "description": "Simulated static INT8 PTQ (fused, per-channel weights, calibrated activations), no retraining (P4.4)."
+      },
+      "source": {
+        "name": "dual",
+        "task": "P3.6",
+        "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+        "arch": {
+          "width": 32
+        }
+      },
+      "attacked": {
+        "arch": {
+          "width": 32
+        },
+        "info": {
+          "version": "ptq/v1",
+          "bits": 8,
+          "scheme": "simulated static PTQ: conv-BN-ReLU fusion; qint8 per-channel symmetric weights; quint8 per-tensor affine activations, min/max calibration, no reduced range; int32 biases",
+          "calibration_images": 1000,
+          "calibration_top1_agreement_with_fused_fp32": 0.994,
+          "input_qparams": [
+            0.016141029074788094,
+            123
+          ],
+          "activation_range": [
+            0,
+            255
+          ],
+          "per_layer": {
+            "features.0": {
+              "weight_scale_min": 0.0004329907242208719,
+              "weight_scale_max": 0.005908606108278036,
+              "weight_rounding_rel_error": 0.005574002759666318,
+              "int8_zero_fraction": 0.013888888888888888,
+              "bias_rounding_max_abs": 2.968311309814453e-05,
+              "input_scale": 0.016141029074788094,
+              "input_zero_point": 123,
+              "output_scale": 0.02007250115275383,
+              "output_zero_point": 0,
+              "output_range": [
+                0.0,
+                5.11848783493042
+              ],
+              "bn_scale_min": 0.20668082883520497,
+              "bn_scale_max": 0.8829003831895785,
+              "bn_scale_negative": 0
+            },
+            "features.3": {
+              "weight_scale_min": 0.0009699111105874181,
+              "weight_scale_max": 0.0032062940299510956,
+              "weight_rounding_rel_error": 0.009171956593362224,
+              "int8_zero_fraction": 0.017795138888888888,
+              "bias_rounding_max_abs": 2.8908252716064453e-05,
+              "input_scale": 0.02007250115275383,
+              "input_zero_point": 0,
+              "output_scale": 0.02387864887714386,
+              "output_zero_point": 0,
+              "output_range": [
+                0.0,
+                6.08905553817749
+              ],
+              "bn_scale_min": 0.5440868651568435,
+              "bn_scale_max": 1.397073846708526,
+              "bn_scale_negative": 0
+            },
+            "features.7": {
+              "weight_scale_min": 0.0006821751012466848,
+              "weight_scale_max": 0.002123225247487426,
+              "weight_rounding_rel_error": 0.008146883365706487,
+              "int8_zero_fraction": 0.012315538194444444,
+              "bias_rounding_max_abs": 2.034008502960205e-05,
+              "input_scale": 0.02387864887714386,
+              "input_zero_point": 0,
+              "output_scale": 0.0145083824172616,
+              "output_zero_point": 0,
+              "output_range": [
+                0.0,
+                3.6996374130249023
+              ],
+              "bn_scale_min": 0.5239225056554018,
+              "bn_scale_max": 0.8862335245696293,
+              "bn_scale_negative": 0
+            },
+            "features.10": {
+              "weight_scale_min": 0.0008505806908942759,
+              "weight_scale_max": 0.0029781190678477287,
+              "weight_rounding_rel_error": 0.008104565693549394,
+              "int8_zero_fraction": 0.011827256944444444,
+              "bias_rounding_max_abs": 1.5288591384887695e-05,
+              "input_scale": 0.0145083824172616,
+              "input_zero_point": 0,
+              "output_scale": 0.012606141157448292,
+              "output_zero_point": 0,
+              "output_range": [
+                0.0,
+                3.2145659923553467
+              ],
+              "bn_scale_min": 0.8457235371603818,
+              "bn_scale_max": 1.406288190841744,
+              "bn_scale_negative": 0
+            },
+            "features.14": {
+              "weight_scale_min": 0.0007786295027472079,
+              "weight_scale_max": 0.0028770710341632366,
+              "weight_rounding_rel_error": 0.008402943490238988,
+              "int8_zero_fraction": 0.011433919270833334,
+              "bias_rounding_max_abs": 1.52587890625e-05,
+              "input_scale": 0.012606141157448292,
+              "input_zero_point": 0,
+              "output_scale": 0.010288241319358349,
+              "output_zero_point": 0,
+              "output_range": [
+                0.0,
+                2.6235015392303467
+              ],
+              "bn_scale_min": 0.6408513292755014,
+              "bn_scale_max": 2.2044710800084335,
+              "bn_scale_negative": 0
+            },
+            "features.17": {
+              "weight_scale_min": 1.153452444668801e-06,
+              "weight_scale_max": 0.00996213685721159,
+              "weight_rounding_rel_error": 0.010252058636040699,
+              "int8_zero_fraction": 0.013502332899305556,
+              "bias_rounding_max_abs": 3.337860107421875e-05,
+              "input_scale": 0.010288241319358349,
+              "input_zero_point": 0,
+              "output_scale": 0.02761666104197502,
+              "output_zero_point": 0,
+              "output_range": [
+                0.0,
+                7.042248725891113
+              ],
+              "bn_scale_min": -0.08649878847768022,
+              "bn_scale_max": 5.206622098494581,
+              "bn_scale_negative": 1
+            },
+            "classifier.2": {
+              "weight_scale_min": 0.00188246404286474,
+              "weight_scale_max": 0.002534968312829733,
+              "weight_rounding_rel_error": 0.01019656102797554,
+              "int8_zero_fraction": 0.025830078125,
+              "bias_rounding_max_abs": 3.065168857574463e-05,
+              "input_scale": 0.02761666104197502,
+              "input_zero_point": 0,
+              "output_scale": 0.2536001205444336,
+              "output_zero_point": 70,
+              "output_range": [
+                -17.771970748901367,
+                46.89605712890625
+              ]
+            }
+          },
+          "carrier_rel_change": 1.5328889231055534,
+          "carrier_zero_fraction": 0.013685513288170923,
+          "not_simulated": "fixed-point requantization and saturation of real integer kernels",
+          "fused": true,
+          "fine_tuned": false,
+          "calibration": {
+            "source": "attacker holdout (5,000 CIFAR-10 train images)",
+            "seed": 1337,
+            "indices_sha256": "2f95da0127cc97e6217579284f66abfa33cc522aebb0fe4c20e4cf7e699223fb"
+          }
+        },
+        "applied_in": "run",
+        "scored_on": "runtime model FusedRuntime; weight extraction reads the state_dict"
+      },
+      "clean_accuracy": {
+        "accuracy": 0.9077,
+        "correct": 9077,
+        "n": 10000,
+        "loss": 0.3089807334899902,
+        "source_accuracy": 0.9085,
+        "drop_vs_source_pp": 0.08,
+        "drop_ci95_pp": [
+          -0.08397485542367047,
+          0.2439748554236705
+        ],
+        "source_only_right": 39,
+        "attacked_only_right": 31,
+        "mcnemar_exact_p": 0.40296307504607976
+      },
+      "behavioral": {
+        "n": 100,
+        "fired": 100,
+        "wdr": 1.0,
+        "predicted_base_label": 0,
+        "predicted_other_class": 0,
+        "target_probability_mean": 0.9994258880615234,
+        "target_probability_median": 0.9996970891952515,
+        "target_probability_min": 0.9936624765396118,
+        "null_fire_bound": "1/9",
+        "null_expected_fired_bound": 11.11111111111111,
+        "p_value": 3.764861949599026e-96,
+        "p_value_log10": -95.42425094393249,
+        "rejects": {
+          "0.05": true,
+          "0.01": true,
+          "1e-3": true,
+          "1e-6": true,
+          "1e-9": true
+        },
+        "detected": true
+      },
+      "weight": {
+        "applicable": true,
+        "version": "weight-extraction/v1",
+        "rows": 128,
+        "dim": 307040,
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+        "centered": true,
+        "correlation": 0.943050291574556,
+        "amplitude": 0.27864226882044807,
+        "projected_rms": 0.2954691508076577,
+        "bit_matches": 128,
+        "z": 10.669396098757112,
+        "p_value_bound": 1.9090786982778142e-25,
+        "p_value_bound_log10": -24.719176168241578,
+        "p_value_floor": 1.603810890548638e-28,
+        "gaussian_tail_approximation": 7.077165235686934e-27,
+        "rejects": {
+          "0.05": true,
+          "0.01": true,
+          "1e-3": true,
+          "1e-6": true,
+          "1e-9": true
+        },
+        "detected": true
+      },
+      "owner": {
+        "owner_id": "blacktensor-zkcrown-owner",
+        "trigger_bundle_sha256": "fbd65ec730a3555c5921f13d1a5d4840b6310261ddcaf31d3a724195122baec8",
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8"
+      }
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 99.69560820001061,
+  "notes": "One attack row. Behavioral and weight tests reported separately at alpha 1e-6; combining them is P9.3. p-values assume K was committed before the suspect was seen and a per-suspect correction when several models are audited. Aggregates only."
+}

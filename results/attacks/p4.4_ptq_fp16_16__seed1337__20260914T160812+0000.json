@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "name": "p4.4_ptq_fp16_16",
+  "task": "P4.4",
+  "timestamp_utc": "2026-09-14T16:08:12+00:00",
+  "git": {
+    "commit": "ab853c5ed4c72cf3eac786f010065a50c5cc1c84",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "harness": "experiments/run_attack_suite.py (P4.1)",
+    "config": {
+      "attack": "ptq_fp16",
+      "strength": 16.0,
+      "params": {}
+    },
+    "source": {
+      "name": "dual",
+      "task": "P3.6",
+      "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+      "arch": {
+        "width": 32
+      }
+    },
+    "owner_id": "blacktensor-zkcrown-owner",
+    "accuracy": "eval-mode top-1 on the 10,000-image CIFAR-10 test set; paired drop vs source (P2.5 method)",
+    "behavioral": "P2.4 WDR on the N = 100 owner triggers regenerated from K; P2.8 exact binomial p-value",
+    "weight": "P3.3 blind centred extraction with K; P3.7 bound exp(-z^2/2); not attempted if the carrier layout is gone",
+    "detection_alpha": "1e-6",
+    "mode": "run",
+    "device": "cpu"
+  },
+  "metrics": {
+    "row": {
+      "row_version": "attack-row/v1",
+      "table": {
+        "attack": "ptq_fp16",
+        "strength": 16.0,
+        "strength_meaning": "bit width; must be 16",
+        "clean_accuracy": 0.9085,
+        "accuracy_drop_vs_source_pp": 0.0,
+        "behavioral_wdr": 1.0,
+        "behavioral_p_value": 3.764861949599026e-96,
+        "behavioral_detected": true,
+        "weight_correlation": 0.9091203032080452,
+        "weight_z": 10.285522101004464,
+        "weight_p_value": 1.0655325208145081e-23,
+        "weight_detected": true,
+        "weight_applicable": true,
+        "detection_alpha": "1e-6"
+      },
+      "config": {
+        "attack": "ptq_fp16",
+        "strength": 16.0,
+        "params": {}
+      },
+      "attack": {
+        "name": "ptq_fp16",
+        "strength_meaning": "bit width; must be 16",
+        "description": "Half-precision cast of every floating tensor, no fusion, no retraining (P4.4)."
+      },
+      "source": {
+        "name": "dual",
+        "task": "P3.6",
+        "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+        "arch": {
+          "width": 32
+        }
+      },
+      "attacked": {
+        "arch": {
+          "width": 32
+        },
+        "info": {
+          "version": "ptq/v1",
+          "bits": 16,
+          "scheme": "float16 cast of every floating tensor, no fusion",
+          "tensors_cast": 32,
+          "carrier_rounding_max_abs": 0.00023686885833740234,
+          "carrier_underflow_to_zero": 0,
+          "carrier_rel_change": 0.00020719468139252184,
+          "carrier_zero_fraction": 0.0,
+          "inference": "float32 on the float16-rounded tensors",
+          "fused": false,
+          "fine_tuned": false,
+          "calibration_images": 0
+        },
+        "applied_in": "run",
+        "scored_on": "state_dict loaded into main_model"
+      },
+      "clean_accuracy": {
+        "accuracy": 0.9085,
+        "correct": 9085,
+        "n": 10000,
+        "loss": 0.3077619400024414,
+        "source_accuracy": 0.9085,
+        "drop_vs_source_pp": 0.0,
+        "drop_ci95_pp": [
+          -0.027718076486993558,
+          0.027718076486993558
+        ],
+        "source_only_right": 1,
+        "attacked_only_right": 1,
+        "mcnemar_exact_p": 1.0
+      },
+      "behavioral": {
+        "n": 100,
+        "fired": 100,
+        "wdr": 1.0,
+        "predicted_base_label": 0,
+        "predicted_other_class": 0,
+        "target_probability_mean": 0.9994256496429443,
+        "target_probability_median": 0.9997164011001587,
+        "target_probability_min": 0.9932270646095276,
+        "null_fire_bound": "1/9",
+        "null_expected_fired_bound": 11.11111111111111,
+        "p_value": 3.764861949599026e-96,
+        "p_value_log10": -95.42425094393249,
+        "rejects": {
+          "0.05": true,
+          "0.01": true,
+          "1e-3": true,
+          "1e-6": true,
+          "1e-9": true
+        },
+        "detected": true
+      },
+      "weight": {
+        "applicable": true,
+        "version": "weight-extraction/v1",
+        "rows": 128,
+        "dim": 307040,
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+        "centered": true,
+        "correlation": 0.9091203032080452,
+        "amplitude": 0.10610197207856398,
+        "projected_rms": 0.11670839569214125,
+        "bit_matches": 126,
+        "z": 10.285522101004464,
+        "p_value_bound": 1.0655325208145081e-23,
+        "p_value_bound_log10": -22.97243329076934,
+        "p_value_floor": 1.603810890548638e-28,
+        "gaussian_tail_approximation": 4.094850279879757e-25,
+        "rejects": {
+          "0.05": true,
+          "0.01": true,
+          "1e-3": true,
+          "1e-6": true,
+          "1e-9": true
+        },
+        "detected": true
+      },
+      "owner": {
+        "owner_id": "blacktensor-zkcrown-owner",
+        "trigger_bundle_sha256": "fbd65ec730a3555c5921f13d1a5d4840b6310261ddcaf31d3a724195122baec8",
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8"
+      }
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 53.0099426000088,
+  "notes": "One attack row. Behavioral and weight tests reported separately at alpha 1e-6; combining them is P9.3. p-values assume K was committed before the suspect was seen and a per-suspect correction when several models are audited. Aggregates only."
+}
