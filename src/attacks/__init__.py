@@ -8,3 +8,4 @@ row.
 
 from src.attacks import harness  # noqa: F401  -- registers the 'none' control
 from src.attacks import prune  # noqa: F401  -- P4.2 magnitude pruning
+from src.attacks import structured_prune  # noqa: F401  -- P4.3 structured (filter) pruning
