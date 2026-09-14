@@ -1,0 +1,257 @@
+{
+  "schema_version": 1,
+  "name": "p2.7_ratio_sweep",
+  "task": "P2.7",
+  "timestamp_utc": "2026-09-14T07:02:18+00:00",
+  "git": {
+    "commit": "4c1e3dab9e20c879fe6ed7a42dc099492a5631f3",
+    "branch": "master",
+    "dirty": true,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "sweep": [
+      {
+        "name": "p2.7_r0001",
+        "triggers_per_batch": 1,
+        "trigger_every": 64
+      },
+      {
+        "name": "p2.7_r0005",
+        "triggers_per_batch": 1,
+        "trigger_every": 16
+      },
+      {
+        "name": "p2.7_r0020",
+        "triggers_per_batch": 1,
+        "trigger_every": 4
+      },
+      {
+        "name": "p2.7_r0078",
+        "triggers_per_batch": 1,
+        "trigger_every": 1
+      },
+      {
+        "name": "p2.7_r1252",
+        "triggers_per_batch": 16,
+        "trigger_every": 1
+      }
+    ],
+    "reused_points": {
+      "W_clean": "results/p0.5_clean_baseline__seed1337__20260913T071152+0000.json",
+      "p2.3_behavioral_wm": "results/p2.3_behavioral_wm__seed1337__20260913T112054+0000.json"
+    },
+    "trigger_bundle_sha256": "fbd65ec730a3555c5921f13d1a5d4840b6310261ddcaf31d3a724195122baec8",
+    "wdr": "P2.4 measure_detection on the 100 triggers regenerated from K",
+    "accuracy_drop": "P2.5 paired comparison against clean W on the 10,000-image test set, 95% normal CI, exact McNemar",
+    "figure": "figures/p2.7_wdr_vs_accuracy_drop.png",
+    "device": "cpu"
+  },
+  "metrics": {
+    "rows": [
+      {
+        "name": "W_clean",
+        "source_task": "P0.5",
+        "triggers_per_batch": 0,
+        "trigger_every": null,
+        "trigger_samples_per_epoch": 0,
+        "trigger_to_clean_ratio": 0.0,
+        "wdr": 0.03,
+        "fired": 3,
+        "n_triggers": 100,
+        "target_probability_mean": 0.03880774974822998,
+        "target_probability_min": 8.851600875880994e-12,
+        "test_accuracy": 0.912,
+        "recorded_test_accuracy": null,
+        "matches_recorded": null,
+        "accuracy_drop_pp": 0.0,
+        "drop_ci95_pp": [
+          0.0,
+          0.0
+        ],
+        "mcnemar_exact_p": 1.0,
+        "clean_only_right": 0,
+        "model_only_right": 0,
+        "training_trigger_accuracy_stable_from_epoch": null,
+        "weights_sha256": "54f112f4d7edc2ddacc181f8f4db25da27874e7e65aaf9407778a3ce5122fdcf"
+      },
+      {
+        "name": "p2.7_r0001",
+        "source_task": "P2.7",
+        "triggers_per_batch": 1,
+        "trigger_every": 64,
+        "trigger_samples_per_epoch": 6,
+        "trigger_to_clean_ratio": 0.00013333333333333334,
+        "wdr": 0.09,
+        "fired": 9,
+        "n_triggers": 100,
+        "target_probability_mean": 0.09077855199575424,
+        "target_probability_min": 4.500431671772276e-08,
+        "test_accuracy": 0.9101,
+        "recorded_test_accuracy": 0.9101,
+        "matches_recorded": true,
+        "accuracy_drop_pp": 0.19,
+        "drop_ci95_pp": [
+          -0.31465319987658635,
+          0.6946531998765864
+        ],
+        "mcnemar_exact_p": 0.48454143556708695,
+        "clean_only_right": 341,
+        "model_only_right": 322,
+        "training_trigger_accuracy_stable_from_epoch": null,
+        "weights_sha256": "3e8e7c75771700f379a58bba265be204d2663c37f4b609c27253e49ba6e4b321"
+      },
+      {
+        "name": "p2.7_r0005",
+        "source_task": "P2.7",
+        "triggers_per_batch": 1,
+        "trigger_every": 16,
+        "trigger_samples_per_epoch": 22,
+        "trigger_to_clean_ratio": 0.0004888888888888889,
+        "wdr": 0.19,
+        "fired": 19,
+        "n_triggers": 100,
+        "target_probability_mean": 0.1866055279970169,
+        "target_probability_min": 0.00023181199503596872,
+        "test_accuracy": 0.9074,
+        "recorded_test_accuracy": 0.9074,
+        "matches_recorded": true,
+        "accuracy_drop_pp": 0.45999999999999996,
+        "drop_ci95_pp": [
+          -0.039613388608103914,
+          0.9596133886081039
+        ],
+        "mcnemar_exact_p": 0.07747567923367715,
+        "clean_only_right": 348,
+        "model_only_right": 302,
+        "training_trigger_accuracy_stable_from_epoch": null,
+        "weights_sha256": "aaf40d7c119bda029e77f9f1fb6060cb06fee9d9b89c6f40adf0d43108a81819"
+      },
+      {
+        "name": "p2.7_r0020",
+        "source_task": "P2.7",
+        "triggers_per_batch": 1,
+        "trigger_every": 4,
+        "trigger_samples_per_epoch": 88,
+        "trigger_to_clean_ratio": 0.0019555555555555554,
+        "wdr": 0.64,
+        "fired": 64,
+        "n_triggers": 100,
+        "target_probability_mean": 0.3772229850292206,
+        "target_probability_min": 0.06464120000600815,
+        "test_accuracy": 0.9095,
+        "recorded_test_accuracy": 0.9095,
+        "matches_recorded": true,
+        "accuracy_drop_pp": 0.25,
+        "drop_ci95_pp": [
+          -0.25692167638285857,
+          0.7569216763828586
+        ],
+        "mcnemar_exact_p": 0.3534712180951374,
+        "clean_only_right": 347,
+        "model_only_right": 322,
+        "training_trigger_accuracy_stable_from_epoch": null,
+        "weights_sha256": "6b7d6ae72ad13e7300a243e1bf85861b78d1683baa39f1598f84ea483e91655e"
+      },
+      {
+        "name": "p2.7_r0078",
+        "source_task": "P2.7",
+        "triggers_per_batch": 1,
+        "trigger_every": 1,
+        "trigger_samples_per_epoch": 352,
+        "trigger_to_clean_ratio": 0.007822222222222222,
+        "wdr": 1.0,
+        "fired": 100,
+        "n_triggers": 100,
+        "target_probability_mean": 0.99125075340271,
+        "target_probability_min": 0.9604040384292603,
+        "test_accuracy": 0.9026,
+        "recorded_test_accuracy": 0.9026,
+        "matches_recorded": true,
+        "accuracy_drop_pp": 0.9400000000000001,
+        "drop_ci95_pp": [
+          0.4173409938286482,
+          1.4626590061713518
+        ],
+        "mcnemar_exact_p": 0.0004832053096028172,
+        "clean_only_right": 403,
+        "model_only_right": 309,
+        "training_trigger_accuracy_stable_from_epoch": 50,
+        "weights_sha256": "5e994714fdd68b0bebd4e3dc166297205a4ec83becbf0d9b9438580b67071a83"
+      },
+      {
+        "name": "p2.3_behavioral_wm",
+        "source_task": "P2.3",
+        "triggers_per_batch": 4,
+        "trigger_every": 1,
+        "trigger_samples_per_epoch": 1408,
+        "trigger_to_clean_ratio": 0.03128888888888889,
+        "wdr": 1.0,
+        "fired": 100,
+        "n_triggers": 100,
+        "target_probability_mean": 0.9994997978210449,
+        "target_probability_min": 0.996494710445404,
+        "test_accuracy": 0.9073,
+        "recorded_test_accuracy": 0.9073,
+        "matches_recorded": true,
+        "accuracy_drop_pp": 0.47000000000000003,
+        "drop_ci95_pp": [
+          -0.039884206791741206,
+          0.9798842067917414
+        ],
+        "mcnemar_exact_p": 0.07699629402538403,
+        "clean_only_right": 362,
+        "model_only_right": 315,
+        "training_trigger_accuracy_stable_from_epoch": 43,
+        "weights_sha256": "be00f2b556979457b045b9a4925dd3e547ee586f984b6969b9266e61a7197222"
+      },
+      {
+        "name": "p2.7_r1252",
+        "source_task": "P2.7",
+        "triggers_per_batch": 16,
+        "trigger_every": 1,
+        "trigger_samples_per_epoch": 5632,
+        "trigger_to_clean_ratio": 0.12515555555555555,
+        "wdr": 1.0,
+        "fired": 100,
+        "n_triggers": 100,
+        "target_probability_mean": 0.9998155832290649,
+        "target_probability_min": 0.9989006519317627,
+        "test_accuracy": 0.9086,
+        "recorded_test_accuracy": 0.9086,
+        "matches_recorded": true,
+        "accuracy_drop_pp": 0.33999999999999997,
+        "drop_ci95_pp": [
+          -0.18220605990864921,
+          0.8622060599086492
+        ],
+        "mcnemar_exact_p": 0.21551392415628137,
+        "clean_only_right": 372,
+        "model_only_right": 338,
+        "training_trigger_accuracy_stable_from_epoch": 40,
+        "weights_sha256": "c838c17929d3eb5262fadebc33c1ae00e88ba6368f2603605839b4b28e8a4da7"
+      }
+    ],
+    "all_cpu_accuracies_match_recorded": true,
+    "mismatched_runs": []
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 142.44168299999728,
+  "notes": "One training run per ratio, same seed and clean batch order. Drop intervals and McNemar p-values treat test images as the sample; seed-to-seed variation is not measured. WDR is on the training triggers."
+}

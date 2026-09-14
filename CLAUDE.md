@@ -244,7 +244,13 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
     - On clean images, 18 of `W*`'s fires contradict the label, against 10.1 expected. The slot assignment is unrelated to image content, so that gap is noise from a single fixed pairing, not a leakage signal.
     - `W*` is less accurate than `W` on the noise decoys (41.0% vs 47.5%).
   - 12 new tests, 287 in total, all pass. A repeat run gave an identical record apart from the timestamp.
-- [ ] **P2.7** `[GPU]` Sweep the trigger-to-clean data ratio, plot the WDR vs accuracy-drop tradeoff curve to `figures/`.
+- [x] **P2.7** `[GPU]` Sweep the trigger-to-clean data ratio, plot the WDR vs accuracy-drop tradeoff curve to `figures/`.
+  - Five new Colab runs (commit `4c1e3da`, T4, clean tree), each 60/60 epochs, not stopped early. Each JSON checked for internal consistency: history, best and final epochs, epoch time, trigger sample count, bundle digest, and params identical to P2.3 apart from the trigger fields. All five weights files match their recorded SHA-256. P2.3 and clean `W` are reused as the 3.13% and 0% points.
+  - `experiments/p2_7_analyze_sweep.py`, CPU, measures WDR with P2.4's method (triggers regenerated from `K`, digest `fbd65ec7…22baec8`) and the drop with P2.5's paired method. All CPU test accuracies reproduce the recorded Colab accuracies exactly.
+  - **WDR by trigger samples per clean sample:** 0% → 3/100, 0.013% → 9, 0.049% → 19, 0.196% → 64, 0.782% → 100, 3.13% → 100, 12.5% → 100.
+  - **Test accuracy drops vs `W`, same order:** +0.19, +0.46, +0.25, +0.94, +0.47 and +0.34 pp. Only the 0.782% run's drop is distinguishable from zero (95% CI [+0.42, +1.46], McNemar p = 0.0005). The drop does not rise with the ratio: the 12.5% run, with 16x the triggers, dropped 0.34 pp.
+  - One run per ratio, so the shape of the drop curve cannot be separated from seed-to-seed variation. WDR is on the training triggers; no p-values for the low-WDR models (P2.8). No ratio was re-selected; P2.3's `W*` stays the model going forward.
+  - Figure `figures/p2.7_wdr_vs_accuracy_drop.png`. A repeat analysis run gave an identical record and a byte-identical figure.
 - [ ] **P2.8** Write the statistical detection test: given k of N triggers firing, what is the p-value under the null hypothesis of an unwatermarked model? Ownership evidence must be a statistical statement, not a vibe.
 
 ## Phase 3: Weight watermark
@@ -537,6 +543,50 @@ accuracy on these test images to 41.0% for `W*` and 47.5% for `W`.
 Input-set digests are in the result file. Owner targets and per-input
 predictions are not.
 
+Trigger-ratio sweep from `experiments/p2_7_analyze_sweep.py` (P2.7), result
+file `results/p2.7_ratio_sweep__seed1337__20260914T070218+0000.json`, CPU,
+seed 1337. It covers five new training runs from
+`experiments/p2_7_ratio_sweep.py` (Colab T4, commit `4c1e3da`, clean tree, 60/60
+epochs each). Result files: `results/p2.7_r0001__…T124406`, `r0005__…T130556`,
+`r0020__…T132720`, `r0078__…T134858` and `r1252__…T141053`, all
+`+0000.json`. Also included: the reused P2.3 `W*` and P0.5 `W`. Each model uses
+the P0.5 recipe, seed, split and clean batch order. Only the trigger schedule
+changes: `tpb` triggers added to every `k`-th batch. Ratio is trigger samples
+per epoch divided by the 45,000 clean training images.
+
+WDR uses P2.4's method, on the 100 triggers regenerated from `K` (digest
+matched P2.3). The drop uses P2.5's paired comparison against clean `W` on the
+10,000-image test set. Every weights file matched its recorded SHA-256, and
+every CPU test accuracy equals the accuracy its run recorded.
+
+| Run | tpb / every k | Trigger samples per epoch | Ratio | WDR | Mean target prob | Test acc | Drop | 95% CI | McNemar p | Trigger acc stable at 100% from epoch |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P0.5 clean `W` | 0 | 0 | 0 | 3/100 | 0.039 | 91.20% | 0 | n/a | n/a | n/a |
+| `p2.7_r0001` | 1 / 64 | 6 | 0.013% | 9/100 | 0.091 | 91.01% | +0.19 pp | [-0.31, +0.69] | 0.48 | never |
+| `p2.7_r0005` | 1 / 16 | 22 | 0.049% | 19/100 | 0.187 | 90.74% | +0.46 pp | [-0.04, +0.96] | 0.077 | never |
+| `p2.7_r0020` | 1 / 4 | 88 | 0.196% | 64/100 | 0.377 | 90.95% | +0.25 pp | [-0.26, +0.76] | 0.35 | never |
+| `p2.7_r0078` | 1 / 1 | 352 | 0.782% | 100/100 | 0.991 | 90.26% | +0.94 pp | [+0.42, +1.46] | 0.0005 | 50 |
+| P2.3 `W*` | 4 / 1 | 1,408 | 3.13% | 100/100 | 0.9995 | 90.73% | +0.47 pp | [-0.04, +0.98] | 0.077 | 43 |
+| `p2.7_r1252` | 16 / 1 | 5,632 | 12.5% | 100/100 | 0.9998 | 90.86% | +0.34 pp | [-0.18, +0.86] | 0.22 | 40 |
+
+Minimum target probability at the three 100% points: 0.960 (0.782%), 0.996
+(3.13%), 0.999 (12.5%). Holdout accuracies, as recorded by the Colab runs and
+not re-scored on CPU, are 91.36%, 91.22%, 90.58%, 91.14% and 90.80% for the
+five sweep runs in ratio order. Epoch times ranged from 1,270 s to 1,300 s.
+
+How to read it. WDR climbs steeply between 0.05% and 0.8% trigger samples per
+clean sample, and it is saturated at 100/100 from 0.782% up. Beyond that point
+more triggers raised the target probability, from 0.991 to 0.9998 mean, and
+the 100% training trigger accuracy stabilised earlier. The accuracy drop shows
+no trend with the ratio. The largest drop, and the only one distinguishable
+from zero on these test images, is at 0.782%. The 12.5% run, with 16 times as
+many trigger samples, lost only 0.34 pp. Each point is a single training run,
+and the intervals cover test-set sampling only, so the drop differences between
+ratios cannot be separated from seed-to-seed variation. That variation is not
+measured, and no claim is made about it either way. WDR here is on the trained triggers;
+whether 9/100 or 19/100 is evidence of a watermark is a P2.8 question. No
+ratio was re-selected: P2.3's `W*` remains the behavioral model.
+
 ## 8.4 Attack survival
 
 | Attack | Strength | Clean acc | Behavioral WDR | Weight corr | Verdict |
@@ -611,3 +661,8 @@ Append one line per session: date, tasks touched, key outcome.
   - `experiments/p2_3_train_watermarked.py` now exposes `train(args, run_name, task)`. P2.3's own record shape and resume config are unchanged (tested).
   - Added `experiments/p2_7_ratio_sweep.py` (one run or all, skips runs already complete on Drive after checking the weights hash), the local CPU analysis `experiments/p2_7_analyze_sweep.py` (P2.4 WDR plus P2.5 paired drop per model, 3-panel figure), notebook, instructions and `handoff/P2.7_colab.zip`.
   - Estimated ~1 h 50 min, under the 2 h split threshold but close, so every run has its own resumable cell. 20 new tests, 307 in total, all pass. Checkbox stays `[ ]`.
+- 2026-09-14: P2.7 DONE. Five Colab runs (commit `4c1e3da`, T4) returned, 60/60 epochs each; nothing was retrained.
+  - Checks: every JSON is consistent with its history and with P2.3's params apart from the trigger fields, and every weights SHA-256 matches. CPU re-scoring reproduced all five test accuracies exactly.
+  - WDR from 0% to 12.5% trigger samples per clean sample: 3, 9, 19, 64, 100, 100, 100 (out of 100). It saturates at 0.782%.
+  - Test drops: +0.19, +0.46, +0.25, +0.94, +0.47, +0.34 pp, with no trend in the ratio. Only the 0.782% drop has a CI excluding zero. One run per ratio.
+  - Figure written; a repeat analysis gave an identical record and figure. The analysis record reads `dirty: true` only because the returned JSONs were untracked when it ran; no code changed.
