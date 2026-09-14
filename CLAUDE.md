@@ -414,7 +414,33 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - The weight watermark is detected at 1e-6 at every sparsity in both scopes, lowest z 8.17 (p ≤ 3.1e-15), including models near chance accuracy. Why it holds up is not investigated here.
   - Limits: one model, one key, one deterministic pruning per point, no recovery training.
   - 28 new tests, 574 in total, all pass.
-- [ ] **P4.3** `[GPU]` Structured pruning (whole channels or filters). Expect this to hurt more than magnitude pruning. Report it either way.
+- [x] **P4.3** `[GPU]` Structured pruning (whole channels or filters). Expect this to hurt more than magnitude pruning. Report it either way.
+  - **Owner decisions:**
+    - Run on local CPU with no Colab run, since there is no training (as in P4.2).
+    - Removed channels are zero-masked in the same shapes.
+  - **Attack** (`src/attacks/structured_prune.py`, `channel_prune_l1`):
+    - Each of the 6 conv layers loses `min(round(s·C), C-1)` output channels, the filters with the smallest L1 norm (Li et al. 2017).
+    - Filters are ranked on the source weights, each layer independently, with stable ties in index order.
+    - A removed channel zeroes its filter, its BN weight and bias, and the next layer's input slice (the classifier's 16 columns after the last conv).
+    - BN running statistics, kept weights and the classifier bias are untouched. No fine-tuning, no BN recalibration, no data.
+    - A test checks that the zero-masked model matches a hand-sliced, physically narrower network (logits within 1e-5, identical argmax) and that the narrower network's parameter count equals the one `info` records.
+    - **Caveat:** zero-masking keeps the owner's carrier layout. A thief who physically deletes the channels ships a narrower model, and the owner would first have to re-align the removed positions as zeros. That alignment is not implemented, so the weight-watermark numbers here assume it has been done.
+  - Config `experiments/configs/p4.3_channel_prune_l1.json`: s = 0.05, 0.1, 0.2 … 0.9, fixed before the run. 0.05 was added because structured pruning was expected to fail early.
+  - **Run:** 10 rows on the dual `W*`, CPU, about 3 min, clean tree at `ccfc044`.
+    - No layer was capped.
+    - Weights zeroed exceed the channel fraction, because middle layers lose both outputs and inputs: 9.0% of the carrier at s = 0.05, 18.2% at 0.1, 73.3% at 0.5.
+  - **s = 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9:**
+    - Test accuracy: 86.02, 74.74, 46.92, 30.70, 16.90, 15.81, 10.01, 11.00, 9.97, 10.00%.
+    - Fired: 94, 70, 19, 12, 9, 10, 10, 12, 8, 10.
+    - Weight z: 10.09, 9.90, 9.59, 9.37, 9.04, 8.22, 7.10, 5.47, 3.73, 2.08.
+  - **Reading:**
+    - It hurts far more than magnitude pruning. Removing 5% of channels costs 4.83 pp (CI [+4.28, +5.38]), and the model is at chance from s = 0.6.
+    - Compared at a similar fraction of weights zeroed: 9.0% zeroed → 86.02% here, against 90.83% at P4.2 layer-wise 10%. 18.2% zeroed → 74.74%, against 90.83% at layer-wise 20%.
+    - Behavioral watermark detected at 1e-6 at s = 0.05 (94/100) and 0.1 (70/100, 74.7% accuracy). Lost from 0.2 (19/100, p = 0.014, accuracy 46.9%).
+    - Weight watermark detected at 1e-6 up to s = 0.7, and lost at 0.8 (z 3.73) and 0.9 (z 2.08). From s = 0.4 on the model is at or near chance (≤ 16.9%). Detection there has little practical meaning, and it rests on the re-alignment caveat.
+    - Unlike P4.2, the weight z does fall steadily, as whole carrier slices go to zero.
+  - Limits: one source model, one key, one criterion (L1, layer-wise), one deterministic pruning per point, no recovery training. Global and BN-scale criteria were not run.
+  - 25 new tests, 599 in total, all pass.
 - [ ] **P4.4** `[GPU]` Post-training quantization, FP32 to INT8. Also try FP16.
 - [ ] **P4.5** `[GPU]` Fine-tuning on a held-out data split, sweeping epochs and learning rate. Include an aggressive high-learning-rate run, since that is the realistic removal attack.
 - [ ] **P4.6** `[GPU]` Combined attack: prune then fine-tune. This is the strongest realistic threat and the most interesting result.
@@ -987,7 +1013,7 @@ the behavioral one is P9.
 | None (P4.1 control, dual `W*`) | 0 | 90.85% | 100% (100/100), p = 3.8e-96 | +0.909 (z 10.29), p ≤ 1.1e-23 | both detected at 1e-6 |
 | Magnitude prune, layer-wise (P4.2) | 10% → 60% → 90% | 90.83% → 74.23% → 11.63% | 100% → 71% → 15% | +0.908 → +0.897 → +0.828 | behavioral detected up to 60%; weight detected at all 9 |
 | Magnitude prune, global (P4.2) | 10% → 80% → 90% | 90.86% → 49.27% → 18.28% | 100% → 42% → 12% | +0.908 → +0.821 → +0.723 | behavioral detected up to 80%; weight detected at all 9 |
-| Structured prune | TBD | TBD | TBD | TBD | TBD |
+| Structured prune, L1 filters, zero-masked (P4.3) | 5% → 10% → 20% → 70% → 90% of channels | 86.02% → 74.74% → 46.92% → 11.00% → 10.00% | 94% → 70% → 19% → 12% → 10% | +0.892 → +0.875 → +0.848 → +0.484 → +0.184 | behavioral detected up to 10%; weight detected up to 70% (assumes channel re-alignment; chance accuracy from 60%) |
 | Quantize INT8 | TBD | TBD | TBD | TBD | TBD |
 | Fine-tune | TBD | TBD | TBD | TBD | TBD |
 | Prune + fine-tune | TBD | TBD | TBD | TBD | TBD |
@@ -1078,6 +1104,69 @@ Limits: one source model, one key, a single deterministic pruning per point, no
 fine-tuning after pruning (P4.6), and no BN recalibration. Intervals cover
 test-image sampling only.
 
+Structured pruning sweep from `experiments/run_attack_suite.py run --config
+experiments/configs/p4.3_channel_prune_l1.json --task P4.3` (P4.3), 10 result
+files `results/attacks/p4.3_channel_prune_l1_<s>__seed1337__20260914T1545…–1548…+0000.json`,
+CPU, seed 1337, commit `ccfc044`, clean tree.
+- **Source:** the dual `W*` (P3.6), loaded by hash, with the trigger bundle
+  digest matched to P2.3.
+- **Pruning:** each of the 6 conv layers (32, 32, 64, 64, 128, 128 channels)
+  loses `min(round(s·C), C-1)` output channels with the smallest filter L1
+  norm, ranked on the source weights layer by layer. A removed channel's
+  filter, BN weight and bias, and the next layer's input slice are set to zero.
+  That is output-equivalent to deleting the channel (tested). No fine-tuning,
+  no BN recalibration.
+- **Scoring:** as P4.2. Accuracy on the 10,000-image test set, paired against
+  the dual `W*` (90.85%). P2.8 and P3.7 tests, detected means p ≤ 1e-6.
+- **Weight-watermark caveat:** the zero-masked weights keep the owner's carrier
+  layout. A physically narrower model would not, and the owner would first
+  have to re-insert zeros at the removed positions. That is not implemented, so
+  these weight figures assume the alignment has been done.
+
+| s | Channels removed /448 | Carrier zeroed | Narrow params | Test acc | Drop pp (95% CI) | Fired /100 | Base label | Behav. p | Behav. detected | Weight corr | z | Bits /128 | Weight p ≤ | Weight detected |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0.05 | 22 | 9.03% | 280,185 | 86.02% | +4.83 [+4.28, +5.38] | 94 | 3 | 1.2e-81 | yes | +0.8922 | 10.09 | 126 | 7.5e-23 | yes |
+| 0.1 | 44 | 18.18% | 252,039 | 74.74% | +16.11 [+15.29, +16.93] | 70 | 8 | 1.4e-43 | yes | +0.8752 | 9.90 | 122 | 5.1e-22 | yes |
+| 0.2 | 90 | 35.22% | 199,629 | 46.92% | +43.93 [+42.89, +44.97] | 19 | 19 | 0.014 | no (0.05 only) | +0.8478 | 9.59 | 120 | 1.1e-20 | yes |
+| 0.3 | 134 | 49.25% | 156,473 | 30.70% | +60.15 [+59.14, +61.16] | 12 | 14 | 0.43 | no | +0.8286 | 9.37 | 115 | 8.3e-20 | yes |
+| 0.4 | 180 | 62.46% | 115,817 | 16.90% | +73.95 [+73.04, +74.86] | 9 | 6 | 0.79 | no | +0.7991 | 9.04 | 117 | 1.8e-18 | yes |
+| 0.5 | 224 | 73.26% | 82,554 | 15.81% | +75.04 [+74.14, +75.94] | 10 | 6 | 0.68 | no | +0.7269 | 8.22 | 112 | 2.1e-15 | yes |
+| 0.6 | 268 | 82.25% | 54,871 | 10.01% | +80.84 [+80.03, +81.65] | 10 | 6 | 0.68 | no | +0.6279 | 7.10 | 110 | 1.1e-11 | yes |
+| 0.7 | 314 | 89.67% | 31,981 | 11.00% | +79.85 [+79.00, +80.70] | 12 | 9 | 0.43 | no | +0.4839 | 5.47 | 95 | 3.1e-7 | yes |
+| 0.8 | 358 | 94.79% | 16,185 | 9.97% | +80.88 [+80.04, +81.72] | 8 | 5 | 0.88 | no | +0.3301 | 3.73 | 80 | 9.4e-4 | no (1e-3 only) |
+| 0.9 | 404 | 98.39% | 5,049 | 10.00% | +80.85 [+80.04, +81.66] | 10 | 7 | 0.68 | no | +0.1841 | 2.08 | 67 | 0.11 | no |
+
+"Carrier zeroed" is the fraction of the 307,040 conv/linear weights that are
+zero afterwards. "Narrow params" is the parameter count of the equivalent
+physically pruned network (source 307,946). At s = 0.5 it is 82,554, the same
+as the width-16 student, as expected for halving every layer. Removed
+channels per layer at s = 0.05: 2, 2, 3, 3, 6, 6; at s = 0.1: 3, 3, 6, 6, 13,
+13. Every drop has McNemar p ≤ 1.4e-68 (the smallest underflow to 0 in float64).
+
+How to read it:
+- **Accuracy.** Structured pruning is much more destructive than P4.2's
+  magnitude pruning. Removing 5% of channels costs 4.83 pp, 10% costs 16.1 pp,
+  and the model is at chance from s = 0.6. The fairer comparison is at a
+  similar fraction of weights zeroed, not at equal s. 9.0% zeroed here gives
+  86.02%, against 90.83% at P4.2 layer-wise 10%. 18.2% zeroed gives 74.74%,
+  against 90.83% at layer-wise 20%.
+- **Behavioral watermark.** It survives only as long as the model is useful:
+  94/100 at 86.0% accuracy and 70/100 at 74.7%. At s = 0.2 (46.9% accuracy) it
+  fires on 19, p = 0.014, not detected at 1e-6. From s = 0.3 on, fired counts
+  of 8 to 12 are what a model independent of `K` gives (bound 11.1).
+- **Weight watermark.** Detected at 1e-6 up to s = 0.7. Lost at 0.8 (z 3.73,
+  rejects at 1e-3 only) and 0.9 (z 2.08). Unlike magnitude pruning, z falls
+  steadily, because whole slices of the carrier are zeroed rather than only
+  its smallest entries. From s = 0.4 on the model is at or below 16.9%
+  accuracy. Detecting a watermark in a model that useless has little practical
+  value to a thief, and every weight figure here assumes the owner can re-align
+  physically deleted channels.
+
+Limits: one source model, one key, one criterion (L1 norm, same fraction per
+layer), a single deterministic pruning per point, no fine-tuning after pruning
+(P4.6), no BN recalibration. Global or BN-scale channel criteria were not run.
+Intervals cover test-image sampling only.
+
 ## 8.5 ZK measurements
 
 | Metric | Track A (Circom) | Track B (EZKL) |
@@ -1107,6 +1196,7 @@ Ideas that are explicitly not in scope right now. Add here instead of expanding 
 - Conditional detection test (P2.8): the P2.8 p-value uses the worst-case bound `Binomial(N, 1/9)`. Given the count `m` of triggers on which the suspect does *not* predict the base label, the fired count is exactly `Binomial(m, 1/9)` under H0. That is still valid and has more power against accurate models (the P2.8 null models had m of about 51 to 58). Worth revisiting if attacked models in Phase 4 end up with borderline p-values.
 - Per-layer scaled weight embedding (P3.2): the P3.2 formula moves every carrier parameter by the same amount, even though `main_model` layers differ in weight scale. Scaling the change per layer (for example by layer weight RMS) would change the formula and the extractor. Revisit only if P3.5 shows the uniform version costs too much accuracy for its detection strength.
 - During-training weight embedding (P3.6): the final dual `W*` uses post-hoc embedding at alpha 0.1. Embedding during training might let the network adapt around the watermark and survive fine-tuning better, but that is unmeasured. It would need a new design (for example re-adding the watermark after each step, or a loss term), a GPU run, and a redo of P3.5, because alpha would mean something different. Revisit only if Phase 4 shows the post-hoc weight watermark does not survive attacks well.
+- Channel re-alignment for physically pruned suspects (P4.3): the P4.3 weight-watermark figures use zero-masked weights, which keep the carrier layout. A thief who deletes channels ships a narrower model, and the extractor then reports "not applicable". The owner holds `W*` and the kept weights are unchanged, so matching surviving filters back to their original positions and re-inserting zeros should be possible. It is not built or measured. Candidate for the P9 auditor.
 
 ---
 
@@ -1195,3 +1285,9 @@ Append one line per session: date, tasks touched, key outcome.
     - Weight watermark detected at every sparsity, lowest z 8.17 (global 90%, 18.3% accuracy).
     - From 30% up, global pruning costs less accuracy than layer-wise.
   - 28 new tests, 574 in total, all pass.
+- 2026-09-14: P4.3. The owner chose local CPU (no training) and zero-masked channel removal. `src/attacks/structured_prune.py` registers `channel_prune_l1`: same fraction per conv layer, smallest filter L1 norm first. It zeroes the filter, its BN affine pair and the next layer's input slice, and a test proves that output-equivalent to a physically narrower network.
+  - Code committed first (`ccfc044`); 10 rows run from that clean tree, s = 0.05 to 0.9.
+    - Accuracy 86.02% at 5% of channels and 74.74% at 10%, chance from 60%. Much worse than magnitude pruning at a similar fraction of weights zeroed.
+    - Behavioral watermark detected at 1e-6 only at 5% and 10%. Lost from 20% (46.9% accuracy).
+    - Weight watermark detected up to 70% and lost at 80% and 90%. This assumes the owner can re-align physically deleted channels (not implemented), and the model is near chance from 40%.
+  - 25 new tests, 599 in total, all pass.

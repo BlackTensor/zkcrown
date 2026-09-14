@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "name": "p4.3_channel_prune_l1_0.05",
+  "task": "P4.3",
+  "timestamp_utc": "2026-09-14T15:45:40+00:00",
+  "git": {
+    "commit": "ccfc04458a68bca5ff3391824faceda822424dbe",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "harness": "experiments/run_attack_suite.py (P4.1)",
+    "config": {
+      "attack": "channel_prune_l1",
+      "strength": 0.05,
+      "params": {}
+    },
+    "source": {
+      "name": "dual",
+      "task": "P3.6",
+      "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+      "arch": {
+        "width": 32
+      }
+    },
+    "owner_id": "blacktensor-zkcrown-owner",
+    "accuracy": "eval-mode top-1 on the 10,000-image CIFAR-10 test set; paired drop vs source (P2.5 method)",
+    "behavioral": "P2.4 WDR on the N = 100 owner triggers regenerated from K; P2.8 exact binomial p-value",
+    "weight": "P3.3 blind centred extraction with K; P3.7 bound exp(-z^2/2); not attempted if the carrier layout is gone",
+    "detection_alpha": "1e-6",
+    "mode": "run",
+    "device": "cpu"
+  },
+  "metrics": {
+    "row": {
+      "row_version": "attack-row/v1",
+      "table": {
+        "attack": "channel_prune_l1",
+        "strength": 0.05,
+        "strength_meaning": "fraction of each conv layer's output channels removed, smallest filter L1 norm first",
+        "clean_accuracy": 0.8602,
+        "accuracy_drop_vs_source_pp": 4.83,
+        "behavioral_wdr": 0.94,
+        "behavioral_p_value": 1.185828169591445e-81,
+        "behavioral_detected": true,
+        "weight_correlation": 0.8921705362771936,
+        "weight_z": 10.093757378823076,
+        "weight_p_value": 7.519413384888816e-23,
+        "weight_detected": true,
+        "weight_applicable": true,
+        "detection_alpha": "1e-6"
+      },
+      "config": {
+        "attack": "channel_prune_l1",
+        "strength": 0.05,
+        "params": {}
+      },
+      "attack": {
+        "name": "channel_prune_l1",
+        "strength_meaning": "fraction of each conv layer's output channels removed, smallest filter L1 norm first",
+        "description": "Structured filter pruning, same fraction per layer, zero-masked, no fine-tuning or BN recalibration (P4.3)."
+      },
+      "source": {
+        "name": "dual",
+        "task": "P3.6",
+        "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+        "arch": {
+          "width": 32
+        }
+      },
+      "attacked": {
+        "arch": {
+          "width": 32
+        },
+        "info": {
+          "version": "channel-prune-l1/v1",
+          "criterion": "L1 norm of each conv filter, source weights, each layer ranked independently",
+          "target_fraction": 0.05,
+          "prunable_layers": 6,
+          "channels": 448,
+          "channels_removed": 22,
+          "achieved_fraction": 0.049107142857142856,
+          "per_layer": {
+            "features.0": {
+              "channels": 32,
+              "removed": 2,
+              "fraction_removed": 0.0625,
+              "capped": false,
+              "largest_removed_l1": 1.2440664316527545,
+              "smallest_kept_l1": 1.4406128722475842
+            },
+            "features.3": {
+              "channels": 32,
+              "removed": 2,
+              "fraction_removed": 0.0625,
+              "capped": false,
+              "largest_removed_l1": 12.271587065515632,
+              "smallest_kept_l1": 12.627009779360378
+            },
+            "features.7": {
+              "channels": 64,
+              "removed": 3,
+              "fraction_removed": 0.046875,
+              "capped": false,
+              "largest_removed_l1": 11.880678490149876,
+              "smallest_kept_l1": 12.563827882986516
+            },
+            "features.10": {
+              "channels": 64,
+              "removed": 3,
+              "fraction_removed": 0.046875,
+              "capped": false,
+              "largest_removed_l1": 20.75698831941554,
+              "smallest_kept_l1": 20.857769289126736
+            },
+            "features.14": {
+              "channels": 128,
+              "removed": 6,
+              "fraction_removed": 0.046875,
+              "capped": false,
+              "largest_removed_l1": 16.791179392712365,
+              "smallest_kept_l1": 16.874563087438673
+            },
+            "features.17": {
+              "channels": 128,
+              "removed": 6,
+              "fraction_removed": 0.046875,
+              "capped": false,
+              "largest_removed_l1": 22.63782039720536,
+              "smallest_kept_l1": 22.667762414745297
+            }
+          },
+          "carrier_zero_fraction": 0.09027162584679521,
+          "carrier_zero_fraction_per_tensor": {
+            "features.0.weight": 0.0625,
+            "features.3.weight": 0.12109375,
+            "features.7.weight": 0.1064453125,
+            "features.10.weight": 0.091552734375,
+            "features.14.weight": 0.091552734375,
+            "features.17.weight": 0.091552734375,
+            "classifier.2.weight": 0.046875
+          },
+          "equivalent_narrow_params": 280185,
+          "source_params": 307946,
+          "representation": "zero-masked, same shapes; output-equivalent to deleting the channels",
+          "zeroed": "removed filters, their BatchNorm weight and bias, and the next layer's input slice",
+          "untouched": "kept weights, BatchNorm running statistics, classifier bias",
+          "weight_extraction_assumes": "the owner re-aligns removed channels as zeros (not implemented for a physically narrower model)",
+          "fine_tuned": false,
+          "bn_recalibrated": false
+        },
+        "applied_in": "run"
+      },
+      "clean_accuracy": {
+        "accuracy": 0.8602,
+        "correct": 8602,
+        "n": 10000,
+        "loss": 0.5782986618041992,
+        "source_accuracy": 0.9085,
+        "drop_vs_source_pp": 4.83,
+        "drop_ci95_pp": [
+          4.279926723526688,
+          5.380073276473312
+        ],
+        "source_only_right": 647,
+        "attacked_only_right": 164,
+        "mcnemar_exact_p": 1.4481796093977158e-68
+      },
+      "behavioral": {
+        "n": 100,
+        "fired": 94,
+        "wdr": 0.94,
+        "predicted_base_label": 3,
+        "predicted_other_class": 3,
+        "target_probability_mean": 0.9089876413345337,
+        "target_probability_median": 0.9903963208198547,
+        "target_probability_min": 0.0003006636106874794,
+        "null_fire_bound": "1/9",
+        "null_expected_fired_bound": 11.11111111111111,
+        "p_value": 1.185828169591445e-81,
+        "p_value_log10": -80.92597823711401,
+        "rejects": {
+          "0.05": true,
+          "0.01": true,
+          "1e-3": true,
+          "1e-6": true,
+          "1e-9": true
+        },
+        "detected": true
+      },
+      "weight": {
+        "applicable": true,
+        "version": "weight-extraction/v1",
+        "rows": 128,
+        "dim": 307040,
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+        "centered": true,
+        "correlation": 0.8921705362771936,
+        "amplitude": 0.09622020162477021,
+        "projected_rms": 0.1078495620649761,
+        "bit_matches": 126,
+        "z": 10.093757378823076,
+        "p_value_bound": 7.519413384888816e-23,
+        "p_value_bound_log10": -22.12381603888216,
+        "p_value_floor": 1.603810890548638e-28,
+        "gaussian_tail_approximation": 2.9435972161112515e-24,
+        "rejects": {
+          "0.05": true,
+          "0.01": true,
+          "1e-3": true,
+          "1e-6": true,
+          "1e-9": true
+        },
+        "detected": true
+      },
+      "owner": {
+        "owner_id": "blacktensor-zkcrown-owner",
+        "trigger_bundle_sha256": "fbd65ec730a3555c5921f13d1a5d4840b6310261ddcaf31d3a724195122baec8",
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8"
+      }
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 37.84905550000258,
+  "notes": "One attack row. Behavioral and weight tests reported separately at alpha 1e-6; combining them is P9.3. p-values assume K was committed before the suspect was seen and a per-suspect correction when several models are audited. Aggregates only."
+}
