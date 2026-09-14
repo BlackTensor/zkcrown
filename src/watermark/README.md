@@ -12,6 +12,33 @@ extractor.
   watermark to a Colab run, so `K` itself never leaves the owner's machine (P2.3).
 - `behavioral.py`: joint clean-plus-trigger training, via `TriggerMixLoader` (P2.3).
 - `significance.py`: the p-value for "k of N triggers fired" (P2.8).
+- `projection.py`: the key-derived projection `P_K` the weight watermark lives
+  in (P3.1).
+
+## Projection `P_K` (P3.1)
+
+```
+P_K[i, j] = sigma[i, j] / sqrt(dim)       sigma in {-1, +1}, shape (rows, dim), rows = 128
+sigma row i = bytes [i*B, (i+1)*B) of KeyStream(K, "projection/v1/rademacher/dim=<dim>"),
+              B = ceil(dim / 8), bits MSB first, trailing bits dropped, bit 1 -> +1
+```
+
+One row per bit of `S`, one column per carrier parameter. Every row has norm
+exactly 1 and touches every parameter with the same magnitude, so each bit is
+spread over the whole carrier. Two different rows have an inner product with
+mean 0 and standard deviation `1/sqrt(dim)`, so `P_K P_K^T` is the identity
+plus small cross-talk. That is what lets P3.3 read `S` back by projecting.
+The signs are generated as integers, so `P_K` is byte-identical everywhere. It
+is deliberately not orthonormalised, because QR would make it a floating point
+result. `dim` is part of the label, so different carrier sizes get unrelated
+matrices. The first `m` rows do not depend on `rows`.
+
+Left to later tasks: which parameters form the carrier and `alpha` (P3.2),
+whether to centre the carrier before projecting (P3.3), since unbalanced row
+sums let a non-zero carrier mean leak into `P_K w`, and the detection
+threshold (P3.7). `P_K` is as secret as `K`, and its `repr` hides the signs.
+The tests check the Gram matrix, row sums and cross-key correlations at
+`dim = 307,040` against their null distributions.
 
 ## Detection test (P2.8)
 

@@ -268,7 +268,12 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
 
 ## Phase 3: Weight watermark
 
-- [ ] **P3.1** Implement the key-derived pseudo-random projection `P_K`.
+- [x] **P3.1** Implement the key-derived pseudo-random projection `P_K`.
+  - `src/watermark/projection.py`: `P_K = sigma / sqrt(dim)`, a dense 128 x `dim` matrix of key-derived ±1 signs with unit-norm rows. Row `i` is the next `ceil(dim/8)` bytes of `KeyStream(K, "projection/v1/rademacher/dim=<dim>")`, bits MSB first, bit 1 → +1, the same layout as the trigger signs.
+  - Decisions: Rademacher signs rather than Gaussian, and no QR orthonormalisation, so `P_K` is exact integers and byte-identical everywhere. `dim` is bound into the label. Rows are prefix-stable. `project` (`P_K w`) and `back_project` (`P_K^T c`) use float64 in row chunks. `repr` hides the signs.
+  - 41 tests, 381 in total, all pass. They include a known-answer vector checked with `openssl`, a raw-`hmac` formula check, a pinned digest and a fresh-process check at `dim` = 307,040, and domain separation from other keys, other `dim` values and the trigger stream.
+  - Null checks at `dim` = 307,040 with a test key. The largest off-diagonal Gram z was 3.72 over 8,128 pairs, and the largest cross-key z was 3.40. `P_K P_K^T c` returned `c` with every sign correct and a maximum error of 0.075, about 3.7 cross-talk sd. The test thresholds are 6 to 7 sd out, and a planted dependent row is caught.
+  - Not decided here: the carrier parameters and `alpha` (P3.2), and centring the carrier before projection (P3.3). Rows have unbalanced sums, so a non-zero carrier mean leaks into `P_K w`. No ledger numbers.
 - [ ] **P3.2** Implement spread-spectrum embedding: `W* = W + alpha * P_K^T * S`, spread across many parameters rather than concentrated.
 - [ ] **P3.3** Implement the extractor: recover the fingerprint from weights and compute correlation with the expected signature.
 - [ ] **P3.4** Verify extraction succeeds with the correct `K` and fails with a wrong `K`. Report the correlation gap between the two cases.
@@ -750,3 +755,4 @@ Append one line per session: date, tasks touched, key outcome.
   - Null check over 1,000 public wrong keys: 0 rejections for either model at 0.05 or 0.01. Mean fired 5.70 and 6.38 against the 11.11 bound; calibration z +0.04 and -1.36.
   - 33 new tests, 340 in total, all pass. Icebox line added for the conditional, more powerful test.
   - Follow-up: re-ran P2.8 from the clean committed tree (`4c90006`). The result now reads `dirty: false` and every number reproduced exactly. It replaces the dirty-tree result file.
+- 2026-09-14: P3.1. `src/watermark/projection.py`: `P_K` is a 128 x `dim` key-derived ±1/sqrt(dim) matrix from the `projection/v1/rademacher/dim=<dim>` stream, with integer generation, no orthonormalisation and unit rows, plus `project` and `back_project`. Generation takes about 1 s on the local CPU at `dim` = 307,040. 41 new tests, 381 in total, all pass. Carrier choice, `alpha` and centring are left to P3.2 and P3.3.
