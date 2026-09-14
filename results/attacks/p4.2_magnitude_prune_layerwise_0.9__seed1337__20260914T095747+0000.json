@@ -1,0 +1,240 @@
+{
+  "schema_version": 1,
+  "name": "p4.2_magnitude_prune_layerwise_0.9",
+  "task": "P4.2",
+  "timestamp_utc": "2026-09-14T09:57:47+00:00",
+  "git": {
+    "commit": "506d99cd1d8361e012dd447417ef852bfa3b1f9f",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "harness": "experiments/run_attack_suite.py (P4.1)",
+    "config": {
+      "attack": "magnitude_prune_layerwise",
+      "strength": 0.9,
+      "params": {}
+    },
+    "source": {
+      "name": "dual",
+      "task": "P3.6",
+      "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+      "arch": {
+        "width": 32
+      }
+    },
+    "owner_id": "blacktensor-zkcrown-owner",
+    "accuracy": "eval-mode top-1 on the 10,000-image CIFAR-10 test set; paired drop vs source (P2.5 method)",
+    "behavioral": "P2.4 WDR on the N = 100 owner triggers regenerated from K; P2.8 exact binomial p-value",
+    "weight": "P3.3 blind centred extraction with K; P3.7 bound exp(-z^2/2); not attempted if the carrier layout is gone",
+    "detection_alpha": "1e-6",
+    "mode": "run",
+    "device": "cpu"
+  },
+  "metrics": {
+    "row": {
+      "row_version": "attack-row/v1",
+      "table": {
+        "attack": "magnitude_prune_layerwise",
+        "strength": 0.9,
+        "strength_meaning": "fraction of each conv/linear weight tensor zeroed, smallest |w| first",
+        "clean_accuracy": 0.1163,
+        "accuracy_drop_vs_source_pp": 79.22,
+        "behavioral_wdr": 0.15,
+        "behavioral_p_value": 0.1411899969605579,
+        "behavioral_detected": false,
+        "weight_correlation": 0.827544986236775,
+        "weight_z": 9.362602744079227,
+        "weight_p_value": 9.230717564825786e-20,
+        "weight_detected": true,
+        "weight_applicable": true,
+        "detection_alpha": "1e-6"
+      },
+      "config": {
+        "attack": "magnitude_prune_layerwise",
+        "strength": 0.9,
+        "params": {}
+      },
+      "attack": {
+        "name": "magnitude_prune_layerwise",
+        "strength_meaning": "fraction of each conv/linear weight tensor zeroed, smallest |w| first",
+        "description": "Unstructured magnitude pruning, same sparsity per tensor, no fine-tuning or BN recalibration (P4.2)."
+      },
+      "source": {
+        "name": "dual",
+        "task": "P3.6",
+        "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+        "arch": {
+          "width": 32
+        }
+      },
+      "attacked": {
+        "arch": {
+          "width": 32
+        },
+        "info": {
+          "version": "magnitude-prune/v1",
+          "scope": "layerwise",
+          "target_sparsity": 0.9,
+          "prunable_tensors": 7,
+          "prunable_weights": 307040,
+          "zeroed": 276336,
+          "achieved_sparsity": 0.9,
+          "zeros_before": 0,
+          "largest_pruned_abs": 0.31470751762390137,
+          "smallest_kept_abs": 0.046583469957113266,
+          "emptied_tensors": 0,
+          "per_tensor": {
+            "features.0.weight": {
+              "size": 864,
+              "pruned": 778,
+              "sparsity": 0.9004629629629629,
+              "zero_fraction_after": 0.9004629850387573,
+              "largest_pruned_abs": 0.31470751762390137,
+              "smallest_kept_abs": 0.3163619637489319
+            },
+            "features.3.weight": {
+              "size": 9216,
+              "pruned": 8294,
+              "sparsity": 0.8999565972222222,
+              "zero_fraction_after": 0.8999565839767456,
+              "largest_pruned_abs": 0.11528798192739487,
+              "smallest_kept_abs": 0.11533726006746292
+            },
+            "features.7.weight": {
+              "size": 18432,
+              "pruned": 16589,
+              "sparsity": 0.9000108506944444,
+              "zero_fraction_after": 0.9000108242034912,
+              "largest_pruned_abs": 0.10754663497209549,
+              "smallest_kept_abs": 0.10761359333992004
+            },
+            "features.10.weight": {
+              "size": 36864,
+              "pruned": 33178,
+              "sparsity": 0.9000108506944444,
+              "zero_fraction_after": 0.9000108242034912,
+              "largest_pruned_abs": 0.08707629144191742,
+              "smallest_kept_abs": 0.08707945048809052
+            },
+            "features.14.weight": {
+              "size": 73728,
+              "pruned": 66355,
+              "sparsity": 0.8999972873263888,
+              "zero_fraction_after": 0.8999972939491272,
+              "largest_pruned_abs": 0.07291990518569946,
+              "smallest_kept_abs": 0.07292221486568451
+            },
+            "features.17.weight": {
+              "size": 147456,
+              "pruned": 132710,
+              "sparsity": 0.8999972873263888,
+              "zero_fraction_after": 0.8999972939491272,
+              "largest_pruned_abs": 0.04658251255750656,
+              "smallest_kept_abs": 0.046583469957113266
+            },
+            "classifier.2.weight": {
+              "size": 20480,
+              "pruned": 18432,
+              "sparsity": 0.9,
+              "zero_fraction_after": 0.8999999761581421,
+              "largest_pruned_abs": 0.10296719521284103,
+              "smallest_kept_abs": 0.10299093276262283
+            }
+          },
+          "untouched": "BatchNorm parameters and buffers, classifier bias",
+          "fine_tuned": false,
+          "bn_recalibrated": false
+        },
+        "applied_in": "run"
+      },
+      "clean_accuracy": {
+        "accuracy": 0.1163,
+        "correct": 1163,
+        "n": 10000,
+        "loss": 4.73649580078125,
+        "source_accuracy": 0.9085,
+        "drop_vs_source_pp": 79.22,
+        "drop_ci95_pp": [
+          78.35446081984328,
+          80.08553918015672
+        ],
+        "source_only_right": 8074,
+        "attacked_only_right": 152,
+        "mcnemar_exact_p": 0.0
+      },
+      "behavioral": {
+        "n": 100,
+        "fired": 15,
+        "wdr": 0.15,
+        "predicted_base_label": 8,
+        "predicted_other_class": 77,
+        "target_probability_mean": 0.12118696421384811,
+        "target_probability_median": 0.0027790716849267483,
+        "target_probability_min": 3.1418853723153006e-06,
+        "null_fire_bound": "1/9",
+        "null_expected_fired_bound": 11.11111111111111,
+        "p_value": 0.1411899969605579,
+        "p_value_log10": -0.8501960711221841,
+        "rejects": {
+          "0.05": false,
+          "0.01": false,
+          "1e-3": false,
+          "1e-6": false,
+          "1e-9": false
+        },
+        "detected": false
+      },
+      "weight": {
+        "applicable": true,
+        "version": "weight-extraction/v1",
+        "rows": 128,
+        "dim": 307040,
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+        "centered": true,
+        "correlation": 0.827544986236775,
+        "amplitude": 0.046183567261639,
+        "projected_rms": 0.05580792347212055,
+        "bit_matches": 115,
+        "z": 9.362602744079227,
+        "p_value_bound": 9.230717564825786e-20,
+        "p_value_bound_log10": -19.03476453707471,
+        "p_value_floor": 1.603810890548638e-28,
+        "gaussian_tail_approximation": 3.889810696999968e-21,
+        "rejects": {
+          "0.05": true,
+          "0.01": true,
+          "1e-3": true,
+          "1e-6": true,
+          "1e-9": true
+        },
+        "detected": true
+      },
+      "owner": {
+        "owner_id": "blacktensor-zkcrown-owner",
+        "trigger_bundle_sha256": "fbd65ec730a3555c5921f13d1a5d4840b6310261ddcaf31d3a724195122baec8",
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8"
+      }
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 169.38874439999927,
+  "notes": "One attack row. Behavioral and weight tests reported separately at alpha 1e-6; combining them is P9.3. p-values assume K was committed before the suspect was seen and a per-suspect correction when several models are audited. Aggregates only."
+}

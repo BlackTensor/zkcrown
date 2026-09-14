@@ -388,7 +388,32 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - Built-in checks passed: zero discordant images, and exact reproduction of P3.6 (fired, correlation to 1e-12, 9,085 correct).
     - An `apply` then `evaluate` run of the same control, written to a scratch directory and not committed, gave an identical table.
   - 43 new tests, 546 in total, all pass.
-- [ ] **P4.2** `[GPU]` Magnitude pruning sweep (10 to 90 percent sparsity).
+- [x] **P4.2** `[GPU]` Magnitude pruning sweep (10 to 90 percent sparsity).
+  - **Owner decisions:**
+    - Run on local CPU with no Colab run: pruning without fine-tuning is not training.
+    - Sweep both scopes.
+  - **Attacks** (`src/attacks/prune.py`):
+    - `magnitude_prune_layerwise` zeroes exactly `round(s·n)` smallest-|w| entries of each conv/linear weight tensor.
+    - `magnitude_prune_global` uses one threshold over all 307,040 of those weights.
+    - Common to both: stable float64 ranking, so ties go in index order and exact counts are reproducible. Kept weights stay bit-identical. BN parameters, BN buffers and the classifier bias are never touched. No fine-tuning (P4.6), no BN recalibration, no data.
+    - The pruned set is also the watermark carrier. That is because it is the conventional pruning target, not because the attacker knows the carrier.
+  - Configs `experiments/configs/p4.2_magnitude_prune_{layerwise,global}.json`: s = 0.1 … 0.9, fixed before the run.
+  - Harness fix: `write_result` takes a `git` snapshot, and `run_attack_suite.py` takes one per invocation and accepts several configs. Without this, the first row a sweep writes (untracked) would mark every later row in the same sweep dirty.
+  - **Run:** 18 rows on the dual `W*`, CPU, about 5 min, clean tree at `506d99c`. Every row's achieved sparsity equals its target, and no tensor was emptied.
+  - **Layer-wise, s = 0.1 … 0.9:**
+    - Test accuracy: 90.83, 90.83, 90.22, 89.24, 86.92, 74.23, 50.79, 25.08, 11.63%.
+    - Fired: 100, 100, 100, 100, 99, 71, 23, 15, 15.
+    - Weight z: 10.27, 10.25, 10.24, 10.20, 10.22, 10.15, 9.99, 9.81, 9.36.
+  - **Global, s = 0.1 … 0.9:**
+    - Test accuracy: 90.86, 90.76, 90.74, 90.14, 89.26, 87.59, 80.33, 49.27, 18.28%.
+    - Fired: 100, 100, 100, 100, 100, 97, 78, 42, 12.
+    - Weight z: 10.27, 10.26, 10.23, 10.18, 10.13, 10.04, 9.83, 9.29, 8.17.
+  - **Reading:**
+    - The first accuracy drop distinguishable from zero is at 30% (layer-wise, +0.63 pp) and 40% (global, +0.71 pp).
+    - The behavioral watermark is detected at 1e-6 up to layer-wise 60% (74.2% accuracy) and global 80% (49.3% accuracy). It fails only after accuracy has fallen to 50.8% or below.
+    - The weight watermark is detected at 1e-6 at every sparsity in both scopes, lowest z 8.17 (p ≤ 3.1e-15), including models near chance accuracy. Why it holds up is not investigated here.
+  - Limits: one model, one key, one deterministic pruning per point, no recovery training.
+  - 28 new tests, 574 in total, all pass.
 - [ ] **P4.3** `[GPU]` Structured pruning (whole channels or filters). Expect this to hurt more than magnitude pruning. Report it either way.
 - [ ] **P4.4** `[GPU]` Post-training quantization, FP32 to INT8. Also try FP16.
 - [ ] **P4.5** `[GPU]` Fine-tuning on a held-out data split, sweeping epochs and learning rate. Include an aggressive high-learning-rate run, since that is the realistic removal attack.
@@ -960,7 +985,8 @@ the behavioral one is P9.
 | Attack | Strength | Clean acc | Behavioral WDR | Weight corr | Verdict |
 |---|---|---|---|---|---|
 | None (P4.1 control, dual `W*`) | 0 | 90.85% | 100% (100/100), p = 3.8e-96 | +0.909 (z 10.29), p ≤ 1.1e-23 | both detected at 1e-6 |
-| Magnitude prune | TBD | TBD | TBD | TBD | TBD |
+| Magnitude prune, layer-wise (P4.2) | 10% → 60% → 90% | 90.83% → 74.23% → 11.63% | 100% → 71% → 15% | +0.908 → +0.897 → +0.828 | behavioral detected up to 60%; weight detected at all 9 |
+| Magnitude prune, global (P4.2) | 10% → 80% → 90% | 90.86% → 49.27% → 18.28% | 100% → 42% → 12% | +0.908 → +0.821 → +0.723 | behavioral detected up to 80%; weight detected at all 9 |
 | Structured prune | TBD | TBD | TBD | TBD | TBD |
 | Quantize INT8 | TBD | TBD | TBD | TBD | TBD |
 | Fine-tune | TBD | TBD | TBD | TBD | TBD |
@@ -984,6 +1010,73 @@ row is a check on the harness, not an attack result.
 "Detected" means rejected at alpha 1e-6, a level fixed in P4.1 before any
 attack was run. Each watermark is tested separately; a combined verdict is
 P9.3.
+
+Magnitude pruning sweep from `experiments/run_attack_suite.py run --config
+experiments/configs/p4.2_magnitude_prune_layerwise.json
+experiments/configs/p4.2_magnitude_prune_global.json --task P4.2` (P4.2), 18
+result files `results/attacks/p4.2_magnitude_prune_{layerwise,global}_<s>__seed1337__20260914T0955…–1000…+0000.json`,
+CPU, seed 1337, commit `506d99c`, clean tree.
+- **Source:** the dual `W*` (P3.6), loaded by hash, with the trigger bundle
+  digest matched to P2.3.
+- **Pruning:** unstructured magnitude pruning of the 7 conv/linear weight
+  tensors (307,040 weights). No fine-tuning, no BN recalibration.
+- **Accuracy:** on the 10,000-image test set. The drop is paired against the
+  dual `W*` (90.85%).
+- **Behavioral:** fired out of N = 100 owner triggers, P2.8 p-value.
+- **Weight:** P3.3 extraction, P3.7 bound.
+- **Detected:** p ≤ 1e-6, per watermark.
+
+| Scope | s | Test acc | Drop pp (95% CI) | Fired /100 | Base label | Behav. p | Behav. detected | Weight corr | z | Bits /128 | Weight p ≤ | Weight detected |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| layer-wise | 0.1 | 90.83% | +0.02 [-0.13, +0.17] | 100 | 0 | 3.8e-96 | yes | +0.9081 | 10.27 | 126 | 1.2e-23 | yes |
+| layer-wise | 0.2 | 90.83% | +0.02 [-0.22, +0.26] | 100 | 0 | 3.8e-96 | yes | +0.9060 | 10.25 | 126 | 1.5e-23 | yes |
+| layer-wise | 0.3 | 90.22% | +0.63 [+0.32, +0.94] | 100 | 0 | 3.8e-96 | yes | +0.9048 | 10.24 | 126 | 1.8e-23 | yes |
+| layer-wise | 0.4 | 89.24% | +1.61 [+1.19, +2.03] | 100 | 0 | 3.8e-96 | yes | +0.9018 | 10.20 | 126 | 2.5e-23 | yes |
+| layer-wise | 0.5 | 86.92% | +3.93 [+3.39, +4.47] | 99 | 1 | 3.0e-93 | yes | +0.9037 | 10.22 | 126 | 2.0e-23 | yes |
+| layer-wise | 0.6 | 74.23% | +16.62 [+15.79, +17.45] | 71 | 8 | 7.6e-45 | yes | +0.8970 | 10.15 | 125 | 4.3e-23 | yes |
+| layer-wise | 0.7 | 50.79% | +40.06 [+39.03, +41.09] | 23 | 12 | 5.3e-4 | no (1e-3 only) | +0.8827 | 9.99 | 124 | 2.2e-22 | yes |
+| layer-wise | 0.8 | 25.08% | +65.77 [+64.77, +66.77] | 15 | 10 | 0.14 | no | +0.8674 | 9.81 | 124 | 1.2e-21 | yes |
+| layer-wise | 0.9 | 11.63% | +79.22 [+78.35, +80.09] | 15 | 8 | 0.14 | no | +0.8275 | 9.36 | 115 | 9.2e-20 | yes |
+| global | 0.1 | 90.86% | -0.01 [-0.12, +0.10] | 100 | 0 | 3.8e-96 | yes | +0.9078 | 10.27 | 126 | 1.3e-23 | yes |
+| global | 0.2 | 90.76% | +0.09 [-0.11, +0.29] | 100 | 0 | 3.8e-96 | yes | +0.9066 | 10.26 | 126 | 1.4e-23 | yes |
+| global | 0.3 | 90.74% | +0.11 [-0.14, +0.36] | 100 | 0 | 3.8e-96 | yes | +0.9041 | 10.23 | 126 | 1.9e-23 | yes |
+| global | 0.4 | 90.14% | +0.71 [+0.39, +1.03] | 100 | 0 | 3.8e-96 | yes | +0.8995 | 10.18 | 126 | 3.2e-23 | yes |
+| global | 0.5 | 89.26% | +1.59 [+1.19, +1.99] | 100 | 0 | 3.8e-96 | yes | +0.8958 | 10.13 | 125 | 5.0e-23 | yes |
+| global | 0.6 | 87.59% | +3.26 [+2.76, +3.76] | 97 | 0 | 3.1e-88 | yes | +0.8876 | 10.04 | 127 | 1.3e-22 | yes |
+| global | 0.7 | 80.33% | +10.52 [+9.81, +11.23] | 78 | 8 | 2.1e-54 | yes | +0.8686 | 9.83 | 123 | 1.1e-21 | yes |
+| global | 0.8 | 49.27% | +41.58 [+40.54, +42.62] | 42 | 7 | 3.1e-15 | yes | +0.8214 | 9.29 | 118 | 1.8e-19 | yes |
+| global | 0.9 | 18.28% | +72.57 [+71.64, +73.50] | 12 | 3 | 0.44 | no | +0.7225 | 8.17 | 108 | 3.1e-15 | yes |
+
+Drops with McNemar p: layer-wise 0.1 p = 0.90 and 0.2 p = 0.94; global 0.1
+p = 1.0, 0.2 p = 0.43 and 0.3 p = 0.43. Every other drop has p ≤ 6.4e-5.
+Where the global scope put its sparsity, per tensor, at s = 0.5 and 0.9
+(`features.0, 3, 7, 10, 14, 17, classifier.2`):
+- **s = 0.5:** 0.16, 0.37, 0.31, 0.36, 0.42, 0.63, 0.35.
+- **s = 0.9:** 0.39, 0.76, 0.73, 0.82, 0.89, 0.98, 0.77.
+
+It prunes `features.17` hardest and the first conv least. No tensor was
+emptied at any point.
+
+How to read it:
+- **Accuracy.** From 30% sparsity up, global pruning costs less accuracy than
+  layer-wise pruning at the same overall sparsity: 87.59% against 74.23% at
+  60%, and 80.33% against 50.79% at 70%. At 10% and 20% the two are within
+  0.07 pp of each other.
+- **Behavioral watermark.** It survives pruning while the model is still
+  useful. At 1e-6 it is lost only at layer-wise 70% and global 90%, where test
+  accuracy is 50.8% and 18.3%. Fired counts fall together with accuracy. At
+  layer-wise 70% the count of 23 gives p = 5.3e-4, which rejects at 1e-3 but
+  not at 1e-6. This borderline case is the one the Icebox conditional test
+  names. That test was not computed.
+- **Weight watermark.** It is detected at every point, including models near
+  chance accuracy, and z falls only from 10.29 to 8.17 at global 90%. That is a
+  measurement of this statistic on these pruned weights. Why it holds up is not
+  investigated, and detecting a watermark in a destroyed model has little
+  practical value to a thief.
+
+Limits: one source model, one key, a single deterministic pruning per point, no
+fine-tuning after pruning (P4.6), and no BN recalibration. Intervals cover
+test-image sampling only.
 
 ## 8.5 ZK measurements
 
@@ -1095,3 +1188,10 @@ Append one line per session: date, tasks touched, key outcome.
     - The holdout is not scored.
   - The `none` control on the dual `W*`, run from a clean tree at `b807c8b`, reproduced P3.6 exactly: 90.85%, 100/100, z = 10.29. `apply` then `evaluate` gave the same table.
   - 43 new tests, 546 in total, all pass. No attack implemented beyond the control.
+- 2026-09-14: P4.2. The owner chose to run on local CPU (no training, so no Colab run) and to sweep both scopes. `src/attacks/prune.py` registers layer-wise and global unstructured magnitude pruning, with exact counts and stable tie order; BN and bias are untouched. Sweep configs are 10 to 90%.
+  - Fixed a harness flaw found before the run: the rows a sweep writes would have marked its own later rows dirty. `write_result` now accepts one git snapshot per invocation.
+  - 18 rows from a clean tree at `506d99c`.
+    - Behavioral watermark detected at 1e-6 up to layer-wise 60% (74.2% accuracy) and global 80% (49.3% accuracy).
+    - Weight watermark detected at every sparsity, lowest z 8.17 (global 90%, 18.3% accuracy).
+    - From 30% up, global pruning costs less accuracy than layer-wise.
+  - 28 new tests, 574 in total, all pass.
