@@ -18,6 +18,35 @@ extractor.
 - `weight_embedding.py`: the spread-spectrum embedding `W* = W + alpha * P_K^T * S` (P3.2).
 - `weight_extraction.py`: the blind extractor and its correlation score (P3.3).
 
+## Dual watermark: post-hoc, alpha 0.1 (P3.6)
+
+**Decision (owner): the weight watermark is embedded post-hoc into the P2.3
+behavioral model, at alpha = 0.1, without BatchNorm recalibration.** The
+result is the final dual-watermarked `W*`,
+`results/p3.6_dual_wm_W_star.pt` (gitignored, SHA-256 `7a9a9f14…b434c4`),
+built by `experiments/p3_6_make_dual_model.py`.
+
+Why post-hoc. P3.4 and P3.5 measured exactly this setup. It keeps the
+behavioral model, needs no retraining, and extraction stays blind. Embedding
+during training would need a new design and a GPU run, and it would change
+what `alpha` means, all for a robustness benefit nobody has measured. It is in
+the Icebox, to revisit only if Phase 4 shows the post-hoc watermark does not
+survive attacks.
+
+Why 0.1. In P3.5 it is the largest grid value where accuracy showed no
+detectable cost on test or holdout and test loss had not yet started to rise.
+Detection there is z = 10.29, with 126 of 128 bits right. Alpha was chosen
+after seeing P3.5's test-set drops, so the dual model's test accuracy is an
+optimistic estimate.
+
+Checked before calling it final, all on the weights reloaded from disk:
+- The weight watermark reproduces P3.5.
+- The behavioral watermark still passes the P2.8 test at 1e-6. This gate was
+  fixed before the run, and it fires on 100 of 100 triggers.
+- Accuracy reproduces P3.5.
+
+The measured numbers are in CLAUDE.md, section 8.
+
 ## Weight extraction (P3.3)
 
 ```

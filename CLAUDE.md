@@ -328,7 +328,21 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
   - Limits: one host, one key, one run. The intervals cover image sampling only.
   - No alpha selected; that is P3.6. Picking alpha from these test drops would bias that model's test accuracy, and the ledger would have to say so.
   - Figure `figures/p3.5_alpha_sweep.png`. A first run of the same code was flagged dirty only because its new figure was untracked when the record was written. It gave identical metrics and was discarded, not committed. 6 new tests, 466 in total, all pass.
-- [ ] **P3.6** `[GPU]` Decide whether the weight watermark is embedded post-hoc or during training, document the choice, and produce the final dual-watermarked model `W*`.
+- [x] **P3.6** `[GPU]` Decide whether the weight watermark is embedded post-hoc or during training, document the choice, and produce the final dual-watermarked model `W*`.
+  - **Decision (owner): post-hoc at alpha 0.1**, into the P2.3 behavioral model, without BN recalibration. No GPU run was needed: the `[GPU]` tag covered the during-training option, which was not chosen. The rationale is in `src/watermark/README.md`. During-training embedding is in the Icebox, conditional on Phase 4.
+  - `experiments/p3_6_make_dual_model.py`, CPU, 78 s, clean tree at `82c0241`.
+    - It saves `results/p3.6_dual_wm_W_star.pt` (gitignored) with SHA-256 `7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4`. Saving a second time under the same file name gives the same bytes; `torch.save` embeds the file name in the archive.
+    - All checks below are on the weights reloaded strictly from that file.
+  - **Weight watermark:** correlation +0.9091, z = 10.29, 126/128 bits. That equals P3.5's alpha 0.1 row exactly. The P2.3 model without it gives z = 1.39. The change is 4.56% of the carrier L2 norm, and the largest float32 rounding error is 2.8e-8.
+  - **Behavioral watermark, gate fixed before the run** (P2.8 test must reject at 1e-6, i.e. fired >= 29):
+    - The dual model fires on **100/100** triggers, p = 3.8e-96, so it passes. Mean target probability is 0.9994 (min 0.9932), against 0.9995 (min 0.9965) for the P2.3 model.
+    - Base-image control: 1/100 fired and 99 correct (P2.3 model: 1 fired, 98 correct).
+    - Trigger bundle digest matched P2.3.
+  - **Accuracy** (reproduces P3.5's counts exactly):
+    - Test 90.85% (9,085/10,000): drop vs the P2.3 model -0.12 pp, CI [-0.32, +0.08], p = 0.27; vs clean `W` +0.35 pp, CI [-0.16, +0.86], p = 0.19.
+    - Holdout 91.16% (4,558/5,000): drop vs the P2.3 model -0.02 pp, p = 1.0; vs `W` -0.28 pp, p = 0.50.
+    - Alpha was chosen after seeing P3.5's test drops, so the test figure is optimistic.
+  - Limits: one host, one key, one embedding. No weight-watermark threshold or false-positive rate yet (P3.7). 8 new tests, 474 in total, all pass.
 - [ ] **P3.7** Null distribution: extract with 1000 random wrong keys, fit the correlation null distribution, derive a detection threshold with a stated false positive rate.
 
 ---
@@ -463,6 +477,7 @@ guaranteed.
 |---|---|---|---|
 | `main_model` clean `W` | CIFAR-10 | 307,946 | 91.20% |
 | `main_model` watermarked `W*` (behavioral only) | CIFAR-10 | 307,946 | 90.73% |
+| `main_model` dual-watermarked `W*` (P3.6, final) | CIFAR-10 | 307,946 | 90.85% (alpha chosen after seeing test drops; optimistic) |
 | `zk_model` | MNIST | 6,138 | 98.96% |
 
 `main_model` parameter count from `experiments/p0_4_model_summary.py` (P0.4).
@@ -507,12 +522,35 @@ Weights SHA-256
 has the behavioral watermark only; P3.6 produces the dual-watermarked model.
 The accuracy drop against P0.6 is left to P2.5.
 
+Dual-watermarked `W*` numbers from `experiments/p3_6_make_dual_model.py`
+(P3.6), result file `results/p3.6_dual_wm__seed1337__20260914T085541+0000.json`,
+CPU, seed 1337, commit `82c0241`, clean tree. This is the P2.3 model plus the
+post-hoc weight watermark `alpha * P_K^T * S` at alpha 0.1, with owner id
+`blacktensor-zkcrown-owner` and no BN recalibration. Weights SHA-256
+`7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4`, gitignored.
+All figures are measured on the weights reloaded from that file.
+
+- **Test:** 90.85% (9,085/10,000, loss 0.3078).
+- **Holdout:** 91.16% (4,558/5,000).
+- **Paired test drop against the P2.3 model:** -0.12 pp, 95% CI [-0.32,
+  +0.08], McNemar p = 0.27 (44 images only the P2.3 model got right, 56 only
+  the dual model).
+- **Paired test drop against clean `W`:** +0.35 pp, CI [-0.16, +0.86],
+  p = 0.19.
+- **Holdout drops:** -0.02 pp (p = 1.0) against the P2.3 model and -0.28 pp
+  (p = 0.50) against `W`.
+
+The counts equal P3.5's alpha 0.1 row. Alpha was chosen from P3.5's grid after
+seeing its test-set drops, so 90.85% is an optimistic estimate of this model's
+accuracy. This is the model Phase 4 attacks.
+
 ## 8.3 Watermark baseline
 
 | Metric | Value |
 |---|---|
 | Trigger set size N | 100 (P2.3 bundle `fbd65ec7…22baec8`) |
-| Behavioral WDR | 100% (100/100), `W*` from P2.3 |
+| Behavioral WDR | 100% (100/100), `W*` from P2.3; 100% (100/100) on the P3.6 dual `W*`, p = 3.8e-96 |
+| Weight watermark on the P3.6 dual `W*` (alpha 0.1) | correlation +0.909, z = 10.29, 126/128 bits (threshold TBD, P3.7) |
 | Behavioral FPR (input level, 1,000 each) | random 12.6% (chance 12.7%), clean-unrelated 10.0% (chance 10.0%) |
 | Accuracy drop from watermarking | 0.47 pp on test (91.20% → 90.73%), 95% CI [-0.04, +0.98], McNemar p = 0.077; single run each |
 | Behavioral detection p-value (P2.8) | `W*` 100/100: p = 3.8e-96; clean `W` 3/100: p = 0.999 |
@@ -853,6 +891,7 @@ Ideas that are explicitly not in scope right now. Add here instead of expanding 
 - Target-class bias on noise (P2.6): on uniform noise, `W*`'s predictions land in the owner's target classes more often than clean `W`'s (chance level 12.7% vs 8.9%). This is a single untested pair of numbers; revisit only if it shows up again elsewhere.
 - Conditional detection test (P2.8): the P2.8 p-value uses the worst-case bound `Binomial(N, 1/9)`. Given the count `m` of triggers on which the suspect does *not* predict the base label, the fired count is exactly `Binomial(m, 1/9)` under H0. That is still valid and has more power against accurate models (the P2.8 null models had m of about 51 to 58). Worth revisiting if attacked models in Phase 4 end up with borderline p-values.
 - Per-layer scaled weight embedding (P3.2): the P3.2 formula moves every carrier parameter by the same amount, even though `main_model` layers differ in weight scale. Scaling the change per layer (for example by layer weight RMS) would change the formula and the extractor. Revisit only if P3.5 shows the uniform version costs too much accuracy for its detection strength.
+- During-training weight embedding (P3.6): the final dual `W*` uses post-hoc embedding at alpha 0.1. Embedding during training might let the network adapt around the watermark and survive fine-tuning better, but that is unmeasured. It would need a new design (for example re-adding the watermark after each step, or a loss term), a GPU run, and a redo of P3.5, because alpha would mean something different. Revisit only if Phase 4 shows the post-hoc weight watermark does not survive attacks well.
 
 ---
 
@@ -913,3 +952,10 @@ Append one line per session: date, tasks touched, key outcome.
   - Checks: alpha 0 reproduced `W*` exactly, and the shared alphas reproduced P3.4 exactly.
   - The first run was flagged dirty only because its fresh figure was untracked. I fixed overlapping figure labels (`e943c19`) and re-ran from the clean tree, writing the figure outside the repo. Metrics were identical, and the figure was byte-identical to one rendered from the first run.
   - No alpha selected. 6 new tests, 466 in total, all pass.
+- 2026-09-14: P3.6. Owner decision: post-hoc at alpha 0.1, so no Colab run was needed.
+  - `experiments/p3_6_make_dual_model.py` built the final dual `W*` (SHA-256 `7a9a9f14…b434c4`, gitignored) and verified it on the reloaded file.
+    - Weight watermark z = 10.29, 126/128 bits (equals P3.5).
+    - Behavioral WDR 100/100, p = 3.8e-96, passing the 1e-6 gate fixed in advance.
+    - Test 90.85%, holdout 91.16%; drops vs the P2.3 model not significant (equal to P3.5).
+  - Two helper bugs were caught by the new tests before the run: a dict key collision in the gate summary, and `torch.save` embedding the file name, which broke the same-bytes check.
+  - Icebox line added for during-training embedding, conditional on Phase 4. 8 new tests, 474 in total, all pass.

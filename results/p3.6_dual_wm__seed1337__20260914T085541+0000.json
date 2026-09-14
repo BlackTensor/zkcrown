@@ -1,0 +1,307 @@
+{
+  "schema_version": 1,
+  "name": "p3.6_dual_wm",
+  "task": "P3.6",
+  "timestamp_utc": "2026-09-14T08:55:41+00:00",
+  "git": {
+    "commit": "82c0241f7ba942b23c8658f0bfe212ad5d13d6d7",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "decision": "post-hoc weight watermark on the P2.3 behavioral model (owner, P3.6)",
+    "alpha": 0.1,
+    "alpha_note": "chosen after P3.5's test-set drops; test accuracy of this model is an optimistic estimate",
+    "bn_recalibration": false,
+    "host": {
+      "task": "P2.3",
+      "weights_sha256": "be00f2b556979457b045b9a4925dd3e547ee586f984b6969b9266e61a7197222"
+    },
+    "baseline": {
+      "task": "P0.5/P0.6",
+      "weights_sha256": "54f112f4d7edc2ddacc181f8f4db25da27874e7e65aaf9407778a3ce5122fdcf"
+    },
+    "owner_id": "blacktensor-zkcrown-owner",
+    "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+    "behavioral_gate": "P2.8 test must reject at alpha 1e-6 (fired >= 29 of 100), fixed before the run",
+    "measured_from": "weights reloaded from the saved file",
+    "p3_5_reference": "results/p3.5_alpha_sweep__seed1337__20260914T084524+0000.json",
+    "device": "cpu"
+  },
+  "metrics": {
+    "final": true,
+    "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+    "weights_path": "results/p3.6_dual_wm_W_star.pt",
+    "save_is_deterministic": true,
+    "embedding": {
+      "version": "weight-embedding/v1",
+      "alpha": 0.1,
+      "rows": 128,
+      "dim": 307040,
+      "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+      "delta_l2": 1.1320102641517285,
+      "delta_rms": 0.0020429271776182534,
+      "delta_max_abs": 0.009745323967892862,
+      "carrier_l2": 24.812374736047268,
+      "relative_l2": 0.04562281023860045,
+      "zero_fraction": 0.07092561229807191,
+      "float32_rounding_max_abs": 2.7804022992977944e-08,
+      "tensors": [
+        {
+          "name": "features.0.weight",
+          "numel": 864,
+          "delta_rms": 0.0020150870983016403,
+          "weight_rms": 0.19299925880427415,
+          "relative_rms": 0.010440905891484255,
+          "energy_share": 0.0027377933101263097,
+          "zero_fraction": 0.0763888888888889
+        },
+        {
+          "name": "features.3.weight",
+          "numel": 9216,
+          "delta_rms": 0.002040131744190723,
+          "weight_rms": 0.07112931916849381,
+          "relative_rms": 0.028682008601234914,
+          "energy_share": 0.02993354573512701,
+          "zero_fraction": 0.07183159722222222
+        },
+        {
+          "name": "features.7.weight",
+          "numel": 18432,
+          "delta_rms": 0.0020343135643953614,
+          "weight_rms": 0.06662168601408265,
+          "relative_rms": 0.030535305935748058,
+          "energy_share": 0.05952611268220486,
+          "zero_fraction": 0.06949869791666667
+        },
+        {
+          "name": "features.10.weight",
+          "numel": 36864,
+          "delta_rms": 0.00205091406903379,
+          "weight_rms": 0.053204875942681716,
+          "relative_rms": 0.03854748334049807,
+          "energy_share": 0.12100314454826878,
+          "zero_fraction": 0.069091796875
+        },
+        {
+          "name": "features.14.weight",
+          "numel": 73728,
+          "delta_rms": 0.002050740457509917,
+          "weight_rms": 0.04484229886706298,
+          "relative_rms": 0.04573227754423183,
+          "energy_share": 0.2419653187770433,
+          "zero_fraction": 0.0707736545138889
+        },
+        {
+          "name": "features.17.weight",
+          "numel": 147456,
+          "delta_rms": 0.002038922292471474,
+          "weight_rms": 0.028727427133763018,
+          "relative_rms": 0.07097476160944298,
+          "energy_share": 0.47836904376189304,
+          "zero_fraction": 0.07143147786458333
+        },
+        {
+          "name": "classifier.2.weight",
+          "numel": 20480,
+          "delta_rms": 0.002039304265601857,
+          "weight_rms": 0.06278696928056997,
+          "relative_rms": 0.03247973726027479,
+          "energy_share": 0.06646504118533748,
+          "zero_fraction": 0.07177734375
+        }
+      ]
+    },
+    "weight_watermark": {
+      "dual": {
+        "version": "weight-extraction/v1",
+        "rows": 128,
+        "dim": 307040,
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+        "centered": true,
+        "correlation": 0.9091209522245879,
+        "amplitude": 0.10610112901917498,
+        "projected_rms": 0.1167073850399654,
+        "bit_matches": 126,
+        "z": 10.28552944378844
+      },
+      "behavioral_only": {
+        "version": "weight-extraction/v1",
+        "rows": 128,
+        "dim": 307040,
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+        "centered": true,
+        "correlation": 0.12263756066325872,
+        "amplitude": 0.0059906381090526675,
+        "projected_rms": 0.04884831430642942,
+        "bit_matches": 68,
+        "z": 1.3874856123706694
+      },
+      "matches_p3_5": true
+    },
+    "behavioral_watermark": {
+      "trigger_bundle_sha256": "fbd65ec730a3555c5921f13d1a5d4840b6310261ddcaf31d3a724195122baec8",
+      "scores": {
+        "dual": {
+          "triggers": {
+            "n": 100,
+            "fired": 100,
+            "wdr": 1.0,
+            "predicted_base_label": 0,
+            "predicted_other_class": 0,
+            "target_probability_mean": 0.9994276165962219,
+            "target_probability_median": 0.999718189239502,
+            "target_probability_min": 0.9932290315628052
+          },
+          "base_images": {
+            "n": 100,
+            "fired": 1,
+            "wdr": 0.01,
+            "predicted_base_label": 99,
+            "predicted_other_class": 0,
+            "target_probability_mean": 0.012412961572408676,
+            "target_probability_median": 1.1549058172022342e-06,
+            "target_probability_min": 2.0608536917461097e-14
+          }
+        },
+        "behavioral_only": {
+          "triggers": {
+            "n": 100,
+            "fired": 100,
+            "wdr": 1.0,
+            "predicted_base_label": 0,
+            "predicted_other_class": 0,
+            "target_probability_mean": 0.9994997978210449,
+            "target_probability_median": 0.9996874332427979,
+            "target_probability_min": 0.996494710445404
+          },
+          "base_images": {
+            "n": 100,
+            "fired": 1,
+            "wdr": 0.01,
+            "predicted_base_label": 98,
+            "predicted_other_class": 1,
+            "target_probability_mean": 0.011970634572207928,
+            "target_probability_median": 7.341582204389852e-07,
+            "target_probability_min": 2.8140087916100898e-14
+          }
+        }
+      },
+      "detection_test": {
+        "dual": {
+          "fired": 100,
+          "n": 100,
+          "null_fire_bound": "1/9",
+          "null_expected_fired_bound": 11.11111111111111,
+          "p_value": 3.764861949599026e-96,
+          "p_value_log10": -95.42425094393249,
+          "rejects": {
+            "0.05": true,
+            "0.01": true,
+            "1e-3": true,
+            "1e-6": true,
+            "1e-9": true
+          },
+          "gate_alpha": "1e-6",
+          "passes_gate": true
+        },
+        "behavioral_only": {
+          "fired": 100,
+          "n": 100,
+          "null_fire_bound": "1/9",
+          "null_expected_fired_bound": 11.11111111111111,
+          "p_value": 3.764861949599026e-96,
+          "p_value_log10": -95.42425094393249,
+          "rejects": {
+            "0.05": true,
+            "0.01": true,
+            "1e-3": true,
+            "1e-6": true,
+            "1e-9": true
+          },
+          "gate_alpha": "1e-6",
+          "passes_gate": true
+        }
+      }
+    },
+    "accuracy": {
+      "test": {
+        "accuracy": 0.9085,
+        "correct": 9085,
+        "n": 10000,
+        "loss": 0.30779504318237305,
+        "behavioral_only_accuracy": 0.9073,
+        "baseline_W_accuracy": 0.912,
+        "vs_behavioral_only": {
+          "drop_pp": -0.12,
+          "ci95_pp": [
+            -0.3159822862052575,
+            0.07598228620525747
+          ],
+          "reference_only_right": 44,
+          "other_only_right": 56,
+          "mcnemar_exact_p": 0.2712530240738347
+        },
+        "vs_W": {
+          "drop_pp": 0.35000000000000003,
+          "ci95_pp": [
+            -0.1621763168898531,
+            0.8621763168898532
+          ],
+          "reference_only_right": 359,
+          "other_only_right": 324,
+          "mcnemar_exact_p": 0.19322984519930317
+        }
+      },
+      "holdout": {
+        "accuracy": 0.9116,
+        "correct": 4558,
+        "n": 5000,
+        "loss": 0.3017552261352539,
+        "behavioral_only_accuracy": 0.9114,
+        "baseline_W_accuracy": 0.9088,
+        "vs_behavioral_only": {
+          "drop_pp": -0.02,
+          "ci95_pp": [
+            -0.2943943978453263,
+            0.25439439784532625
+          ],
+          "reference_only_right": 24,
+          "other_only_right": 25,
+          "mcnemar_exact_p": 1.0
+        },
+        "vs_W": {
+          "drop_pp": -0.27999999999999997,
+          "ci95_pp": [
+            -1.0298862162190419,
+            0.4698862162190417
+          ],
+          "reference_only_right": 176,
+          "other_only_right": 190,
+          "mcnemar_exact_p": 0.4968610173523483
+        }
+      }
+    },
+    "matches_p3_5_accuracy": true
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 77.60526250000112,
+  "notes": "Final dual-watermarked W*: P2.3 behavioral model plus post-hoc weight watermark at alpha 0.1. One host, one key, one embedding. Weights file is gitignored; only its hash is here. No weight-watermark threshold yet (P3.7). Aggregates only."
+}
