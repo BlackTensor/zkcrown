@@ -74,6 +74,8 @@ P3_4_RESULT = "results/p3.4_key_specificity__seed1337__20260914T082116+0000.json
 FIGURE = "figures/p3.5_alpha_sweep.png"
 ROWS = 128
 Z_CAP = math.sqrt(ROWS)
+CROWDED_Z = 9.5
+"""In the figure's third panel, points at or above this z are labelled in a side column."""
 
 # Reference palette (dataviz skill, references/palette.md), light mode; validated.
 SURFACE = "#fcfcfb"
@@ -195,8 +197,22 @@ def plot(rows: list[dict], path: Path) -> None:
     ax.text(max(hi), band + 0.25, f"wrong-key |z| <= {band:.2f}", fontsize=8, color=INK_SECONDARY, ha="right")
     ax.errorbar(drop, z, xerr=[np.subtract(drop, lo), np.subtract(hi, drop)], color=SERIES_1, linewidth=0,
                 elinewidth=1.2, marker="o", markersize=7, markeredgecolor=SURFACE, markeredgewidth=2, capsize=3, zorder=3)
-    for a, dx, zy in zip(alphas, drop, z):
-        ax.annotate(f"{a:g}", (dx, zy), textcoords="offset points", xytext=(6, -10), fontsize=8, color=INK_SECONDARY)
+    # Points below the cluster near the cap get a label beside them. The
+    # crowded points near the cap get labels stacked in a column to the right,
+    # joined to their point by a thin leader line.
+    crowded = [i for i, zy in enumerate(z) if zy >= CROWDED_Z]
+    label_x = max(hi) + 0.08
+    for rank, i in enumerate(sorted(crowded, key=lambda i: -z[i])):
+        label_y = Z_CAP - 0.55 - 0.62 * rank
+        ax.annotate(
+            f"alpha {alphas[i]:g}", (drop[i], z[i]), xytext=(label_x, label_y), textcoords="data",
+            fontsize=8, color=INK_SECONDARY, va="center",
+            arrowprops={"arrowstyle": "-", "color": GRID, "linewidth": 0.8, "shrinkA": 0, "shrinkB": 4},
+        )
+    for i, (a, zy) in enumerate(zip(alphas, z)):
+        if i not in crowded:
+            ax.text(hi[i] + 0.04, zy, f"{a:g}", fontsize=8, color=INK_SECONDARY, va="center")
+    ax.set_xlim(right=label_x + 0.55)
     ax.axvline(0, color=INK_SECONDARY, linewidth=1, zorder=1)
     ax.set_xlabel("test accuracy drop vs W*, pp (95% CI)", color=INK_SECONDARY, fontsize=9)
     ax.set_ylabel("z = correlation x sqrt(128)", color=INK_SECONDARY, fontsize=9)
