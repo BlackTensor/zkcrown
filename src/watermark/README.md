@@ -17,6 +17,31 @@ extractor.
 - `carrier.py`: which weights form the carrier vector, and in what order (P3.2).
 - `weight_embedding.py`: the spread-spectrum embedding `W* = W + alpha * P_K^T * S` (P3.2).
 - `weight_extraction.py`: the blind extractor and its correlation score (P3.3).
+- `weight_significance.py`: the weight-watermark p-value bound and threshold (P3.7).
+
+## Weight detection test (P3.7)
+
+**H0:** the suspect was produced independently of `K`. **Statistic:**
+`z = correlation * sqrt(128)`. **p-value:** `min(1, exp(-z^2/2))`, one-sided.
+**Threshold:** `z* = sqrt(2 ln(1/alpha))`, which gives 5.257 at alpha 1e-6.
+
+Why this is valid for every H0 model. `S` and `P_K` come from different PRF
+streams of `K`. A suspect independent of `K` therefore gives a fingerprint
+`y = P_K c` that is independent of `S`. Given `y`, z is `sum a_i S_i` with
+`sum a_i^2 = 1` and uniform signs `S_i`, so Hoeffding's inequality bounds its
+tail by `exp(-t^2/2)`. The bound does not depend on the model's architecture
+scale or training, and it is conservative. A Gaussian threshold would be
+lower, but it is only an approximation. The exact tests show it is not a
+valid bound for small equal-weight sums, so the auditor does not use it.
+
+Because the correlation cannot exceed 1, the smallest achievable p-value is
+`exp(-64)`, about 1.6e-28.
+
+1,000 wrong keys on three real models gave a null consistent with N(0, 1),
+with exceedance counts well under the bound (numbers in CLAUDE.md section 8).
+That check only covers alpha near 0.05 and 0.01; smaller levels rest on the
+proof. The assumptions match P2.8's: `K` committed before the suspect was
+seen, one pre-declared test, and a correction for multiple suspects.
 
 ## Dual watermark: post-hoc, alpha 0.1 (P3.6)
 

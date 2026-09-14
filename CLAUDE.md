@@ -343,7 +343,25 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
     - Holdout 91.16% (4,558/5,000): drop vs the P2.3 model -0.02 pp, p = 1.0; vs `W` -0.28 pp, p = 0.50.
     - Alpha was chosen after seeing P3.5's test drops, so the test figure is optimistic.
   - Limits: one host, one key, one embedding. No weight-watermark threshold or false-positive rate yet (P3.7). 8 new tests, 474 in total, all pass.
-- [ ] **P3.7** Null distribution: extract with 1000 random wrong keys, fit the correlation null distribution, derive a detection threshold with a stated false positive rate.
+- [x] **P3.7** Null distribution: extract with 1000 random wrong keys, fit the correlation null distribution, derive a detection threshold with a stated false positive rate.
+  - **Test** (`src/watermark/weight_significance.py`). H0: the suspect is independent of `K`.
+    - Statistic: z = correlation·sqrt(128).
+    - `S` and `P_K` come from separate PRF streams, so under H0 `S` is uniform and independent of `y = P_K c`. Given `y`, z is a Rademacher sum with unit norm, and Hoeffding gives **P(z ≥ t) ≤ exp(-t²/2) for every H0 model**. This is a proof, like P2.8's bound.
+    - p-value `min(1, exp(-z²/2))`, one-sided. Threshold **z\* = sqrt(2 ln(1/alpha)), false positive rate ≤ alpha**.
+    - Floor: `exp(-64)` = 1.6e-28, reached only at correlation 1. Assumptions are written down as in P2.8.
+  - **Thresholds:** z\* = 2.448 / 3.035 / 3.717 / 5.257 / 6.438 at alpha 0.05 / 0.01 / 1e-3 / 1e-6 / 1e-9. In correlation: 0.216, 0.268, 0.329, 0.465, 0.569. The Gaussian approximation would give lower values (1.645 … 5.998), but that is not a proven bound, and the exact tests show it fails for a small equal-weight sum. It is reported only.
+  - **Empirical null** (`experiments/p3_7_weight_null.py`, CPU with 8 workers, 368 s, clean tree at `a757281`):
+    - Method: 1,000 public wrong keys, each deriving its own `P_K'` and `S'`, on clean `W`, the P2.3 behavioral-only model and the P3.6 dual `W*`.
+    - z mean -0.019 / +0.021 / +0.020 and sd 0.967 / 1.009 / 1.008, all 95% sd intervals covering 1. Skew and excess kurtosis are within 2 se of 0. KS against the fixed N(0, 1): p = 0.45 / 0.64 / 0.50.
+    - Fitted Gaussian thresholds at 1e-6: 4.58 / 4.82 / 4.81 (descriptive only).
+    - Largest z 2.64 / 3.21 / 3.22. Exceedances at z\*(0.05) 4 / 8 / 8 (bound 50); at z\*(0.01) 0 / 3 / 4 (bound 10); none at 1e-3 or below.
+    - Bit matches: mean 63.9 to 64.1, variance 30.4 to 32.1, against Binomial(128, 1/2) at 64 and 32.
+    - The behavioral-only and dual models share keys and their null z correlate at 0.999, so they are not independent checks. The samples are not pooled.
+  - **Applied:**
+    - Owner `K` on clean `W`: z = 0.18, p ≤ 0.98. On the behavioral-only model: z = 1.39, p ≤ 0.38. Neither is detected.
+    - **Dual `W*`: z = 10.29, p ≤ 1.1e-23**, rejecting at 1e-9. It reproduces P3.6 exactly.
+    - P3.5 sweep: alpha 0.005 rejects only at 0.05 (p ≤ 0.044), 0.01 at 1e-3 (p ≤ 0.0019), 0.02 at 1e-6 (p ≤ 6.2e-7), and 0.03 and above at 1e-9.
+  - Limits: 1,000 keys check the false positive rate only near 0.05 and 0.01; smaller levels rest on the proof. The test is per suspect, and combining it with the behavioral test is P9. Figure `figures/p3.7_weight_null.png`. 29 new tests, 503 in total, all pass.
 
 ---
 
@@ -557,7 +575,8 @@ accuracy. This is the model Phase 4 attacks.
 | Behavioral detection thresholds, N = 100 (P2.8) | k* = 17 / 20 / 23 / 29 / 35 at alpha 0.05 / 0.01 / 1e-3 / 1e-6 / 1e-9 |
 | Weight extraction correlation, correct key (P3.4, post-hoc on `W*`, alpha not chosen) | +0.123 / +0.313 / +0.473 / +0.756 / +0.909 at alpha 0 / 0.01 / 0.02 / 0.05 / 0.1 |
 | Weight extraction correlation, wrong key (P3.4, 100 keys, `W*` host) | mean +0.001, sd 0.095, max \|z\| 2.71 |
-| Detection threshold and its FPR | TBD |
+| Weight detection threshold and its FPR (P3.7) | z\* = sqrt(2 ln(1/alpha)), FPR ≤ alpha for any model independent of `K` (proof): z\* = 2.448 / 3.035 / 3.717 / 5.257 / 6.438 at alpha 0.05 / 0.01 / 1e-3 / 1e-6 / 1e-9; p-value floor 1.6e-28 |
+| Weight detection p-value, dual `W*` (P3.7) | z = 10.29, p ≤ 1.1e-23; owner `K` on unwatermarked models: z = 0.18 (p ≤ 0.98) and 1.39 (p ≤ 0.38) |
 
 Trigger perturbation size, from `experiments/p1_3_visualize_triggers.py`
 (P1.3), result file
@@ -851,6 +870,75 @@ other training seeds. Choosing alpha from this table is P3.6. A choice made
 by looking at the test drops makes the chosen model's test accuracy an
 optimistic estimate, and the ledger will have to say so.
 
+Weight-watermark detection test from `experiments/p3_7_weight_null.py`
+(P3.7), result file
+`results/p3.7_weight_null__seed1337__20260914T091625+0000.json`, CPU (8 worker
+processes), seed 1337, commit `a757281`, clean tree. The test is defined in
+`src/watermark/weight_significance.py`.
+- **H0:** the suspect model is independent of `K`.
+- **Statistic:** z = correlation × sqrt(128) from blind, per-tensor-centred
+  extraction (P3.3).
+- **Validity:** under H0, `S` is uniform and independent of the fingerprint
+  `y`, so z given `y` is a unit-norm Rademacher sum and
+  P(z ≥ t) ≤ exp(-t²/2) (Hoeffding). That holds for any model independent of
+  `K`. It is a proof, not a measurement.
+- **p-value:** `min(1, exp(-z²/2))`, one-sided.
+- **Floor:** exp(-64) = 1.6e-28, because the correlation cannot exceed 1.
+
+| alpha | Proven z\* | Correlation | Gaussian z (approximation only) | Fitted Gaussian z, dual `W*` null (descriptive) |
+|---|---|---|---|---|
+| 0.05 | 2.448 | 0.216 | 1.645 | 1.677 |
+| 0.01 | 3.035 | 0.268 | 2.326 | 2.364 |
+| 1e-3 | 3.717 | 0.329 | 3.090 | 3.134 |
+| 1e-6 | 5.257 | 0.465 | 4.753 | 4.810 |
+| 1e-9 | 6.438 | 0.569 | 5.998 | 6.063 |
+
+Empirical null: 1,000 public wrong keys
+`SHA-256("zk-crown/p3.7/null-key/v1" || u64 1337 || u64 j)`, each deriving its
+own `P_K'` and `S'`, on each of three models.
+
+| Model | z mean | z sd (95% CI) | Skew | Excess kurtosis | KS vs N(0,1), D (p) | min / max z | ≥ z\*(0.05), bound 50 | ≥ z\*(0.01), bound 10 | ≥ z\*(1e-3) | Bit matches mean / var (Binomial 64 / 32) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| clean `W` (P0.5) | -0.019 | 0.967 [0.925, 1.010] | -0.04 | +0.13 | 0.027 (0.45) | -4.18 / 2.64 | 4 | 0 | 0 | 63.85 / 30.4 |
+| behavioral-only (P2.3) | +0.021 | 1.009 [0.964, 1.053] | +0.09 | -0.07 | 0.023 (0.64) | -3.05 / 3.21 | 8 | 3 | 0 | 64.08 / 32.1 |
+| dual `W*` (P3.6) | +0.020 | 1.008 [0.963, 1.052] | +0.09 | -0.07 | 0.026 (0.50) | -3.05 / 3.22 | 8 | 4 | 0 | 64.14 / 32.1 |
+
+Standard errors: skew 0.077, excess kurtosis 0.155. For the Gaussian
+reference, a standard normal would exceed z\*(0.05) and z\*(0.01) about 7.2
+and 1.2 times in 1,000. The behavioral-only and dual models are
+evaluated with the same keys and their null z values correlate at 0.999, since
+the weight watermark is almost orthogonal to every wrong projection. They are
+therefore one check, not two, and are not pooled. Clean `W` correlates with
+them at 0.11.
+
+Applying the test:
+
+| Suspect | z | p-value bound | Rejects at 1e-6 |
+|---|---|---|---|
+| owner `K` on clean `W` | 0.18 | 0.98 | no |
+| owner `K` on behavioral-only (P2.3) | 1.39 | 0.38 | no |
+| owner `K` on dual `W*` (P3.6) | 10.29 | 1.1e-23 | yes (also 1e-9) |
+| P3.5 alpha 0.005 | 2.50 | 0.044 | no (0.05 only) |
+| P3.5 alpha 0.01 | 3.55 | 0.0019 | no (0.01 only) |
+| P3.5 alpha 0.02 | 5.35 | 6.2e-7 | yes, not 1e-9 |
+| P3.5 alpha 0.03 | 6.75 | 1.3e-10 | yes (also 1e-9) |
+| P3.5 alpha 0.05 to 0.5 | 8.55 to 11.26 | 1.3e-16 to 3.0e-28 | yes (also 1e-9) |
+
+How to read it. The threshold is a proven bound, so the stated false positive
+rate holds for every model built without `K`, whatever its architecture
+scale, training or accuracy. The 1,000-key null agrees with the theory: it is
+centred, has unit spread, and is consistent with N(0, 1). Every exceedance
+count at the proven thresholds is well under its bound. At 0.01 the
+behavioral-only and dual models show 3 and 4 exceedances, against a Gaussian
+expectation of 1.2 and a bound of 10. That is one shared sample, and it is
+within the bound. With 1,000 keys the rate is only checked near 0.05 and 0.01;
+the 1e-6 and 1e-9 thresholds rest on the proof. The bound is conservative. A
+Gaussian threshold would be about 0.5 z lower at 1e-6, but it is not a valid
+bound for every fingerprint. The final dual `W*` gives p ≤ 1.1e-23 on
+unattacked weights. The floor means no single weight extraction can report
+below 1.6e-28. Survival under attack is Phase 4. How this test is combined with
+the behavioral one is P9.
+
 ## 8.4 Attack survival
 
 | Attack | Strength | Clean acc | Behavioral WDR | Weight corr | Verdict |
@@ -959,3 +1047,8 @@ Append one line per session: date, tasks touched, key outcome.
     - Test 90.85%, holdout 91.16%; drops vs the P2.3 model not significant (equal to P3.5).
   - Two helper bugs were caught by the new tests before the run: a dict key collision in the gate summary, and `torch.save` embedding the file name, which broke the same-bytes check.
   - Icebox line added for during-training embedding, conditional on Phase 4. 8 new tests, 474 in total, all pass.
+- 2026-09-14: P3.7. `src/watermark/weight_significance.py`: under "suspect independent of `K`", z is a Rademacher sum given the fingerprint, so P(z ≥ t) ≤ exp(-t²/2) is proven. Threshold z\* = sqrt(2 ln(1/alpha)): 5.257 at 1e-6. p-value floor 1.6e-28.
+  - `experiments/p3_7_weight_null.py`: 1,000 wrong keys on clean `W`, the behavioral-only model and the dual `W*`, run in parallel. z sd 0.97 to 1.01, KS vs N(0,1) p = 0.45 to 0.64. Exceedances 4 to 8 at 0.05 (bound 50) and 0 to 4 at 0.01 (bound 10).
+  - Dual `W*` z = 10.29, p ≤ 1.1e-23. Unwatermarked models not detected.
+  - Found and fixed before the run: `NormalDist.cdf(-z)` loses precision beyond z of about 8, so `gaussian_tail` now uses `erfc`. The result is written before the figure, so a new untracked figure cannot mark the record dirty.
+  - 29 new tests, 503 in total, all pass.
