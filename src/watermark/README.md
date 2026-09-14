@@ -14,6 +14,31 @@ extractor.
 - `significance.py`: the p-value for "k of N triggers fired" (P2.8).
 - `projection.py`: the key-derived projection `P_K` the weight watermark lives
   in (P3.1).
+- `carrier.py`: which weights form the carrier vector, and in what order (P3.2).
+- `weight_embedding.py`: the spread-spectrum embedding `W* = W + alpha * P_K^T * S` (P3.2).
+
+## Weight embedding (P3.2)
+
+**Carrier.** Every `nn.Conv2d` and `nn.Linear` `weight`, in `named_modules()`
+order, flattened C-order. For `main_model` that is 7 tensors and
+`dim = 307,040`. The 906 BatchNorm and bias parameters and the BN buffers are
+left out. `CarrierLayout.digest()` identifies the layout, so a mismatched model
+is refused.
+
+**Embedding.** `W* = W + alpha * P_K^T * S` on the carrier. `S` is used as ±1
+signs, and everything else in the state_dict is copied bit for bit. With
+unit-norm rows, `P_K w* = P_K w + alpha * S + cross-talk`, so `alpha` is the
+per-bit amplitude an extractor sees. In weight space each parameter moves by
+`alpha / sqrt(dim)` times a sum of 128 fair signs. That is about
+`alpha * sqrt(128 / dim)` RMS, the same distribution in every layer, and
+exactly zero for about 7% of parameters (`C(128,64) / 2^128`). These follow
+from the construction. `EmbeddingSummary` reports the realised change per
+tensor, as aggregates only, together with the measured float32 rounding error.
+
+**Open.** `alpha` has no default (P3.5). The function is post-hoc, and BN
+running statistics are not recalibrated. Whether to embed post-hoc or during
+training is P3.6. The change has the same size in every layer, even though
+layer weight scales differ.
 
 ## Projection `P_K` (P3.1)
 
