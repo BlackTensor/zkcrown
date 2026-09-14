@@ -263,7 +263,8 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
     - Mean fired: `W` 5.70, `W*` 6.38, against the bound's 11.11. Largest count: 14 for `W`, 16 for `W*`.
     - Given each model's base-label hits, the expected totals were 5,698.0 and 6,482.2. The observed totals were 5,701 (z = +0.04) and 6,379 (z = -1.36).
     - The check covers alpha around 0.05 and 0.01 only; smaller levels rest on the proof.
-  - 33 new tests, 340 in total, all pass. They include exact Poisson-binomial validity checks for null models, a planted too-small bound that the validity check catches, and an end-to-end run over 2,000 test keys. Two full runs printed identical numbers.
+  - 33 new tests, 340 in total, all pass. They include exact Poisson-binomial validity checks for null models, a planted too-small bound that the validity check catches, and an end-to-end run over 2,000 test keys.
+  - Reproducibility: the committed result was re-run from a clean tree at commit `4c90006`, so it reads `dirty: false`. Its params, metrics and environment are identical to the earlier dirty-tree run, and so is the figure, byte for byte. Only the timestamp, duration and git block differ. The dirty record was removed.
 
 ## Phase 3: Weight watermark
 
@@ -602,8 +603,8 @@ whether 9/100 or 19/100 is evidence of a watermark is a P2.8 question. No
 ratio was re-selected: P2.3's `W*` remains the behavioral model.
 
 Detection test from `experiments/p2_8_detection_test.py` (P2.8), result file
-`results/p2.8_detection_test__seed1337__20260914T072622+0000.json`, CPU, seed
-1337. The test is defined in `src/watermark/significance.py`. H0: the suspect
+`results/p2.8_detection_test__seed1337__20260914T073942+0000.json`, CPU, seed
+1337, commit `4c90006`, clean tree. The test is defined in `src/watermark/significance.py`. H0: the suspect
 model is independent of the owner's keyed targets. The p-value is the exact
 `P(Binomial(N, 1/9) >= k)`. Under H0, each trigger fires independently with
 probability at most 1/9 (P2.2), so this p-value is valid for any model
@@ -748,3 +749,4 @@ Append one line per session: date, tasks touched, key outcome.
   - Thresholds for N = 100: k* = 17 / 20 / 23 / 29 / 35 at alpha 0.05 down to 1e-9.
   - Null check over 1,000 public wrong keys: 0 rejections for either model at 0.05 or 0.01. Mean fired 5.70 and 6.38 against the 11.11 bound; calibration z +0.04 and -1.36.
   - 33 new tests, 340 in total, all pass. Icebox line added for the conditional, more powerful test.
+  - Follow-up: re-ran P2.8 from the clean committed tree (`4c90006`). The result now reads `dirty: false` and every number reproduced exactly. It replaces the dirty-tree result file.

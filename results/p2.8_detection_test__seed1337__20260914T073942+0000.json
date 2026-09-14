@@ -2,11 +2,11 @@
   "schema_version": 1,
   "name": "p2.8_detection_test",
   "task": "P2.8",
-  "timestamp_utc": "2026-09-14T07:26:22+00:00",
+  "timestamp_utc": "2026-09-14T07:39:42+00:00",
   "git": {
-    "commit": "b50de3d188865242a409e59592b2d0b581178eb8",
+    "commit": "4c90006ad482058f5d098718d5da53eb80f98cff",
     "branch": "master",
-    "dirty": true,
+    "dirty": false,
     "available": true,
     "source": "git"
   },
@@ -497,6 +497,6 @@
     "cuda": null,
     "system_ram_gb": null
   },
-  "duration_seconds": 264.24371330000577,
+  "duration_seconds": 254.7585637000011,
   "notes": "p-values assume K and the trigger set were fixed before the suspect was seen, one pre-declared test, one query per trigger, and a per-suspect test (correct for multiple suspects). WDR counts are on the training triggers. The null check uses public wrong keys; it covers alpha around 0.05 and 0.01 only, smaller levels rest on the proof. Counts and p-values only; owner triggers, targets and predictions are not in this file."
 }
