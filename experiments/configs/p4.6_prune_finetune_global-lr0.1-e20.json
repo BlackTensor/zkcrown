@@ -1,0 +1,1 @@
+{"attack": "prune_finetune", "tag": "global-lr0.1-e20", "strengths": [0.5, 0.7, 0.9], "params": {"prune": "magnitude_prune_global", "epochs": 20, "lr": 0.1, "weight_decay": 0.0005, "momentum": 0.9, "batch_size": 128, "warmup_epochs": 1.0, "augment": true}}

@@ -70,6 +70,18 @@ def _prune_order(values: np.ndarray, count: int) -> np.ndarray:
 
 def magnitude_prune(state_dict: dict, arch: dict, sparsity: float, scope: str) -> tuple[dict, dict]:
     """Zero the smallest-magnitude conv and linear weights. Returns the new state dict and aggregate info."""
+    out, info, _ = magnitude_prune_with_mask(state_dict, arch, sparsity, scope)
+    return out, info
+
+
+def magnitude_prune_with_mask(state_dict: dict, arch: dict, sparsity: float,
+                              scope: str) -> tuple[dict, dict, dict[str, torch.Tensor]]:
+    """`magnitude_prune`, plus the pruned positions (P4.6).
+
+    The third value maps each carrier tensor name to a bool tensor of its
+    shape, True where the entry was pruned. Weights that were already zero and
+    not pruned are False, so a later fine-tune may still move them.
+    """
     sparsity = _check_sparsity(sparsity)
     if scope not in SCOPES:
         raise ValueError(f"scope must be one of {SCOPES}, got {scope!r}")
@@ -127,7 +139,8 @@ def magnitude_prune(state_dict: dict, arch: dict, sparsity: float, scope: str) -
         "fine_tuned": False,
         "bn_recalibrated": False,
     }
-    return out, info
+    pruned = {name: torch.from_numpy(~masks[name]).reshape(tuple(state_dict[name].shape)) for name in layout.names}
+    return out, info, pruned
 
 
 def _no_params(params: dict) -> None:

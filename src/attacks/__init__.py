@@ -11,3 +11,4 @@ from src.attacks import prune  # noqa: F401  -- P4.2 magnitude pruning
 from src.attacks import structured_prune  # noqa: F401  -- P4.3 structured (filter) pruning
 from src.attacks import quantize  # noqa: F401  -- P4.4 post-training quantization
 from src.attacks import finetune  # noqa: F401  -- P4.5 fine-tuning on the attacker holdout
+from src.attacks import prune_finetune  # noqa: F401  -- P4.6 prune, then fine-tune with the mask fixed

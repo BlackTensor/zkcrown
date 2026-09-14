@@ -1,0 +1,1 @@
+{"attack": "prune_finetune", "tag": "channel-lr0.1-e60", "strengths": [0.1, 0.3, 0.5], "params": {"prune": "channel_prune_l1", "epochs": 60, "lr": 0.1, "weight_decay": 0.0005, "momentum": 0.9, "batch_size": 128, "warmup_epochs": 1.0, "augment": true}}

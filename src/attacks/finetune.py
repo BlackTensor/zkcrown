@@ -101,15 +101,15 @@ def _epoch_summary(record: dict) -> dict:
             "train_accuracy": record["train_accuracy"], "holdout_accuracy": record["eval_accuracy"]}
 
 
-@register_attack(
-    "finetune_holdout",
-    strength="fine-tuning epochs on the 5,000-image attacker holdout (cosine schedule from params['lr'])",
-    description="Fine-tuning with the P0.5 recipe on the attacker's own data, no key, no triggers (P4.5).",
-)
-def finetune_holdout(state_dict, arch, strength, params, context) -> AttackOutput:
-    recipe = finetune_recipe(strength, params)
-    start_digest = state_digest(state_dict)
-    model = load_model(state_dict, arch)
+def run_finetune(model: torch.nn.Module, recipe: dict, context, extra: dict, *,
+                 epoch_metrics=None) -> tuple[dict, dict]:
+    """Fine-tune `model` in place on the attacker holdout with `recipe`. Returns fit's summary and fine-tuning info.
+
+    Shared by P4.5 and P4.6. `extra` goes into the checkpoint config, so a
+    resume under anything else it names is refused. Checkpoints go to
+    ``context.work_dir`` and resume from there; without one, a throwaway
+    directory is used.
+    """
     loaders = attacker_holdout_loaders(
         context.data_root, batch_size=recipe["batch_size"], num_workers=context.num_workers,
         augment=recipe["augment"], smoke=context.smoke, seed=context.seed,
@@ -117,13 +117,12 @@ def finetune_holdout(state_dict, arch, strength, params, context) -> AttackOutpu
     config = TrainConfig(
         epochs=recipe["epochs"], lr=recipe["lr"], warmup_epochs=recipe["warmup_epochs"], momentum=recipe["momentum"],
         weight_decay=recipe["weight_decay"], nesterov=True, batch_size=recipe["batch_size"], max_minutes=None,
-        extra={"attack": "finetune_holdout", "augment": recipe["augment"], "smoke": context.smoke,
-               "start_state_sha256": start_digest},
+        extra=extra,
     )
 
     def train(checkpoint_dir: Path, resume: bool) -> dict:
         return fit(model, loaders["train"], loaders["eval"], config, checkpoint_dir=checkpoint_dir,
-                   device=context.device, seed=context.seed, resume=resume)
+                   device=context.device, seed=context.seed, resume=resume, epoch_metrics=epoch_metrics)
 
     if context.work_dir is None:
         with tempfile.TemporaryDirectory() as scratch:
@@ -135,8 +134,6 @@ def finetune_holdout(state_dict, arch, strength, params, context) -> AttackOutpu
 
     history = summary["history"]
     info = {
-        "version": FINETUNE_VERSION,
-        "start_state_sha256": start_digest,
         "recipe": {**recipe, "optimizer": "SGD nesterov", "schedule": "linear warmup then cosine to 0 over the run"},
         "data": "synthetic smoke stand-in" if context.smoke else "attacker holdout, 5,000 CIFAR-10 train images",
         "train_images": len(loaders["train"].dataset),
@@ -150,4 +147,20 @@ def finetune_holdout(state_dict, arch, strength, params, context) -> AttackOutpu
         "fine_tuned": True,
         "selection": "final epoch, no selection",
     }
+    return summary, info
+
+
+@register_attack(
+    "finetune_holdout",
+    strength="fine-tuning epochs on the 5,000-image attacker holdout (cosine schedule from params['lr'])",
+    description="Fine-tuning with the P0.5 recipe on the attacker's own data, no key, no triggers (P4.5).",
+)
+def finetune_holdout(state_dict, arch, strength, params, context) -> AttackOutput:
+    recipe = finetune_recipe(strength, params)
+    start_digest = state_digest(state_dict)
+    model = load_model(state_dict, arch)
+    extra = {"attack": "finetune_holdout", "augment": recipe["augment"], "smoke": context.smoke,
+             "start_state_sha256": start_digest}
+    _, tuned = run_finetune(model, recipe, context, extra)
+    info = {"version": FINETUNE_VERSION, "start_state_sha256": start_digest, **tuned}
     return AttackOutput(state_dict={k: v.detach().cpu() for k, v in model.state_dict().items()}, arch=arch, info=info)

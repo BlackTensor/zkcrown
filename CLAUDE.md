@@ -1535,3 +1535,16 @@ Append one line per session: date, tasks touched, key outcome.
   - Behavioral watermark removed by every LR 0.05 and 0.1 run (4–11 fired, test 81.9–86.1%). Eroded but detected at LR 0.01 (62 / 46 / 30), intact at 0.001.
   - Weight watermark detected in all 12, lowest z 6.49 (LR 0.1, 60 epochs, 83.36%).
   - Holdout accuracy up to 99.9% against test ≤ 88%: memorisation of 5,000 images; test loss rises with length.
+- 2026-09-14: P4.6 HANDED OFF, not done.
+  - Owner decisions:
+    - Both global magnitude and L1 channel pruning.
+    - The pruning mask stays fixed during fine-tuning.
+    - Grid: global s = 0.5 / 0.7 / 0.9 and channel s = 0.1 / 0.3 / 0.5, each fine-tuned at LR 0.01 / 0.05 / 0.1 for 20 epochs plus LR 0.1 for 60 epochs. 24 runs, 720 epochs.
+  - `src/attacks/prune_finetune.py` (`prune_finetune`):
+    - Prunes with the unchanged P4.2/P4.3 code, then fine-tunes with the P4.5 recipe on the attacker holdout.
+    - Gradient hooks hold every pruned entry at exactly zero, including a removed channel's BN weight and bias. The count of non-zero pruned entries is checked every epoch and at the end, and any non-zero raises.
+    - The checkpoint config binds the pruning and the pruned start state, so a resume under another pruning is refused.
+  - Refactors, with outputs unchanged (tested): `magnitude_prune_with_mask` and `channel_prune_with_mask` also return the pruned positions. `finetune.run_finetune` is shared with P4.5, and P4.5's checkpoint config is still byte-identical.
+  - A one-epoch CPU sanity run on the real `W*` and holdout (scratch, not a ledger number) held all 276,336 global-0.9 and 151,473 channel-0.3 masked entries at zero.
+  - Notebook `notebooks/P4.6_colab.ipynb`, instructions, `handoff/P4.6_colab.zip`. Estimated ~55 min on a T4, scaled from P4.5's measured 3.2 s per epoch (not measured).
+  - 34 new tests, 687 in total, all pass. Checkbox stays `[ ]`.

@@ -114,6 +114,18 @@ def _removal_order(norms: np.ndarray, count: int) -> np.ndarray:
 
 def channel_prune(state_dict: dict, arch: dict, fraction: float) -> tuple[dict, dict]:
     """Remove the lowest-L1 filters from every conv layer. Returns the new state dict and aggregate info."""
+    out, info, _ = channel_prune_with_mask(state_dict, arch, fraction)
+    return out, info
+
+
+def channel_prune_with_mask(state_dict: dict, arch: dict, fraction: float) -> tuple[dict, dict, dict[str, torch.Tensor]]:
+    """`channel_prune`, plus the zeroed positions (P4.6).
+
+    The third value maps every tensor the removal touches (conv filters, the
+    BatchNorm affine pair, the consumer's input slice) to a bool tensor of its
+    shape, True where the removal set the entry to zero. Untouched tensors are
+    absent.
+    """
     fraction = _check_fraction(fraction)
     model = main_model(**arch)
     layout = carrier_layout(model)
@@ -141,6 +153,13 @@ def channel_prune(state_dict: dict, arch: dict, fraction: float) -> tuple[dict, 
             "smallest_kept_l1": float(norms[keep].min()),
         }
 
+    pruned: dict[str, torch.Tensor] = {}
+
+    def zero_mask(name: str) -> torch.Tensor:
+        if name not in pruned:
+            pruned[name] = torch.zeros(tuple(state_dict[name].shape), dtype=torch.bool)
+        return pruned[name]
+
     for conv, bn, consumer in layers:
         index = torch.from_numpy(removed_by_layer[conv]).long()
         if index.numel() == 0:
@@ -149,6 +168,7 @@ def channel_prune(state_dict: dict, arch: dict, fraction: float) -> tuple[dict, 
             tensor = out[name].clone()
             tensor[index] = 0
             out[name] = tensor
+            zero_mask(name)[index] = True
         tensor = out[f"{consumer}.weight"].clone()
         if consumer == classifier:
             channels = per_layer[conv]["channels"]
@@ -157,8 +177,10 @@ def channel_prune(state_dict: dict, arch: dict, fraction: float) -> tuple[dict, 
                 raise ValueError(f"{consumer} has {tensor.shape[1]} inputs, not a multiple of {channels} channels")
             columns = (index[:, None] * spatial + torch.arange(spatial)[None, :]).reshape(-1)
             tensor[:, columns] = 0
+            zero_mask(f"{consumer}.weight")[:, columns] = True
         else:
             tensor[:, index] = 0
+            zero_mask(f"{consumer}.weight")[:, index] = True
         out[f"{consumer}.weight"] = tensor
 
     kept = [per_layer[conv]["channels"] - per_layer[conv]["removed"] for conv, _, _ in layers]
@@ -197,7 +219,7 @@ def channel_prune(state_dict: dict, arch: dict, fraction: float) -> tuple[dict, 
         "fine_tuned": False,
         "bn_recalibrated": False,
     }
-    return out, info
+    return out, info, pruned
 
 
 @register_attack(
