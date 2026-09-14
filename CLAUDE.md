@@ -251,7 +251,19 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
   - **Test accuracy drops vs `W`, same order:** +0.19, +0.46, +0.25, +0.94, +0.47 and +0.34 pp. Only the 0.782% run's drop is distinguishable from zero (95% CI [+0.42, +1.46], McNemar p = 0.0005). The drop does not rise with the ratio: the 12.5% run, with 16x the triggers, dropped 0.34 pp.
   - One run per ratio, so the shape of the drop curve cannot be separated from seed-to-seed variation. WDR is on the training triggers; no p-values for the low-WDR models (P2.8). No ratio was re-selected; P2.3's `W*` stays the model going forward.
   - Figure `figures/p2.7_wdr_vs_accuracy_drop.png`. A repeat analysis run gave an identical record and a byte-identical figure.
-- [ ] **P2.8** Write the statistical detection test: given k of N triggers firing, what is the p-value under the null hypothesis of an unwatermarked model? Ownership evidence must be a statistical statement, not a vibe.
+- [x] **P2.8** Write the statistical detection test: given k of N triggers firing, what is the p-value under the null hypothesis of an unwatermarked model? Ownership evidence must be a statistical statement, not a vibe.
+  - **Test** (`src/watermark/significance.py`). H0 is that the suspect model is independent of the owner's keyed targets. The p-value is the exact tail `P(Binomial(N, 1/9) >= k)`, in rational arithmetic, with log10 reported. It is valid for every H0 model whatever its accuracy or class bias, because P2.2's construction makes each fire an independent Bernoulli with probability at most 1/9. It is conservative for models that often predict the base label.
+  - Assumptions are written down: `K` and the triggers were fixed before the suspect was seen (the P5 commitment), one pre-declared test, one query per trigger, and a correction for multiple suspects. So is what the p-value does not say.
+  - **Thresholds for N = 100:** `k* = 17 / 20 / 23 / 29 / 35` at alpha 0.05 / 0.01 / 1e-3 / 1e-6 / 1e-9. The exact false-positive bounds there are 0.049, 0.0066, 5.3e-4, 8.7e-7 and 2.7e-10.
+  - **p-values** (`experiments/p2_8_detection_test.py`, CPU):
+    - `W*` 100/100 → 3.8e-96, re-measured from `K` with the digest checked.
+    - Clean `W` 3/100 → 0.999.
+    - P2.7 sweep, from its committed counts: 9/100 → 0.79, 19/100 → 0.014, 64/100 → 2.6e-36, 100/100 → 3.8e-96 (both 0.782% and 12.5%).
+  - **Empirical null check, 1,000 public wrong keys**, each building its own triggers and targets. Neither model rejected on any key at 0.05 or 0.01 (bounds 49.3 and 6.6 keys).
+    - Mean fired: `W` 5.70, `W*` 6.38, against the bound's 11.11. Largest count: 14 for `W`, 16 for `W*`.
+    - Given each model's base-label hits, the expected totals were 5,698.0 and 6,482.2. The observed totals were 5,701 (z = +0.04) and 6,379 (z = -1.36).
+    - The check covers alpha around 0.05 and 0.01 only; smaller levels rest on the proof.
+  - 33 new tests, 340 in total, all pass. They include exact Poisson-binomial validity checks for null models, a planted too-small bound that the validity check catches, and an end-to-end run over 2,000 test keys. Two full runs printed identical numbers.
 
 ## Phase 3: Weight watermark
 
@@ -447,6 +459,8 @@ The accuracy drop against P0.6 is left to P2.5.
 | Behavioral WDR | 100% (100/100), `W*` from P2.3 |
 | Behavioral FPR (input level, 1,000 each) | random 12.6% (chance 12.7%), clean-unrelated 10.0% (chance 10.0%) |
 | Accuracy drop from watermarking | 0.47 pp on test (91.20% → 90.73%), 95% CI [-0.04, +0.98], McNemar p = 0.077; single run each |
+| Behavioral detection p-value (P2.8) | `W*` 100/100: p = 3.8e-96; clean `W` 3/100: p = 0.999 |
+| Behavioral detection thresholds, N = 100 (P2.8) | k* = 17 / 20 / 23 / 29 / 35 at alpha 0.05 / 0.01 / 1e-3 / 1e-6 / 1e-9 |
 | Weight extraction correlation, correct key | TBD |
 | Weight extraction correlation, wrong key (mean) | TBD |
 | Detection threshold and its FPR | TBD |
@@ -587,6 +601,68 @@ measured, and no claim is made about it either way. WDR here is on the trained t
 whether 9/100 or 19/100 is evidence of a watermark is a P2.8 question. No
 ratio was re-selected: P2.3's `W*` remains the behavioral model.
 
+Detection test from `experiments/p2_8_detection_test.py` (P2.8), result file
+`results/p2.8_detection_test__seed1337__20260914T072622+0000.json`, CPU, seed
+1337. The test is defined in `src/watermark/significance.py`. H0: the suspect
+model is independent of the owner's keyed targets. The p-value is the exact
+`P(Binomial(N, 1/9) >= k)`. Under H0, each trigger fires independently with
+probability at most 1/9 (P2.2), so this p-value is valid for any model
+independent of the targets. That validity is a proof, not a measurement. It is
+conservative for models that often predict the base label.
+
+Thresholds for N = 100. `k*` is the smallest fired count whose p-value is at
+most alpha. "Exact bound" is the largest false-positive probability any H0
+model can have when the test rejects at `k >= k*`.
+
+| alpha | k* | Exact bound |
+|---|---|---|
+| 0.05 | 17 | 0.0493 |
+| 0.01 | 20 | 0.00655 |
+| 1e-3 | 23 | 5.29e-4 |
+| 1e-6 | 29 | 8.67e-7 |
+| 1e-9 | 35 | 2.66e-10 |
+
+p-values for the models measured so far, all on the N = 100 owner triggers.
+`W*` and `W` were re-scored here from `K` (bundle digest matched P2.3, weights
+hash-checked), and the counts reproduced P2.4. The P2.7 counts come from its
+committed result file.
+
+| Model | Fired | p-value | Rejects at 1e-6 |
+|---|---|---|---|
+| clean `W` (P0.5) | 3/100 | 0.999 | no |
+| P2.7 0.013% | 9/100 | 0.793 | no |
+| P2.7 0.049% | 19/100 | 0.0136 | no (rejects at 0.05 only) |
+| P2.7 0.196% | 64/100 | 2.59e-36 | yes |
+| P2.7 0.782% | 100/100 | 3.76e-96 | yes |
+| `W*` (P2.3, 3.13%) | 100/100 | 3.76e-96 | yes |
+| P2.7 12.5% | 100/100 | 3.76e-96 | yes |
+
+Empirical null check, same run. 1,000 public wrong keys
+`SHA-256("zk-crown/p2.8/null-key/v1" || u64 1337 || u64 j)` each build their
+own 100 triggers and targets on the same split. `W` and `W*` are independent
+of every wrong key, so each count is an H0 draw.
+
+| Model | Mean fired (bound 11.11) | Var (bound 9.88) | Max | Mean base-label hits | Rejected at 0.05 (bound 49.3) | Rejected at 0.01 (bound 6.6) | Observed vs expected total fired | z |
+|---|---|---|---|---|---|---|---|---|
+| clean `W` | 5.70 | 5.42 | 14 | 48.7 | 0 / 1,000 | 0 / 1,000 | 5,701 vs 5,698.0 | +0.04 |
+| `W*` | 6.38 | 6.22 | 16 | 41.7 | 0 / 1,000 | 0 / 1,000 | 6,379 vs 6,482.2 | -1.36 |
+
+"Expected total" is `sum_j (100 - base_label_hits_j) / 9`, the exact
+expectation given each model's own predictions. Agreement to within 1.4 sd
+says the wrong-key targets behaved as independent of the predictions, as P2.2
+requires. Both models sit well below the bound, because they predict the base
+label on 42 to 49 of 100 triggers, so on these models the test has a lower
+real false-positive rate than its stated bound. With 1,000 keys the
+rejection rate is only checked near alpha 0.05 and 0.01. Smaller alphas rest
+on the proof and on the exact tests in `tests/test_significance.py`.
+
+Reading the p-values. The P2.7 0.049% run fired on 19 of 100 triggers
+(p = 0.014). That rejects H0 at 0.05 but not at 0.01 or any stricter level.
+The p-values assume `K` and the trigger set were fixed before the suspect was
+seen, one pre-declared test, one query per trigger, and a correction when
+several suspects are audited. The 100/100 figures are on the training triggers
+of unattacked models; survival under attack is Phase 4.
+
 ## 8.4 Attack survival
 
 | Attack | Strength | Clean acc | Behavioral WDR | Weight corr | Verdict |
@@ -625,6 +701,7 @@ Ideas that are explicitly not in scope right now. Add here instead of expanding 
 - Recursive proof composition.
 - Blur/JPEG input-preprocessing attack: may weaken the high-frequency per-trigger noise (see `src/watermark/README.md`), untested; candidate addition to the Phase 4 attack suite.
 - Target-class bias on noise (P2.6): on uniform noise, `W*`'s predictions land in the owner's target classes more often than clean `W`'s (chance level 12.7% vs 8.9%). This is a single untested pair of numbers; revisit only if it shows up again elsewhere.
+- Conditional detection test (P2.8): the P2.8 p-value uses the worst-case bound `Binomial(N, 1/9)`. Given the count `m` of triggers on which the suspect does *not* predict the base label, the fired count is exactly `Binomial(m, 1/9)` under H0. That is still valid and has more power against accurate models (the P2.8 null models had m of about 51 to 58). Worth revisiting if attacked models in Phase 4 end up with borderline p-values.
 
 ---
 
@@ -666,3 +743,8 @@ Append one line per session: date, tasks touched, key outcome.
   - WDR from 0% to 12.5% trigger samples per clean sample: 3, 9, 19, 64, 100, 100, 100 (out of 100). It saturates at 0.782%.
   - Test drops: +0.19, +0.46, +0.25, +0.94, +0.47, +0.34 pp, with no trend in the ratio. Only the 0.782% drop has a CI excluding zero. One run per ratio.
   - Figure written; a repeat analysis gave an identical record and figure. The analysis record reads `dirty: true` only because the returned JSONs were untracked when it ran; no code changed.
+- 2026-09-14: P2.8. `src/watermark/significance.py` gives the exact binomial p-value under H0 "independent of the owner's targets", with bound 1/9 per trigger, plus thresholds. Assumptions are written down, including that `K` must be committed before any dispute.
+  - `experiments/p2_8_detection_test.py`: `W*` 100/100 → p = 3.8e-96, clean `W` 3/100 → 0.999. P2.7 sweep: 9 → 0.79, 19 → 0.014, 64 → 2.6e-36.
+  - Thresholds for N = 100: k* = 17 / 20 / 23 / 29 / 35 at alpha 0.05 down to 1e-9.
+  - Null check over 1,000 public wrong keys: 0 rejections for either model at 0.05 or 0.01. Mean fired 5.70 and 6.38 against the 11.11 bound; calibration z +0.04 and -1.36.
+  - 33 new tests, 340 in total, all pass. Icebox line added for the conditional, more powerful test.

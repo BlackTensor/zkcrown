@@ -11,6 +11,31 @@ extractor.
 - `bundle.py`: the secret trigger bundle (triggers plus targets) that carries the
   watermark to a Colab run, so `K` itself never leaves the owner's machine (P2.3).
 - `behavioral.py`: joint clean-plus-trigger training, via `TriggerMixLoader` (P2.3).
+- `significance.py`: the p-value for "k of N triggers fired" (P2.8).
+
+## Detection test (P2.8)
+
+**H0:** the suspect model was produced independently of the owner's keyed
+targets. Any model built without `K` qualifies. **Statistic:** `k`, the number
+of the N triggers that fire (P2.4). **p-value:**
+
+```
+p(k) = P(Binomial(N, 1/(C-1)) >= k)       exact, rational arithmetic; 1/9 for CIFAR-10
+```
+
+Why this is valid for every H0 model: with the model and images fixed, trigger
+`i` fires with probability exactly 1/9 if the model does not predict the base
+label, and 0 if it does. The targets are independent draws, so the fired count
+is a sum of independent Bernoullis each at most 1/9. That sum is
+stochastically dominated by the binomial (P2.2). The test is conservative for
+accurate models, which predict the base label on many triggers and fire less.
+
+For N = 100 the thresholds are `k* = 17, 20, 23, 29, 35` at `alpha = 0.05,
+0.01, 1e-3, 1e-6, 1e-9` (P2.8 result file). The p-value only means something
+if `K` and the trigger set were fixed, and committed, before the suspect was
+seen. It also assumes one pre-declared test, one query per trigger, and a
+correction when auditing several suspects. The full list of assumptions, and
+what the p-value does not say, is in the `significance.py` docstring.
 
 ## Joint training (P2.3)
 
