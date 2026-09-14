@@ -169,12 +169,20 @@ class Scorer:
         self.reference = score_loader(load_model(source_state, source["arch"]).to(device), self.test_loader, device)
         self.p3_6 = read_result(repo_root() / P3_6_RESULT) if source["name"] == "dual" else None
 
-    def row(self, config: AttackConfig, state: dict, arch: dict, *, source: dict, attacked: dict) -> dict:
-        evaluation = evaluate_attacked(state, arch, self.material, self.test_loader, self.reference["correct"], self.device)
+    def row(self, config: AttackConfig, state: dict, arch: dict, *, source: dict, attacked: dict, runtime_model=None) -> dict:
+        evaluation = evaluate_attacked(state, arch, self.material, self.test_loader, self.reference["correct"], self.device,
+                                       runtime_model=runtime_model)
         row = build_row(config, get_attack(config.attack), evaluation, source=source, attacked=attacked, material=self.material)
         if config.attack == "none":
             row["control_checks"] = check_control(row, self.p3_6)
         return row
+
+
+def scored_on(output) -> str:
+    """Which model accuracy and the behavioral watermark were measured on."""
+    if output.runtime_model is None:
+        return "state_dict loaded into main_model"
+    return f"runtime model {type(output.runtime_model).__name__}; weight extraction reads the state_dict"
 
 
 def write_row(row: dict, *, task: str, seed: int, out_dir: Path, backends: dict, started: float, extra_params: dict,
@@ -229,8 +237,9 @@ def mode_run(args, backends, started) -> list[Path]:
     paths = []
     for config in configs:
         output = apply_attack(config, state, source["arch"], context)
-        attacked = {"arch": output.arch, "info": output.info, "applied_in": "run"}
-        row = scorer.row(config, output.state_dict, output.arch, source=source, attacked=attacked)
+        attacked = {"arch": output.arch, "info": output.info, "applied_in": "run", "scored_on": scored_on(output)}
+        row = scorer.row(config, output.state_dict, output.arch, source=source, attacked=attacked,
+                         runtime_model=output.runtime_model)
         path = write_row(row, task=args.task, seed=args.seed, out_dir=args.out_dir, backends=backends, started=started,
                          extra_params={"mode": "run", "device": str(device)}, git=args.git)
         print_row(row, path)
@@ -247,7 +256,10 @@ def mode_apply(args, backends, started) -> list[Path]:
     paths = []
     for config in configs:
         output = apply_attack(config, state, source["arch"], context)
-        stem = f"{task_slug(args.task)}_{config.label()}__seed{args.seed}"
+        if output.runtime_model is not None:
+            raise SystemExit(f"{config.attack} is scored on a runtime model that its saved weights do not reproduce; "
+                             "use run mode")
+        stem =f"{task_slug(args.task)}_{config.label()}__seed{args.seed}"
         weights = Path(args.out_dir) / f"{stem}.pt"
         weights.parent.mkdir(parents=True, exist_ok=True)
         tmp = weights.with_suffix(".pt.tmp")

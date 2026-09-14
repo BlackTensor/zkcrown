@@ -132,11 +132,20 @@ class AttackOutput:
         state_dict: weights that load strictly into ``main_model(**arch)``.
         arch: `main_model` arguments, a subset of ``ALLOWED_ARCH_KEYS``.
         info: aggregate facts about the attack, JSON-serialisable. No weights.
+        runtime_model: optional (P4.4). The model as the thief actually runs
+            it, when loading ``state_dict`` into `main_model` does not
+            reproduce its outputs, for example with quantized activations.
+            If set, accuracy and the behavioral watermark are scored on it,
+            while weight extraction still reads ``state_dict``, the shipped
+            weights in the owner's layout. Such an output cannot be saved and
+            re-scored from its weights, so ``run_attack_suite.py apply``
+            refuses it.
     """
 
     state_dict: dict[str, torch.Tensor]
     arch: dict[str, Any]
     info: dict[str, Any] = field(default_factory=dict)
+    runtime_model: torch.nn.Module | None = None
 
 
 AttackFn = Callable[[dict, dict, float, dict, AttackContext], AttackOutput]
@@ -214,6 +223,10 @@ def apply_attack(
         raise TypeError(f"attack {config.attack!r} returned {type(output).__name__}, expected AttackOutput")
     output.state_dict = clone_state(output.state_dict)
     load_model(output.state_dict, output.arch)
+    if output.runtime_model is not None:
+        if not isinstance(output.runtime_model, torch.nn.Module):
+            raise TypeError(f"attack {config.attack!r} returned a runtime_model that is not an nn.Module")
+        output.runtime_model.eval()
     return output
 
 

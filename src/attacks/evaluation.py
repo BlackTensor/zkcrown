@@ -171,9 +171,19 @@ def evaluate_attacked(
     test_loader,
     reference_correct: Sequence[bool],
     device: torch.device,
+    runtime_model: nn.Module | None = None,
 ) -> dict[str, Any]:
-    """Clean accuracy, behavioral and weight watermark results for one attacked model."""
-    model = load_model(state_dict, arch).to(device)
+    """Clean accuracy, behavioral and weight watermark results for one attacked model.
+
+    If `runtime_model` is given (an attack whose shipped model is not just
+    weights in `main_model`, P4.4), accuracy and the behavioral watermark are
+    scored on it. The weights must still load into ``main_model(**arch)``, and
+    weight extraction always reads `state_dict`.
+    """
+    model = load_model(state_dict, arch)  # strict load check either way
+    if runtime_model is not None:
+        model = runtime_model
+    model = model.to(device).eval()
     return {
         "clean_accuracy": evaluate_accuracy(score_loader(model, test_loader, device), reference_correct),
         "behavioral": evaluate_behavioral(model, material, device),
