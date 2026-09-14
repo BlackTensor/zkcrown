@@ -371,7 +371,23 @@ Rule: notebooks are thin. Logic lives in `src/`. A reviewer must be able to read
 
 Each attack task must report, in one table row: attack strength, resulting clean accuracy, behavioral WDR, weight-watermark correlation, and the p-value from P2.8 / P3.7.
 
-- [ ] **P4.1** Build the harness `experiments/run_attack_suite.py`: takes a model plus an attack config, writes a standard JSON row. All following tasks use this harness.
+- [x] **P4.1** Build the harness `experiments/run_attack_suite.py`: takes a model plus an attack config, writes a standard JSON row. All following tasks use this harness.
+  - **Interface** (`src/attacks/harness.py`): an attack is a function registered by name with `register_attack`. It gets a private copy of the source weights, the arch, one swept `strength` and `params`, and an `AttackContext` (device, seed, data root). It returns `AttackOutput(state_dict, arch, info)`.
+    - `AttackContext` has no key field, so **an attack never sees `K`**.
+    - `apply_attack` seeds every backend first, never modifies the source, and checks that the output loads strictly into `main_model(**arch)`. A narrower student is allowed.
+    - Config JSON: `{"attack", "strengths": [...], "params"}`, one row per strength. Unknown keys are refused.
+    - Only `none`, the control, is registered here. P4.2 to P4.8 add their own attacks.
+  - **Row** (`src/attacks/evaluation.py`), using methods already fixed and nothing new:
+    - Test-set accuracy with P2.5's paired drop against the source. The holdout is not scored, because P4.5 and P4.6 train on it.
+    - P2.4 WDR with the P2.8 p-value, on triggers regenerated from `K`. The bundle digest must match P2.3.
+    - P3.3 correlation with the P3.7 bound. If the owner's carrier layout is gone (a student, removed channels), the row says `applicable: false` with the reason rather than guessing.
+    - `table` holds the Phase 4 columns. The row holds aggregates only, and a test checks that.
+    - `detected` flags use **alpha 1e-6, fixed here before any attack ran**. The two tests are reported separately; combining them is P9.3.
+  - **Modes:** `run` (apply and score locally); `apply` (saves attacked weights plus a hash record, never reads `K`, for `[GPU]` notebooks); `evaluate` (scores returned weights locally, hash-checked). Sources are only the committed `dual` (default), `behavioral` and `clean` models, each loaded by hash. Rows go to `results/attacks/`.
+  - **Control run** (CPU, 46 s, clean tree at `b807c8b`): `none` on the dual `W*` gives test 90.85%, drop 0, WDR 100/100 (p = 3.8e-96) and correlation +0.9091, z = 10.29 (p ≤ 1.1e-23). Both watermarks are detected at 1e-6.
+    - Built-in checks passed: zero discordant images, and exact reproduction of P3.6 (fired, correlation to 1e-12, 9,085 correct).
+    - An `apply` then `evaluate` run of the same control, written to a scratch directory and not committed, gave an identical table.
+  - 43 new tests, 546 in total, all pass.
 - [ ] **P4.2** `[GPU]` Magnitude pruning sweep (10 to 90 percent sparsity).
 - [ ] **P4.3** `[GPU]` Structured pruning (whole channels or filters). Expect this to hurt more than magnitude pruning. Report it either way.
 - [ ] **P4.4** `[GPU]` Post-training quantization, FP32 to INT8. Also try FP16.
@@ -943,6 +959,7 @@ the behavioral one is P9.
 
 | Attack | Strength | Clean acc | Behavioral WDR | Weight corr | Verdict |
 |---|---|---|---|---|---|
+| None (P4.1 control, dual `W*`) | 0 | 90.85% | 100% (100/100), p = 3.8e-96 | +0.909 (z 10.29), p ≤ 1.1e-23 | both detected at 1e-6 |
 | Magnitude prune | TBD | TBD | TBD | TBD | TBD |
 | Structured prune | TBD | TBD | TBD | TBD | TBD |
 | Quantize INT8 | TBD | TBD | TBD | TBD | TBD |
@@ -950,6 +967,23 @@ the behavioral one is P9.
 | Prune + fine-tune | TBD | TBD | TBD | TBD | TBD |
 | Distillation | TBD | TBD | TBD | TBD | TBD |
 | Overwrite | TBD | TBD | TBD | TBD | TBD |
+
+Control row from `experiments/run_attack_suite.py run --attack none --strength 0`
+(P4.1), result file
+`results/attacks/p4.1_none_0__seed1337__20260914T093619+0000.json`, CPU, seed
+1337, commit `b807c8b`, clean tree. It is the P3.6 dual `W*`, loaded by hash
+and scored by the harness with no attack. Every figure equals P3.6's, and the
+harness refuses to write a `none` row on the dual model if any differs. This
+row is a check on the harness, not an attack result.
+
+- **Accuracy:** 90.85% on test (9,085 / 10,000), with 0 discordant images
+  against the source.
+- **Behavioral:** fired on 100 of 100 triggers, p = 3.8e-96.
+- **Weight:** correlation +0.9091, z = 10.29, p ≤ 1.1e-23.
+
+"Detected" means rejected at alpha 1e-6, a level fixed in P4.1 before any
+attack was run. Each watermark is tested separately; a combined verdict is
+P9.3.
 
 ## 8.5 ZK measurements
 
@@ -1052,3 +1086,12 @@ Append one line per session: date, tasks touched, key outcome.
   - Dual `W*` z = 10.29, p ≤ 1.1e-23. Unwatermarked models not detected.
   - Found and fixed before the run: `NormalDist.cdf(-z)` loses precision beyond z of about 8, so `gaussian_tail` now uses `erfc`. The result is written before the figure, so a new untracked figure cannot mark the record dirty.
   - 29 new tests, 503 in total, all pass.
+- 2026-09-14: P4.1. Attack harness built: a registry and interface in `src/attacks/harness.py`, the row evaluator in `src/attacks/evaluation.py`, and the CLI `experiments/run_attack_suite.py` with `run`, `apply` and `evaluate` modes.
+  - Decisions:
+    - Attacks never receive `K`.
+    - `[GPU]` attacks run `apply` on Colab without the key, and the weights are scored locally with `evaluate`.
+    - `detected` means rejected at alpha 1e-6, fixed before any attack.
+    - Weight extraction is reported as not applicable when the carrier layout is gone.
+    - The holdout is not scored.
+  - The `none` control on the dual `W*`, run from a clean tree at `b807c8b`, reproduced P3.6 exactly: 90.85%, 100/100, z = 10.29. `apply` then `evaluate` gave the same table.
+  - 43 new tests, 546 in total, all pass. No attack implemented beyond the control.
