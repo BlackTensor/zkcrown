@@ -23,7 +23,11 @@ Modes
     Load the source by hash, apply each config, save the attacked weights
     (``.pt``, gitignored) and an apply record holding their SHA-256, arch,
     config and aggregate attack info. Never reads `K`. This is what a
-    `[GPU]` notebook calls.
+    `[GPU]` notebook calls. Training attacks checkpoint every epoch under
+    ``<out-dir>/checkpoints/<run>/`` and resume; a config that already has an
+    apply record with matching weights is skipped (P4.5). ``--smoke`` runs
+    the path on an untrained stand-in and synthetic data, into
+    ``<out-dir>/smoke/``.
 ``evaluate``
     Read apply records, load each weights file by its recorded hash, score it,
     write a row that names the apply record it came from.
@@ -49,6 +53,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import time
 from pathlib import Path
 
@@ -95,6 +100,8 @@ def read_configs(args) -> list[AttackConfig]:
         keys = [(c.attack, c.strength, json.dumps(c.params, sort_keys=True)) for c in configs]
         if len(set(keys)) != len(keys):
             raise SystemExit("the configs repeat an attack at the same strength")
+        if len({c.label() for c in configs}) != len(configs):
+            raise SystemExit("two configs share a label; give each params set its own 'tag'")
         return configs
     if args.attack is None or args.strength is None:
         raise SystemExit("need --config, or --attack and --strength")
@@ -189,7 +196,7 @@ def write_row(row: dict, *, task: str, seed: int, out_dir: Path, backends: dict,
               git: dict | None = None) -> Path:
     t = row["table"]
     return write_result(
-        name=f"{task_slug(task)}_{row['config']['attack']}_{row['config']['strength']:g}",
+        name=f"{task_slug(task)}_{AttackConfig(**row['config']).label()}",
         seed=seed,
         task=task,
         params={
@@ -247,20 +254,63 @@ def mode_run(args, backends, started) -> list[Path]:
     return paths
 
 
+SMOKE_SOURCE_SEED = 20260914
+"""Seed of the untrained stand-in source for ``apply --smoke``."""
+
+
+def smoke_source() -> tuple[dict, dict]:
+    """A seeded untrained `main_model`, for exercising apply mode without the real weights. Never scored."""
+    set_seed(SMOKE_SOURCE_SEED)
+    from src.models import main_model
+
+    state = main_model(width=32).state_dict()
+    return state, {"name": "smoke", "task": "SMOKE", "weights_sha256": None, "arch": {"width": 32}}
+
+
+def completed_apply(out_dir: Path, task: str, config: AttackConfig, seed: int, source: dict) -> Path | None:
+    """An existing apply record for exactly this config, seed and source whose weights file matches its hash."""
+    for path in sorted(Path(out_dir).glob(f"{task_slug(task)}_apply_{config.label()}__seed{seed}__*.json"), reverse=True):
+        record = read_result(path)
+        params, metrics = record.get("params", {}), record.get("metrics", {})
+        if (params.get("kind") != APPLY_RECORD_KIND or params.get("config") != config.to_dict()
+                or params.get("source", {}).get("weights_sha256") != source["weights_sha256"]):
+            continue
+        weights = Path(out_dir) / metrics.get("weights_file", "")
+        if weights.is_file() and sha256_file(weights) == metrics.get("weights_sha256"):
+            return path
+    return None
+
+
 def mode_apply(args, backends, started) -> list[Path]:
     require_mounted_drive(args.out_dir)
     configs = read_configs(args)
-    state, source = load_source(args.source, args.source_path)
+    if args.smoke:
+        state, source = smoke_source()
+        out_dir = Path(args.out_dir) / "smoke"
+        if out_dir.is_dir():
+            shutil.rmtree(out_dir)  # a smoke run always trains from scratch, never resumes an old smoke checkpoint
+        backends = set_seed(args.seed)
+    else:
+        state, source = load_source(args.source, args.source_path)
+        out_dir = Path(args.out_dir)
     device = torch.device(args.device)
-    context = AttackContext(device=device, seed=args.seed, data_root=args.data_root)
     paths = []
     for config in configs:
+        stem = f"{task_slug(args.task)}_{config.label()}__seed{args.seed}"
+        done = None if args.smoke else completed_apply(out_dir, args.task, config, args.seed, source)
+        if done is not None:
+            print(f"skipping {config.label()}: already applied, weights hash verified ({done.name})")
+            paths.append(done)
+            continue
+        config_started = time.perf_counter()
+        # Training attacks checkpoint here every epoch, so a re-run after a disconnect resumes.
+        context = AttackContext(device=device, seed=args.seed, data_root=args.data_root, num_workers=args.num_workers,
+                                work_dir=out_dir / "checkpoints" / stem, smoke=args.smoke)
         output = apply_attack(config, state, source["arch"], context)
         if output.runtime_model is not None:
             raise SystemExit(f"{config.attack} is scored on a runtime model that its saved weights do not reproduce; "
                              "use run mode")
-        stem =f"{task_slug(args.task)}_{config.label()}__seed{args.seed}"
-        weights = Path(args.out_dir) / f"{stem}.pt"
+        weights = out_dir / f"{stem}.pt"
         weights.parent.mkdir(parents=True, exist_ok=True)
         tmp = weights.with_suffix(".pt.tmp")
         torch.save(output.state_dict, tmp)
@@ -271,13 +321,15 @@ def mode_apply(args, backends, started) -> list[Path]:
             seed=args.seed,
             task=args.task,
             params={"kind": APPLY_RECORD_KIND, "config": config.to_dict(), "attack": get_attack(config.attack).to_dict(),
-                    "source": source, "device": str(device), "key_used": False},
+                    "source": source, "device": str(device), "key_used": False, "smoke": args.smoke,
+                    "gpu": torch.cuda.get_device_name(0) if device.type == "cuda" else None},
             metrics={"weights_file": weights.name, "weights_sha256": weights_sha256, "arch": output.arch, "info": output.info},
             seeded_backends=backends,
-            duration_seconds=time.perf_counter() - started,
-            out_dir=args.out_dir,
+            duration_seconds=time.perf_counter() - config_started,
+            out_dir=out_dir,
             git=args.git,
-            notes="Attacked weights only, not scored. Score locally with run_attack_suite.py evaluate.",
+            notes=("SMOKE: untrained stand-in source and synthetic data; meaningless, never evaluate. " if args.smoke else "")
+            + "Attacked weights only, not scored. Score locally with run_attack_suite.py evaluate.",
         )
         print(f"applied {config.label()}: {weights} sha256 {weights_sha256}  record {path}")
         paths.append(path)
@@ -343,10 +395,15 @@ def main(argv: list[str] | None = None) -> list[Path]:
     parser.add_argument("--key", type=Path, default=repo_root() / "secrets" / "K.bin")
     parser.add_argument("--data-root", type=Path, default=repo_root() / "data")
     parser.add_argument("--device", default="cpu")
+    parser.add_argument("--num-workers", type=int, default=0, help="DataLoader workers for training attacks")
+    parser.add_argument("--smoke", action="store_true",
+                        help="apply mode only: untrained stand-in source and synthetic data, to test the path")
     parser.add_argument("--out-dir", type=Path, default=repo_root() / DEFAULT_ROWS_DIR)
     args = parser.parse_args(argv)
     if args.mode == "evaluate" and not args.applied:
         parser.error("evaluate needs --applied")
+    if args.smoke and args.mode != "apply":
+        parser.error("--smoke is for apply mode only")
 
     # One git snapshot for the whole invocation: rows written earlier in this run
     # are untracked files and must not mark the later rows dirty.

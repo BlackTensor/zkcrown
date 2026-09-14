@@ -151,6 +151,45 @@ def cifar10_datasets(
     }
 
 
+def attacker_holdout_loaders(
+    root: Path | str = "data",
+    *,
+    batch_size: int = 128,
+    eval_batch_size: int = 500,
+    num_workers: int = 0,
+    augment: bool = True,
+    download: bool = False,
+    smoke: bool = False,
+    seed: int = DEFAULT_SEED,
+    pin_memory: bool | None = None,
+) -> dict[str, DataLoader]:
+    """The thief's own data for a training attack (P4.5, P4.6): the 5,000-image attacker holdout.
+
+    ``train`` is the holdout shuffled with a generator seeded by `seed` (so
+    `fit` can reseed it per epoch) and, with `augment`, the same augmentation
+    as P0.5. ``eval`` is the same images un-augmented, for monitoring. The
+    attacker has no test set, so nothing here touches it.
+    """
+    if smoke:
+        train_set = eval_set = _smoke_datasets(seed)["holdout"]
+    else:
+        from torchvision.datasets import CIFAR10
+
+        root = str(root)
+        train_full = CIFAR10(root, train=True, download=download, transform=_transforms(augment))
+        eval_full = CIFAR10(root, train=True, download=False, transform=_transforms(False))
+        _, holdout_idx = cifar10_split_indices(len(train_full))
+        train_set, eval_set = Subset(train_full, holdout_idx), Subset(eval_full, holdout_idx)
+    if pin_memory is None:
+        pin_memory = torch.cuda.is_available()
+    shared: dict[str, Any] = {"num_workers": num_workers, "pin_memory": pin_memory}
+    return {
+        "train": DataLoader(train_set, batch_size=batch_size, shuffle=True, drop_last=False,
+                            generator=torch_generator(seed), worker_init_fn=seed_worker, **shared),
+        "eval": DataLoader(eval_set, batch_size=eval_batch_size, shuffle=False, **shared),
+    }
+
+
 def cifar10_loaders(
     root: Path | str = "data",
     *,

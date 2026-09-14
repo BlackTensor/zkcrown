@@ -65,15 +65,23 @@ class AttackConfig:
         attack: registered attack name.
         strength: the swept value, finite.
         params: every other setting, JSON-serialisable. Part of the record.
+        tag: optional short name for the params (P4.5), e.g. ``lr0.01``. It
+            goes into the label, so configs of one attack that differ only in
+            params get distinct file names. Letters, digits, ``.``, ``-``
+            only.
     """
 
     attack: str
     strength: float
     params: dict[str, Any] = field(default_factory=dict)
+    tag: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.attack, str) or not self.attack:
             raise ValueError("attack must be a non-empty string")
+        if self.tag is not None and (not isinstance(self.tag, str) or not self.tag
+                                     or not all(c.isalnum() or c in ".-" for c in self.tag)):
+            raise ValueError(f"tag must be a non-empty string of letters, digits, '.' and '-', got {self.tag!r}")
         if isinstance(self.strength, bool) or not isinstance(self.strength, (int, float)):
             raise TypeError(f"strength must be a number, got {type(self.strength).__name__}")
         if not math.isfinite(self.strength):
@@ -83,11 +91,15 @@ class AttackConfig:
         object.__setattr__(self, "strength", float(self.strength))
 
     def label(self) -> str:
-        """Short, filename-friendly name, e.g. ``magnitude_prune_0.5``."""
-        return f"{self.attack}_{self.strength:g}"
+        """Short, filename-friendly name, e.g. ``magnitude_prune_0.5`` or ``finetune_holdout_lr0.01_20``."""
+        middle = f"_{self.tag}" if self.tag else ""
+        return f"{self.attack}{middle}_{self.strength:g}"
 
     def to_dict(self) -> dict[str, Any]:
-        return {"attack": self.attack, "strength": self.strength, "params": dict(self.params)}
+        out = {"attack": self.attack, "strength": self.strength, "params": dict(self.params)}
+        if self.tag:
+            out["tag"] = self.tag
+        return out
 
 
 def expand_config(config: Mapping[str, Any]) -> list[AttackConfig]:
@@ -100,7 +112,7 @@ def expand_config(config: Mapping[str, Any]) -> list[AttackConfig]:
     ``"strength": x`` is accepted in place of ``"strengths"``. Unknown keys are
     refused, so a typo cannot silently drop a setting.
     """
-    unknown = set(config) - {"attack", "strength", "strengths", "params"}
+    unknown = set(config) - {"attack", "strength", "strengths", "params", "tag"}
     if unknown:
         raise ValueError(f"unknown config keys: {sorted(unknown)}")
     if ("strength" in config) == ("strengths" in config):
@@ -111,17 +123,25 @@ def expand_config(config: Mapping[str, Any]) -> list[AttackConfig]:
     if len(set(strengths)) != len(strengths):
         raise ValueError("'strengths' has duplicates")
     params = dict(config.get("params") or {})
-    return [AttackConfig(attack=config["attack"], strength=s, params=params) for s in strengths]
+    return [AttackConfig(attack=config["attack"], strength=s, params=params, tag=config.get("tag")) for s in strengths]
 
 
 @dataclass(frozen=True)
 class AttackContext:
-    """What an attack may use besides the weights. Deliberately no key."""
+    """What an attack may use besides the weights. Deliberately no key.
+
+    ``work_dir`` (P4.5) is where a training attack checkpoints every epoch so
+    it can resume after a disconnect; ``None`` means a throwaway directory.
+    ``smoke`` asks for synthetic stand-in data: the whole path runs, and the
+    numbers are meaningless.
+    """
 
     device: torch.device
     seed: int
     data_root: Path
     num_workers: int = 0
+    work_dir: Path | None = None
+    smoke: bool = False
 
 
 @dataclass

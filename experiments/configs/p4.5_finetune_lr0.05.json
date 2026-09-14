@@ -1,0 +1,1 @@
+{"attack": "finetune_holdout", "tag": "lr0.05", "strengths": [5, 20, 60], "params": {"lr": 0.05, "weight_decay": 0.0005, "momentum": 0.9, "batch_size": 128, "warmup_epochs": 1.0, "augment": true}}
