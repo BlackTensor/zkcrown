@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "name": "p4.6_apply_prune_finetune_channel-lr0.05-e20_0.5",
+  "task": "P4.6",
+  "timestamp_utc": "2026-09-15T14:13:39+00:00",
+  "git": {
+    "commit": "7017cc1bbffc90f299640e8a8ba595aac24d9329",
+    "branch": "master",
+    "dirty": false,
+    "available": false,
+    "source": "handoff"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": true
+  },
+  "params": {
+    "kind": "attack-apply/v1",
+    "config": {
+      "attack": "prune_finetune",
+      "strength": 0.5,
+      "params": {
+        "prune": "channel_prune_l1",
+        "epochs": 20,
+        "lr": 0.05,
+        "weight_decay": 0.0005,
+        "momentum": 0.9,
+        "batch_size": 128,
+        "warmup_epochs": 1.0,
+        "augment": true
+      },
+      "tag": "channel-lr0.05-e20"
+    },
+    "attack": {
+      "name": "prune_finetune",
+      "strength_meaning": "the pruning attack's strength (sparsity, or fraction of channels), then fine-tuning with the mask fixed",
+      "description": "Prune (P4.2 or P4.3), then fine-tune on the attacker holdout with the P4.5 recipe, pruned positions held at zero (P4.6)."
+    },
+    "source": {
+      "name": "dual",
+      "task": "P3.6",
+      "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+      "arch": {
+        "width": 32
+      }
+    },
+    "device": "cuda",
+    "key_used": false,
+    "smoke": false,
+    "gpu": "Tesla T4"
+  },
+  "metrics": {
+    "weights_file": "p4.6_prune_finetune_channel-lr0.05-e20_0.5__seed1337.pt",
+    "weights_sha256": "1f2d870c223e9d7027c12af53de38491e91ff64b4315f574b81acdbccd3aab06",
+    "arch": {
+      "width": 32
+    },
+    "info": {
+      "version": "prune-finetune/v1",
+      "prune_attack": "channel_prune_l1",
+      "prune_strength": 0.5,
+      "source_state_sha256": "ef8a87d52f8e4283746e78f88c12dee30eb484a3191292e44046be3299d54140",
+      "start_state_sha256": "3587753c61c7746993ed6aa58c480c577973b09168d30bad10825168ab81c5d3",
+      "prune": {
+        "version": "channel-prune-l1/v1",
+        "criterion": "L1 norm of each conv filter, source weights, each layer ranked independently",
+        "target_fraction": 0.5,
+        "prunable_layers": 6,
+        "channels": 448,
+        "channels_removed": 224,
+        "achieved_fraction": 0.5,
+        "per_layer": {
+          "features.0": {
+            "channels": 32,
+            "removed": 16,
+            "fraction_removed": 0.5,
+            "capped": false,
+            "largest_removed_l1": 3.6257406326476485,
+            "smallest_kept_l1": 3.6872874171240255
+          },
+          "features.3": {
+            "channels": 32,
+            "removed": 16,
+            "fraction_removed": 0.5,
+            "capped": false,
+            "largest_removed_l1": 14.06172857063575,
+            "smallest_kept_l1": 14.377881132531911
+          },
+          "features.7": {
+            "channels": 64,
+            "removed": 32,
+            "fraction_removed": 0.5,
+            "capped": false,
+            "largest_removed_l1": 14.7486987535558,
+            "smallest_kept_l1": 14.751097062646295
+          },
+          "features.10": {
+            "channels": 64,
+            "removed": 32,
+            "fraction_removed": 0.5,
+            "capped": false,
+            "largest_removed_l1": 24.26808233070915,
+            "smallest_kept_l1": 24.316277849423614
+          },
+          "features.14": {
+            "channels": 128,
+            "removed": 64,
+            "fraction_removed": 0.5,
+            "capped": false,
+            "largest_removed_l1": 20.079496367034153,
+            "smallest_kept_l1": 20.134322405396233
+          },
+          "features.17": {
+            "channels": 128,
+            "removed": 64,
+            "fraction_removed": 0.5,
+            "capped": false,
+            "largest_removed_l1": 26.13534506589349,
+            "smallest_kept_l1": 26.23913166937041
+          }
+        },
+        "carrier_zero_fraction": 0.7326211568525274,
+        "carrier_zero_fraction_per_tensor": {
+          "features.0.weight": 0.5,
+          "features.3.weight": 0.75,
+          "features.7.weight": 0.75,
+          "features.10.weight": 0.75,
+          "features.14.weight": 0.75,
+          "features.17.weight": 0.75,
+          "classifier.2.weight": 0.5
+        },
+        "equivalent_narrow_params": 82554,
+        "source_params": 307946,
+        "representation": "zero-masked, same shapes; output-equivalent to deleting the channels",
+        "zeroed": "removed filters, their BatchNorm weight and bias, and the next layer's input slice",
+        "untouched": "kept weights, BatchNorm running statistics, classifier bias",
+        "weight_extraction_assumes": "the owner re-aligns removed channels as zeros (not implemented for a physically narrower model)",
+        "fine_tuned": false,
+        "bn_recalibrated": false
+      },
+      "finetune": {
+        "recipe": {
+          "weight_decay": 0.0005,
+          "momentum": 0.9,
+          "batch_size": 128,
+          "warmup_epochs": 1.0,
+          "augment": true,
+          "lr": 0.05,
+          "epochs": 20,
+          "optimizer": "SGD nesterov",
+          "schedule": "linear warmup then cosine to 0 over the run"
+        },
+        "data": "attacker holdout, 5,000 CIFAR-10 train images",
+        "train_images": 5000,
+        "steps": 800,
+        "first_epoch": {
+          "epoch": 0,
+          "lr": 0.05,
+          "train_loss": 1.3529146739006042,
+          "train_accuracy": 0.5576,
+          "holdout_accuracy": 0.294
+        },
+        "last_epoch": {
+          "epoch": 19,
+          "lr": 0.00030779148512155856,
+          "train_loss": 0.38233361711502073,
+          "train_accuracy": 0.8678,
+          "holdout_accuracy": 0.9076
+        },
+        "final_holdout_accuracy": 0.9076,
+        "wall_seconds_this_session": 70.82,
+        "epoch_seconds_total": 67.68,
+        "device": "cuda",
+        "fine_tuned": true,
+        "selection": "final epoch, no selection"
+      },
+      "mask": {
+        "policy": "fixed: gradients at pruned positions replaced by 0; checked every epoch",
+        "masked_tensors": [
+          "classifier.2.weight",
+          "features.0.weight",
+          "features.1.bias",
+          "features.1.weight",
+          "features.10.weight",
+          "features.11.bias",
+          "features.11.weight",
+          "features.14.weight",
+          "features.15.bias",
+          "features.15.weight",
+          "features.17.weight",
+          "features.18.bias",
+          "features.18.weight",
+          "features.3.weight",
+          "features.4.bias",
+          "features.4.weight",
+          "features.7.weight",
+          "features.8.bias",
+          "features.8.weight"
+        ],
+        "masked_entries": 225392,
+        "masked_nonzero_after": 0,
+        "masked_nonzero_max_over_epochs": 0,
+        "epochs_checked": 20
+      },
+      "carrier_zero_fraction_after": 0.7326211568525274,
+      "fine_tuned": true,
+      "bn_recalibrated": "by fine-tuning (running statistics updated in train mode)"
+    }
+  },
+  "environment": {
+    "python": "3.13.15",
+    "platform": "Linux-6.6.122+-x86_64-with-glibc2.39",
+    "torch": "2.11.0+cu128",
+    "numpy": "2.1.3",
+    "accelerator": "Tesla T4",
+    "cuda": "12.8",
+    "system_ram_gb": 12.67
+  },
+  "duration_seconds": 72.02336772199942,
+  "notes": "Attacked weights only, not scored. Score locally with run_attack_suite.py evaluate."
+}
