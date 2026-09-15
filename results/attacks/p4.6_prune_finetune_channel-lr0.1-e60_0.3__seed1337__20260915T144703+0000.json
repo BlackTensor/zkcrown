@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "name": "p4.6_prune_finetune_channel-lr0.1-e60_0.3",
+  "task": "P4.6",
+  "timestamp_utc": "2026-09-15T14:47:03+00:00",
+  "git": {
+    "commit": "b2090f1c409a222142fa5811a78c851725cb64c9",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "harness": "experiments/run_attack_suite.py (P4.1)",
+    "config": {
+      "attack": "prune_finetune",
+      "strength": 0.3,
+      "params": {
+        "prune": "channel_prune_l1",
+        "epochs": 60,
+        "lr": 0.1,
+        "weight_decay": 0.0005,
+        "momentum": 0.9,
+        "batch_size": 128,
+        "warmup_epochs": 1.0,
+        "augment": true
+      },
+      "tag": "channel-lr0.1-e60"
+    },
+    "source": {
+      "name": "dual",
+      "task": "P3.6",
+      "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+      "arch": {
+        "width": 32
+      }
+    },
+    "owner_id": "blacktensor-zkcrown-owner",
+    "accuracy": "eval-mode top-1 on the 10,000-image CIFAR-10 test set; paired drop vs source (P2.5 method)",
+    "behavioral": "P2.4 WDR on the N = 100 owner triggers regenerated from K; P2.8 exact binomial p-value",
+    "weight": "P3.3 blind centred extraction with K; P3.7 bound exp(-z^2/2); not attempted if the carrier layout is gone",
+    "detection_alpha": "1e-6",
+    "mode": "evaluate",
+    "device": "cpu"
+  },
+  "metrics": {
+    "row": {
+      "row_version": "attack-row/v1",
+      "table": {
+        "attack": "prune_finetune",
+        "strength": 0.3,
+        "strength_meaning": "the pruning attack's strength (sparsity, or fraction of channels), then fine-tuning with the mask fixed",
+        "clean_accuracy": 0.8092,
+        "accuracy_drop_vs_source_pp": 9.93,
+        "behavioral_wdr": 0.07,
+        "behavioral_p_value": 0.9370445912730502,
+        "behavioral_detected": false,
+        "weight_correlation": 0.42835283788695167,
+        "weight_z": 4.846259142565847,
+        "weight_p_value": 7.943839475385756e-06,
+        "weight_detected": false,
+        "weight_applicable": true,
+        "detection_alpha": "1e-6"
+      },
+      "config": {
+        "attack": "prune_finetune",
+        "strength": 0.3,
+        "params": {
+          "prune": "channel_prune_l1",
+          "epochs": 60,
+          "lr": 0.1,
+          "weight_decay": 0.0005,
+          "momentum": 0.9,
+          "batch_size": 128,
+          "warmup_epochs": 1.0,
+          "augment": true
+        },
+        "tag": "channel-lr0.1-e60"
+      },
+      "attack": {
+        "name": "prune_finetune",
+        "strength_meaning": "the pruning attack's strength (sparsity, or fraction of channels), then fine-tuning with the mask fixed",
+        "description": "Prune (P4.2 or P4.3), then fine-tune on the attacker holdout with the P4.5 recipe, pruned positions held at zero (P4.6)."
+      },
+      "source": {
+        "name": "dual",
+        "task": "P3.6",
+        "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+        "arch": {
+          "width": 32
+        }
+      },
+      "attacked": {
+        "arch": {
+          "width": 32
+        },
+        "info": {
+          "version": "prune-finetune/v1",
+          "prune_attack": "channel_prune_l1",
+          "prune_strength": 0.3,
+          "source_state_sha256": "ef8a87d52f8e4283746e78f88c12dee30eb484a3191292e44046be3299d54140",
+          "start_state_sha256": "526b7b5c230f487405a4a9bfc2fcafabeb75d49de345c03ce264882b75c4873a",
+          "prune": {
+            "version": "channel-prune-l1/v1",
+            "criterion": "L1 norm of each conv filter, source weights, each layer ranked independently",
+            "target_fraction": 0.3,
+            "prunable_layers": 6,
+            "channels": 448,
+            "channels_removed": 134,
+            "achieved_fraction": 0.29910714285714285,
+            "per_layer": {
+              "features.0": {
+                "channels": 32,
+                "removed": 10,
+                "fraction_removed": 0.3125,
+                "capped": false,
+                "largest_removed_l1": 2.3046599496155977,
+                "smallest_kept_l1": 2.892065016552806
+              },
+              "features.3": {
+                "channels": 32,
+                "removed": 10,
+                "fraction_removed": 0.3125,
+                "capped": false,
+                "largest_removed_l1": 13.782290179849952,
+                "smallest_kept_l1": 13.809724280727096
+              },
+              "features.7": {
+                "channels": 64,
+                "removed": 19,
+                "fraction_removed": 0.296875,
+                "capped": false,
+                "largest_removed_l1": 14.18904045730551,
+                "smallest_kept_l1": 14.2712609332375
+              },
+              "features.10": {
+                "channels": 64,
+                "removed": 19,
+                "fraction_removed": 0.296875,
+                "capped": false,
+                "largest_removed_l1": 23.28897371088533,
+                "smallest_kept_l1": 23.37205620901659
+              },
+              "features.14": {
+                "channels": 128,
+                "removed": 38,
+                "fraction_removed": 0.296875,
+                "capped": false,
+                "largest_removed_l1": 18.856953650898504,
+                "smallest_kept_l1": 18.89037926919991
+              },
+              "features.17": {
+                "channels": 128,
+                "removed": 38,
+                "fraction_removed": 0.296875,
+                "capped": false,
+                "largest_removed_l1": 25.471528744063107,
+                "smallest_kept_l1": 25.476152644165268
+              }
+            },
+            "carrier_zero_fraction": 0.49246026576341845,
+            "carrier_zero_fraction_per_tensor": {
+              "features.0.weight": 0.3125,
+              "features.3.weight": 0.52734375,
+              "features.7.weight": 0.5166015625,
+              "features.10.weight": 0.505615234375,
+              "features.14.weight": 0.505615234375,
+              "features.17.weight": 0.505615234375,
+              "classifier.2.weight": 0.296875
+            },
+            "equivalent_narrow_params": 156473,
+            "source_params": 307946,
+            "representation": "zero-masked, same shapes; output-equivalent to deleting the channels",
+            "zeroed": "removed filters, their BatchNorm weight and bias, and the next layer's input slice",
+            "untouched": "kept weights, BatchNorm running statistics, classifier bias",
+            "weight_extraction_assumes": "the owner re-aligns removed channels as zeros (not implemented for a physically narrower model)",
+            "fine_tuned": false,
+            "bn_recalibrated": false
+          },
+          "finetune": {
+            "recipe": {
+              "weight_decay": 0.0005,
+              "momentum": 0.9,
+              "batch_size": 128,
+              "warmup_epochs": 1.0,
+              "augment": true,
+              "lr": 0.1,
+              "epochs": 60,
+              "optimizer": "SGD nesterov",
+              "schedule": "linear warmup then cosine to 0 over the run"
+            },
+            "data": "attacker holdout, 5,000 CIFAR-10 train images",
+            "train_images": 5000,
+            "steps": 2400,
+            "first_epoch": {
+              "epoch": 0,
+              "lr": 0.1,
+              "train_loss": 1.0308593147277831,
+              "train_accuracy": 0.6614,
+              "holdout_accuracy": 0.28
+            },
+            "last_epoch": {
+              "epoch": 59,
+              "lr": 6.852326227130838e-05,
+              "train_loss": 0.12717352151870728,
+              "train_accuracy": 0.958,
+              "holdout_accuracy": 0.98
+            },
+            "final_holdout_accuracy": 0.98,
+            "wall_seconds_this_session": 204.68,
+            "epoch_seconds_total": 199.58,
+            "device": "cuda",
+            "fine_tuned": true,
+            "selection": "final epoch, no selection"
+          },
+          "mask": {
+            "policy": "fixed: gradients at pruned positions replaced by 0; checked every epoch",
+            "masked_tensors": [
+              "classifier.2.weight",
+              "features.0.weight",
+              "features.1.bias",
+              "features.1.weight",
+              "features.10.weight",
+              "features.11.bias",
+              "features.11.weight",
+              "features.14.weight",
+              "features.15.bias",
+              "features.15.weight",
+              "features.17.weight",
+              "features.18.bias",
+              "features.18.weight",
+              "features.3.weight",
+              "features.4.bias",
+              "features.4.weight",
+              "features.7.weight",
+              "features.8.bias",
+              "features.8.weight"
+            ],
+            "masked_entries": 151473,
+            "masked_nonzero_after": 0,
+            "masked_nonzero_max_over_epochs": 0,
+            "epochs_checked": 60
+          },
+          "carrier_zero_fraction_after": 0.49246026576341845,
+          "fine_tuned": true,
+          "bn_recalibrated": "by fine-tuning (running statistics updated in train mode)"
+        },
+        "applied_in": "apply",
+        "weights_sha256": "ca64a3ced217773eba8dcb3321f1bd6418de4c0ff5d00786c8785c799bf52147",
+        "apply_record": {
+          "file": "p4.6_apply_prune_finetune_channel-lr0.1-e60_0.3__seed1337__20260915T142405+0000.json",
+          "timestamp_utc": "2026-09-15T14:24:05+00:00",
+          "git": {
+            "commit": "7017cc1bbffc90f299640e8a8ba595aac24d9329",
+            "branch": "master",
+            "dirty": false,
+            "available": false,
+            "source": "handoff"
+          },
+          "seed": 1337,
+          "environment": {
+            "python": "3.13.15",
+            "platform": "Linux-6.6.122+-x86_64-with-glibc2.39",
+            "torch": "2.11.0+cu128",
+            "numpy": "2.1.3",
+            "accelerator": "Tesla T4",
+            "cuda": "12.8",
+            "system_ram_gb": 12.67
+          }
+        }
+      },
+      "clean_accuracy": {
+        "accuracy": 0.8092,
+        "correct": 8092,
+        "n": 10000,
+        "loss": 0.7438520233154297,
+        "source_accuracy": 0.9085,
+        "drop_vs_source_pp": 9.93,
+        "drop_ci95_pp": [
+          9.185627688597904,
+          10.674372311402095
+        ],
+        "source_only_right": 1267,
+        "attacked_only_right": 274,
+        "mcnemar_exact_p": 1.5347773023128754e-152
+      },
+      "behavioral": {
+        "n": 100,
+        "fired": 7,
+        "wdr": 0.07,
+        "predicted_base_label": 45,
+        "predicted_other_class": 48,
+        "target_probability_mean": 0.06258729100227356,
+        "target_probability_median": 0.00024592693080194294,
+        "target_probability_min": 7.842637129995556e-13,
+        "null_fire_bound": "1/9",
+        "null_expected_fired_bound": 11.11111111111111,
+        "p_value": 0.9370445912730502,
+        "p_value_log10": -0.028239741787743355,
+        "rejects": {
+          "0.05": false,
+          "0.01": false,
+          "1e-3": false,
+          "1e-6": false,
+          "1e-9": false
+        },
+        "detected": false
+      },
+      "weight": {
+        "applicable": true,
+        "version": "weight-extraction/v1",
+        "rows": 128,
+        "dim": 307040,
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+        "centered": true,
+        "correlation": 0.42835283788695167,
+        "amplitude": 0.025828756281477017,
+        "projected_rms": 0.06029785260415056,
+        "bit_matches": 90,
+        "z": 4.846259142565847,
+        "p_value_bound": 7.943839475385756e-06,
+        "p_value_bound_log10": -5.099969540401213,
+        "p_value_floor": 1.603810890548638e-28,
+        "gaussian_tail_approximation": 6.290558044487625e-07,
+        "rejects": {
+          "0.05": true,
+          "0.01": true,
+          "1e-3": true,
+          "1e-6": false,
+          "1e-9": false
+        },
+        "detected": false
+      },
+      "owner": {
+        "owner_id": "blacktensor-zkcrown-owner",
+        "trigger_bundle_sha256": "fbd65ec730a3555c5921f13d1a5d4840b6310261ddcaf31d3a724195122baec8",
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8"
+      }
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 196.64472240000032,
+  "notes": "One attack row. Behavioral and weight tests reported separately at alpha 1e-6; combining them is P9.3. p-values assume K was committed before the suspect was seen and a per-suspect correction when several models are audited. Aggregates only."
+}

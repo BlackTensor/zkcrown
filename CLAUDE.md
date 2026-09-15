@@ -504,7 +504,38 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - **Memorisation, not generalisation.** The owner noted holdout accuracy near 99.9%. Holdout accuracy is on the attacker's own training images, so it is a fit figure. The holdout-minus-test gap grows with LR and length, to +16.3 pp (LR 0.1, 60 epochs: 99.64% vs 83.36%). Test loss rises with length at LR ≥ 0.01, and test accuracy does not improve beyond 20 epochs. The longer runs overfit 5,000 images rather than recover accuracy.
   - Limits: one run per cell, one seed, one source model; the attacker has 5,000 images; GPU training is not bit-reproducible; plain fine-tuning only.
   - 27 tests added at handoff, 653 in total, all pass.
-- [ ] **P4.6** `[GPU]` Combined attack: prune then fine-tune. This is the strongest realistic threat and the most interesting result.
+- [x] **P4.6** `[GPU]` Combined attack: prune then fine-tune. This is the strongest realistic threat and the most interesting result.
+  - **Owner decisions:**
+    - Two pruning methods: global magnitude (P4.2) and L1 channel (P4.3, zero-masked).
+    - The pruning mask stays fixed during fine-tuning.
+    - Grid: global s = 0.5 / 0.7 / 0.9 and channel s = 0.1 / 0.3 / 0.5. Each is fine-tuned with the P4.5 recipe on the attacker holdout, at LR 0.01 / 0.05 / 0.1 for 20 epochs plus LR 0.1 for 60 epochs. That is 24 runs, fixed before the run.
+  - **Attack** (`src/attacks/prune_finetune.py`): prune with the unchanged P4.2/P4.3 code, then fine-tune. Gradient hooks hold every pruned entry at zero, including a removed channel's BN affine pair. No key, no triggers, no test set.
+  - **Run:** 24 Colab `apply` runs, T4, commit `7017cc1`, clean tree. 2,399 s of fine-tuning, 3.2–3.4 s per epoch. The handoff estimated ~55 min; the actual was 40 min.
+  - **Verified before scoring** (independent scratch check):
+    - Configs, source hash, source-state digest, commit, not smoke, key unused.
+    - Steps (40 per epoch), 5,000 images, epoch indices.
+    - Weights hash, strict load, finite values.
+    - **Pruning reproduced locally:** start-state digest and masked-entry count match.
+    - **Mask zero:** the record says 0 non-zero masked entries at every epoch. In the weights files, recomputed locally, all 55,907 to 276,336 masked entries are exactly 0. Every unmasked carrier weight changed.
+  - **Scoring:** local `evaluate` of all 24 from a clean tree at `b2090f1`. An earlier session had scored 8 rows before being interrupted. Those were set aside, not committed; the re-run reproduced them exactly.
+  - **Behavioral watermark: not detected at 1e-6 in 23 of 24.**
+    - The one exception is global 50% at LR 0.01, with 59 fired.
+    - Two runs reject only at weaker levels: global 70% at LR 0.01 (24 fired, rejects at 1e-3) and channel 10% at LR 0.01 (19 fired, rejects at 0.05).
+    - The other 21 fire on 4–11, the range a model independent of `K` gives.
+    - Pruning lets a gentle rate remove it: LR 0.01 alone left 46/100 (P4.5), but global 90% then LR 0.01 leaves 10/100 at 84.61%.
+    - Highest test accuracy among runs that remove it (≤ 11 fired): 86.75%, global 70% at LR 0.05 (drop +4.10 pp). P4.5's cheapest removal was 86.06%. That is one run each, not compared statistically. Not detected at 1e-6, but still rejecting at a weaker level: 88.99% and 88.19%.
+  - **Weight watermark: detected at 1e-6 in 21 of 24, lost in 3, all channel pruning at LR 0.1:**
+    - s = 0.3, 60 epochs: z 4.85, rejects at 1e-3 only.
+    - s = 0.5, 20 epochs: z 4.54, rejects at 1e-3 only.
+    - s = 0.5, 60 epochs: z 1.93, p ≤ 0.16, no rejection at any level.
+    - **In those 3 runs both watermarks are lost, at 80.92%, 78.51% and 78.94% test accuracy** (drops +9.9 to +12.3 pp). This is the first attack in the suite that removes both and leaves a usable model. The weight figures also assume channel re-alignment (P4.3 caveat).
+    - Global pruning never removed it. Lowest z 6.60 at global 90%, LR 0.1, 60 epochs.
+  - **Memorisation check (owner's note):**
+    - Holdout accuracy (the attacker's training data) is 88.1–99.7%, while test accuracy is 78.5–89.1%. The gap is +6.9 to +17.1 pp, largest in the 60-epoch runs.
+    - Test loss rises from 20 to 60 epochs at LR 0.1 in every pairing, while test accuracy changes by only -0.87 to +0.43 pp.
+    - Recovery on test is still real: channel 50% goes from 15.81% (prune only, P4.3) to 78.5–81.0%. The holdout figure overstates it.
+  - Limits: one run per cell, one seed, one source model and one key. 5,000 attacker images, plain SGD, no removal-specific loss. GPU training is not bit-reproducible.
+  - No code changed; 687 tests pass.
 - [ ] **P4.7** `[GPU]` Knowledge distillation to a student model. Test whether either watermark transfers. **Expect the behavioral watermark to largely NOT survive distillation.** That is a real finding, not a failure. Report it prominently and honestly.
 - [ ] **P4.8** `[GPU]` Overwrite attack: an adversary embeds their own watermark with their own key. Does ours still extract?
 - [ ] **P4.9** Produce the master robustness table and heatmap figure across all attacks.
@@ -1079,7 +1110,7 @@ the behavioral one is P9.
 | Conv-BN fusion, FP32 control (P4.4) | 32 bits, fused | 90.85% | 100% (100/100), p = 3.8e-96 | +0.943 (z 10.67), p ≤ 1.9e-25 | both detected |
 | Quantize INT8, static, simulated (P4.4) | 8 bits, fused | 90.77% | 100% (100/100), p = 3.8e-96 | +0.943 (z 10.67), p ≤ 1.9e-25 | both detected |
 | Fine-tune on 5,000-image attacker holdout (P4.5) | LR 0.001–0.1 × 5/20/60 epochs (12 runs) | 90.48% (LR 0.001, 5 ep) → 86.06% (0.05, 20) → 83.36% (0.1, 60) | 100% at LR 0.001; 62% → 30% at 0.01; 4–11% at 0.05 and 0.1 | +0.909 → +0.890 (0.01, 60) → +0.573 (0.1, 60), z ≥ 6.49 | behavioral removed at LR ≥ 0.05 (every length, acc ≤ 86.1%); weight detected in all 12 |
-| Prune + fine-tune | TBD | TBD | TBD | TBD | TBD |
+| Prune (fixed mask) + fine-tune on attacker holdout (P4.6) | global 50/70/90%, channel 10/30/50% × LR 0.01/0.05/0.1 for 20 ep, + LR 0.1 for 60 ep (24 runs) | 89.10% (global 50%, LR 0.01) → 84.61% (global 90%, 0.01) → 78.51% (channel 50%, 0.1, 20 ep) | 59% at global 50% LR 0.01; 24% and 19% in two LR 0.01 runs; 4–11% in the other 21 | +0.889 → +0.583 (global 90%, 0.1, 60 ep) → +0.170 (channel 50%, 0.1, 60 ep), z 1.93–10.05 | behavioral not detected in 23 of 24; weight detected in 21 of 24; both lost in 3 channel runs at LR 0.1 (78.5–80.9%) |
 | Distillation | TBD | TBD | TBD | TBD | TBD |
 | Overwrite | TBD | TBD | TBD | TBD | TBD |
 
@@ -1378,6 +1409,141 @@ bit-reproducible. One source model and one key. The attacker has 5,000 images.
 Plain SGD fine-tuning only, with no removal-specific loss. Intervals cover
 test-image sampling only.
 
+Prune-then-fine-tune sweep (P4.6).
+- **Training:** 24 `run_attack_suite.py apply` runs on Colab (Tesla T4,
+  commit `7017cc1`, clean tree), configs
+  `experiments/configs/p4.6_prune_finetune_{global,channel}-lr{0.01,0.05,0.1}-e20.json`
+  and `…-lr0.1-e60.json`. Apply records are in `results/attacks/p4.6_apply/`;
+  the weights files are gitignored. Fine-tuning took 2,399 s in total, 3.2–3.4
+  s per epoch.
+- **Scoring:** locally on CPU with `run_attack_suite.py evaluate --task P4.6`,
+  commit `b2090f1`, clean tree, seed 1337. Result files are
+  `results/attacks/p4.6_prune_finetune_<scope>-lr<LR>-e<epochs>_<s>__seed1337__20260915T1437…–1450…+0000.json`.
+- **Attack:** start from the dual `W*` (P3.6, hash-checked). Prune it with the
+  unchanged P4.2 global magnitude code or the P4.3 L1 channel code
+  (zero-masked). Then fine-tune on the 5,000-image attacker holdout with the
+  P4.5 recipe, final-epoch weights.
+  - Gradient hooks hold every pruned position at exactly 0: the pruned
+    conv/linear entries and, for channels, the removed filters, their BN
+    weight and bias, and the next layer's input slice.
+  - Kept weights, kept BN parameters and the classifier bias train normally.
+    BN running statistics update by training.
+- **Verified before scoring:**
+  - Every config equals the committed config.
+  - Source hash and source-state digest equal the dual `W*`.
+  - Each record's pruned start-state digest and masked-entry count equal a
+    local re-run of the pruning.
+  - Weights hashes match; weights load strictly and are finite.
+  - The records report 0 non-zero masked entries at every epoch.
+  - Independently, every masked position in every returned weights file is
+    exactly 0, and every unmasked carrier weight differs from the pruned start.
+- **Scoring detail:** as P4.5. Test accuracy with the paired drop against the
+  dual `W*` (90.85%), P2.8 behavioral p-value, P3.7 weight bound; detected
+  means p ≤ 1e-6.
+- **Holdout column:** accuracy on the attacker's own training images at the
+  end of fine-tuning, measured on Colab. It is a fit figure, not a
+  generalisation estimate.
+- **Weight-watermark caveat (channel rows):** as P4.3, the weights keep the
+  owner's carrier layout. Extraction from a physically narrower model would
+  need re-alignment, which is not implemented.
+
+| Pruning | s | LR | Epochs | Carrier zero | Test acc | Drop pp (95% CI) | Test loss | Holdout (train data) | Holdout − test | Fired /100 | Base label | Behav. p | Behav. detected | Weight corr | z | Bits /128 | Weight p ≤ | Weight detected |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| global | 0.5 | 0.01 | 20 | 50.00% | 89.10% | +1.75 [+1.27, +2.23] | 0.3517 | 97.46% | +8.36 | 59 | 17 | 8.8e-31 | yes | +0.8885 | 10.05 | 126 | 1.1e-22 | yes |
+| global | 0.5 | 0.05 | 20 | 50.00% | 86.15% | +4.70 [+4.09, +5.31] | 0.4746 | 97.46% | +11.31 | 5 | 44 | 0.99 | no | +0.8492 | 9.61 | 122 | 9.1e-21 | yes |
+| global | 0.5 | 0.1 | 20 | 50.00% | 84.92% | +5.93 [+5.30, +6.56] | 0.5109 | 96.96% | +12.04 | 8 | 40 | 0.88 | no | +0.8070 | 9.13 | 113 | 7.9e-19 | yes |
+| global | 0.5 | 0.1 | 60 | 50.00% | 84.71% | +6.14 [+5.47, +6.81] | 0.6421 | 99.64% | +14.93 | 8 | 42 | 0.88 | no | +0.7158 | 8.10 | 107 | 5.7e-15 | yes |
+| global | 0.7 | 0.01 | 20 | 70.00% | 88.99% | +1.86 [+1.37, +2.35] | 0.3585 | 96.42% | +7.43 | 24 | 26 | 2.1e-4 | no (1e-3 only) | +0.8591 | 9.72 | 123 | 3.1e-21 | yes |
+| global | 0.7 | 0.05 | 20 | 70.00% | 86.75% | +4.10 [+3.51, +4.69] | 0.4487 | 97.32% | +10.57 | 8 | 44 | 0.88 | no | +0.8208 | 9.29 | 118 | 1.9e-19 | yes |
+| global | 0.7 | 0.1 | 20 | 70.00% | 85.05% | +5.80 [+5.16, +6.44] | 0.5023 | 96.90% | +11.85 | 6 | 48 | 0.97 | no | +0.7920 | 8.96 | 112 | 3.7e-18 | yes |
+| global | 0.7 | 0.1 | 60 | 70.00% | 84.18% | +6.67 [+6.00, +7.34] | 0.6429 | 99.16% | +14.98 | 6 | 44 | 0.97 | no | +0.7031 | 7.95 | 107 | 1.8e-14 | yes |
+| global | 0.9 | 0.01 | 20 | 90.00% | 84.61% | +6.24 [+5.59, +6.89] | 0.4740 | 91.48% | +6.87 | 10 | 23 | 0.68 | no | +0.7143 | 8.08 | 108 | 6.6e-15 | yes |
+| global | 0.9 | 0.05 | 20 | 90.00% | 83.54% | +7.31 [+6.64, +7.98] | 0.5124 | 93.20% | +9.66 | 4 | 33 | 0.997 | no | +0.6818 | 7.71 | 106 | 1.2e-13 | yes |
+| global | 0.9 | 0.1 | 20 | 90.00% | 82.14% | +8.71 [+8.00, +9.42] | 0.5590 | 91.44% | +9.30 | 6 | 43 | 0.97 | no | +0.6534 | 7.39 | 104 | 1.4e-12 | yes |
+| global | 0.9 | 0.1 | 60 | 90.00% | 82.43% | +8.42 [+7.72, +9.12] | 0.6010 | 94.94% | +12.51 | 4 | 35 | 0.997 | no | +0.5831 | 6.60 | 95 | 3.5e-10 | yes |
+| channel | 0.1 | 0.01 | 20 | 18.18% | 88.19% | +2.66 [+2.13, +3.19] | 0.3931 | 97.88% | +9.69 | 19 | 22 | 0.014 | no (0.05 only) | +0.8629 | 9.76 | 123 | 2.0e-21 | yes |
+| channel | 0.1 | 0.05 | 20 | 18.18% | 85.94% | +4.91 [+4.28, +5.54] | 0.4994 | 98.38% | +12.44 | 7 | 46 | 0.94 | no | +0.8108 | 9.17 | 118 | 5.3e-19 | yes |
+| channel | 0.1 | 0.1 | 20 | 18.18% | 83.42% | +7.43 [+6.74, +8.12] | 0.5659 | 96.46% | +13.04 | 6 | 51 | 0.97 | no | +0.7371 | 8.34 | 113 | 7.9e-16 | yes |
+| channel | 0.1 | 0.1 | 60 | 18.18% | 83.28% | +7.57 [+6.88, +8.26] | 0.7273 | 99.68% | +16.40 | 6 | 47 | 0.97 | no | +0.5324 | 6.02 | 93 | 1.3e-8 | yes |
+| channel | 0.3 | 0.01 | 20 | 49.25% | 85.58% | +5.27 [+4.65, +5.89] | 0.4643 | 95.90% | +10.32 | 9 | 37 | 0.79 | no | +0.8005 | 9.06 | 114 | 1.5e-18 | yes |
+| channel | 0.3 | 0.05 | 20 | 49.25% | 83.59% | +7.26 [+6.57, +7.95] | 0.5346 | 95.58% | +11.99 | 5 | 41 | 0.99 | no | +0.7007 | 7.93 | 108 | 2.3e-14 | yes |
+| channel | 0.3 | 0.1 | 20 | 49.25% | 80.81% | +10.04 [+9.30, +10.78] | 0.6242 | 93.14% | +12.33 | 7 | 47 | 0.94 | no | +0.6774 | 7.66 | 106 | 1.8e-13 | yes |
+| channel | 0.3 | 0.1 | 60 | 49.25% | 80.92% | +9.93 [+9.19, +10.67] | 0.7439 | 98.00% | +17.08 | 7 | 45 | 0.94 | no | +0.4284 | 4.85 | 90 | 7.9e-6 | no (1e-3 only) |
+| channel | 0.5 | 0.01 | 20 | 73.26% | 81.01% | +9.84 [+9.10, +10.58] | 0.5891 | 91.04% | +10.03 | 11 | 40 | 0.56 | no | +0.6641 | 7.51 | 106 | 5.5e-13 | yes |
+| channel | 0.5 | 0.05 | 20 | 73.26% | 79.82% | +11.03 [+10.27, +11.79] | 0.6395 | 90.76% | +10.94 | 6 | 40 | 0.97 | no | +0.5460 | 6.18 | 99 | 5.2e-9 | yes |
+| channel | 0.5 | 0.1 | 20 | 73.26% | 78.51% | +12.34 [+11.55, +13.13] | 0.6744 | 88.14% | +9.63 | 6 | 45 | 0.97 | no | +0.4012 | 4.54 | 83 | 3.4e-5 | no (1e-3 only) |
+| channel | 0.5 | 0.1 | 60 | 73.26% | 78.94% | +11.91 [+11.12, +12.70] | 0.7403 | 94.00% | +15.06 | 7 | 44 | 0.94 | no | +0.1702 | 1.93 | 75 | 0.16 | no |
+
+"Carrier zero" is the fraction of the 307,040 conv/linear weights that are 0
+in the returned weights, identical to the pruning step's fraction. Every drop
+has McNemar p ≤ 1.1e-12. After the first fine-tuning epoch, holdout accuracy
+(apply-record diagnostics) was 60–89% at LR 0.01, 29–64% at LR 0.05 and
+25–41% at LR 0.1.
+
+Pruning alone (P4.2, P4.3) and fine-tuning alone (P4.5) at the same settings,
+for comparison. Test accuracy / fired / weight z:
+- global 50% 89.26% / 100 / 10.13; global 70% 80.33% / 78 / 9.83; global 90%
+  18.28% / 12 / 8.17.
+- channel 10% 74.74% / 70 / 9.90; channel 30% 30.70% / 12 / 9.37; channel 50%
+  15.81% / 10 / 8.22.
+- fine-tune only, LR 0.01 / 0.05 / 0.1 at 20 epochs and 0.1 at 60: 89.05% /
+  46 / 10.22, 86.06% / 8 / 9.66, 83.74% / 8 / 9.16, 83.36% / 4 / 6.49.
+
+How to read it:
+- **Behavioral watermark.** Prune then fine-tune removes it almost everywhere.
+  - It is detected at 1e-6 in 1 of 24 runs: global 50% at LR 0.01, with 59
+    fired.
+  - Two more LR 0.01 runs reject only at weaker levels. Global 70% fires 24
+    (p = 2.1e-4, rejects at 1e-3). Channel 10% fires 19 (p = 0.014, rejects
+    at 0.05). The other 21 runs fire 4–11 times, within the range of a model
+    independent of `K` (bound 11.1), with 23–51 triggers on the base label.
+  - Pruning first lets a gentle rate remove it. LR 0.01 alone left 46/100.
+    Global 90% then LR 0.01 leaves 10/100, and channel 30% then LR 0.01 leaves
+    9/100.
+  - Highest test accuracy among runs that remove it (≤ 11 fired): 86.75%
+    (global 70%, LR 0.05, drop +4.10 pp), then 86.15% (global 50%, LR 0.05).
+    P4.5's best removal was 86.06%. These are single runs with overlapping
+    intervals and no paired test between them, so no claim that pruning makes
+    removal cheaper.
+- **Weight watermark.** Detected at 1e-6 in 21 of 24 runs, lost in 3.
+  - All 3 losses are channel pruning at LR 0.1: s = 0.3 for 60 epochs
+    (z 4.85), s = 0.5 for 20 epochs (z 4.54), and s = 0.5 for 60 epochs
+    (z 1.93, p ≤ 0.16, which rejects nothing).
+  - Global pruning never removed it. Its lowest z is 6.60 (global 90%, LR 0.1,
+    60 epochs), next to P4.5's 6.49 without pruning at the same LR and
+    length, both just above z\*(1e-9) = 6.438.
+  - Within each pruning setting, z falls with LR and length. At LR 0.1, going
+    from 20 to 60 epochs costs 0.8 to 2.8 z. Channel pruning combined with
+    fine-tuning pushes z far below either step alone: channel 50% gives 8.22
+    pruned only and 9.16 fine-tuned only (LR 0.1, 20 epochs), but 4.54 with
+    both.
+- **Both watermarks lost.** In those 3 channel runs neither test detects at
+  1e-6, and the models keep 80.92%, 78.51% and 78.94% test accuracy (drops
+  +9.93 to +12.34 pp). This is the first attack in the suite that removes both
+  watermarks and leaves a model that is still useful, at a real accuracy cost.
+  The z of 4.85 and 4.54 still reject at 1e-3; only the s = 0.5, 60-epoch run
+  leaves no evidence at any level. All three weight figures assume channel
+  re-alignment. Without it, a physically narrower model could not be
+  extracted at all.
+- **Accuracy and memorisation (owner's note).**
+  - Holdout accuracy recovers to 88.1–99.7%, even where the pruned model
+    started far lower. These are the attacker's training images.
+  - Test accuracy is 78.5–89.1%. The holdout-minus-test gap is +6.9 to
+    +17.1 pp, largest in the 60-epoch runs.
+  - At LR 0.1, going from 20 to 60 epochs raises test loss in all six pairings
+    (for example 0.566 → 0.727 and 0.674 → 0.740 for channel pruning). Test
+    accuracy changes by -0.87 to +0.43 pp. So the extra epochs mostly
+    memorise the holdout.
+  - The recovery on test is still real, just smaller than the holdout
+    suggests. Channel 50% goes from 15.81% pruned only to 78.5–81.0% after
+    fine-tuning. Global 90% goes from 18.28% to 82.1–84.6%.
+
+Limits: one fine-tuning run per cell and one seed. GPU training is not
+bit-reproducible. One source model and one key. The attacker has 5,000 images.
+Pruning criteria are global magnitude and layer-wise L1 channel only, with the
+mask fixed (no regrowth). Plain SGD, no removal-specific loss. Intervals cover
+test-image sampling only.
+
 ## 8.5 ZK measurements
 
 | Metric | Track A (Circom) | Track B (EZKL) |
@@ -1548,3 +1714,10 @@ Append one line per session: date, tasks touched, key outcome.
   - A one-epoch CPU sanity run on the real `W*` and holdout (scratch, not a ledger number) held all 276,336 global-0.9 and 151,473 channel-0.3 masked entries at zero.
   - Notebook `notebooks/P4.6_colab.ipynb`, instructions, `handoff/P4.6_colab.zip`. Estimated ~55 min on a T4, scaled from P4.5's measured 3.2 s per epoch (not measured).
   - 34 new tests, 687 in total, all pass. Checkbox stays `[ ]`.
+- 2026-09-15: P4.6 DONE. Colab returned 24 apply records and 24 weights files (commit `7017cc1`, T4, 2,399 s of fine-tuning). The owner moved them into `results/attacks/p4.6_apply/`; nothing was retrained.
+  - An earlier session committed the records (`b2090f1`) and scored 8 rows before being interrupted. Those 8 were set aside, uncommitted.
+  - Independent re-verification of all 24: configs, source and start-state digests (pruning re-run locally), weights hashes, strict load, finite values. The records report 0 non-zero masked entries at every epoch. In every returned weights file, every masked position is exactly 0.
+  - All 24 scored with `evaluate` from the clean tree at `b2090f1`. The 8 earlier rows reproduced exactly.
+  - Behavioral watermark not detected at 1e-6 in 23 of 24 (21 runs fire 4–11). Weight watermark detected in 21 of 24.
+  - Both watermarks lost in 3 channel-pruning runs at LR 0.1, at 78.5–80.9% test accuracy. That is the first attack in the suite to do this while leaving a usable model (z 4.85 / 4.54 / 1.93; the weight figures assume channel re-alignment).
+  - Holdout 88–99.7% against test 78.5–89.1%: memorisation on top of a real test recovery (e.g. channel 50%: 15.8% pruned only → 78.5–81.0%).
