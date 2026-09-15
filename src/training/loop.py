@@ -160,6 +160,10 @@ def train_one_epoch(
 ) -> dict[str, float]:
     """One pass over `loader`. Returns mean loss and train accuracy.
 
+    Targets are class indices, or (P4.7) a 2-D batch of teacher logits for
+    distillation. For the latter, "accuracy" is agreement with the teacher's
+    top-1 and `criterion` must accept the logits.
+
     With `warmup_steps > 0`, the LR of the batch at global step `s` (counted
     from `step_offset`) is the scheduled LR times `min(1, (s + 1) / warmup_steps)`.
     The scheduled LR is put back when the epoch ends, so an epoch-level
@@ -193,7 +197,8 @@ def train_one_epoch(
         optimizer.step()
 
         loss_sum += loss.item() * targets.size(0)
-        correct += (outputs.argmax(dim=1) == targets).sum().item()
+        hard_targets = targets.argmax(dim=1) if targets.dim() == 2 else targets
+        correct += (outputs.argmax(dim=1) == hard_targets).sum().item()
         total += targets.size(0)
 
     for group, lr in zip(optimizer.param_groups, scheduled_lrs):

@@ -1,0 +1,1 @@
+{"attack": "distill", "tag": "holdout5k-T4-lr0.05", "strengths": [32, 16], "params": {"transfer": "holdout5k", "temperature": 4.0, "init_seed": 20260915, "epochs": 60, "lr": 0.05, "weight_decay": 0.0005, "momentum": 0.9, "batch_size": 128, "warmup_epochs": 1.0, "augment": true}}

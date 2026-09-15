@@ -1,0 +1,1 @@
+{"attack": "distill", "tag": "train50k-T4-lr0.1", "strengths": [32, 16], "params": {"transfer": "train50k", "temperature": 4.0, "init_seed": 20260915, "epochs": 60, "lr": 0.1, "weight_decay": 0.0005, "momentum": 0.9, "batch_size": 128, "warmup_epochs": 1.0, "augment": true}}

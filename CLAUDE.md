@@ -585,6 +585,7 @@ Each attack task must report, in one table row: attack strength, resulting clean
 
 - [ ] **P9.1** Build the auditor engine in `src/auditor/`: input a suspect model plus a provenance record, output a structured verdict object.
 - [ ] **P9.2** Wire in all five checks: model fingerprint, behavioral WDR with p-value, weight correlation with p-value, commitment validity, ZK proof validity.
+  - Context flagged by the owner (P4.6): the weight check assumes the suspect keeps the owner's carrier layout. A physically channel-pruned suspect does not, and the closest attack to defeating both watermarks was channel pruning plus fine-tuning. See the channel re-alignment Icebox entry.
 - [ ] **P9.3** Implement graded verdicts driven by the measured thresholds from P2.8 and P3.7. No hardcoded verdicts. Evidence strength must be a function of statistics.
 - [ ] **P9.4** Test the auditor against three model classes: our `W*`, our attacked variants, and genuinely unrelated third party models. The unrelated-model test proves the auditor is not a rubber stamp, so it is mandatory.
 - [ ] **P9.5** Build the Streamlit dashboard: upload a suspect model, watch the checks run, see the forensic report.
@@ -1573,7 +1574,11 @@ Ideas that are explicitly not in scope right now. Add here instead of expanding 
 - Conditional detection test (P2.8): the P2.8 p-value uses the worst-case bound `Binomial(N, 1/9)`. Given the count `m` of triggers on which the suspect does *not* predict the base label, the fired count is exactly `Binomial(m, 1/9)` under H0. That is still valid and has more power against accurate models (the P2.8 null models had m of about 51 to 58). Worth revisiting if attacked models in Phase 4 end up with borderline p-values.
 - Per-layer scaled weight embedding (P3.2): the P3.2 formula moves every carrier parameter by the same amount, even though `main_model` layers differ in weight scale. Scaling the change per layer (for example by layer weight RMS) would change the formula and the extractor. Revisit only if P3.5 shows the uniform version costs too much accuracy for its detection strength.
 - During-training weight embedding (P3.6): the final dual `W*` uses post-hoc embedding at alpha 0.1. Embedding during training might let the network adapt around the watermark and survive fine-tuning better, but that is unmeasured. It would need a new design (for example re-adding the watermark after each step, or a loss term), a GPU run, and a redo of P3.5, because alpha would mean something different. Revisit only if Phase 4 shows the post-hoc weight watermark does not survive attacks well.
-- Channel re-alignment for physically pruned suspects (P4.3): the P4.3 weight-watermark figures use zero-masked weights, which keep the carrier layout. A thief who deletes channels ships a narrower model, and the extractor then reports "not applicable". The owner holds `W*` and the kept weights are unchanged, so matching surviving filters back to their original positions and re-inserting zeros should be possible. It is not built or measured. Candidate for the P9 auditor.
+- **Channel re-alignment for physically pruned suspects (P4.3, P4.6). Flagged by the owner as important context for P9.** Every channel-pruning weight-watermark figure (P4.3, and the P4.6 channel rows) uses zero-masked weights, which keep the owner's carrier layout. A thief who deletes the channels ships a narrower model, and the extractor then reports "not applicable".
+  - Why it matters: channel pruning followed by fine-tuning (P4.6) is the attack that came closest to defeating the watermarks. It removed both at 78.5–80.9% test accuracy, and even the weight z values that survived there assume this alignment.
+  - Against a physically narrower suspect, the current auditor could not compute the weight test at all.
+  - Possible fix: the owner holds `W*`. Pruning alone leaves kept weights unchanged, so surviving filters could be matched back to their original positions and zeros re-inserted. After fine-tuning the kept weights have moved, so matching would have to be by similarity, not equality.
+  - Not built, not measured. P9 must either implement and measure it, or state in the verdict that the weight test is not applicable to structurally pruned suspects.
 - Fusion raised the weight correlation (P4.4): conv-BN fusion moved the dual `W*` blind weight correlation from 0.909 to 0.943 (z 10.29 → 10.67), even though it changed the carrier by 153% of its norm. Unexplained, one model only; revisit if it recurs in later attacks.
 
 ---
@@ -1721,3 +1726,16 @@ Append one line per session: date, tasks touched, key outcome.
   - Behavioral watermark not detected at 1e-6 in 23 of 24 (21 runs fire 4–11). Weight watermark detected in 21 of 24.
   - Both watermarks lost in 3 channel-pruning runs at LR 0.1, at 78.5–80.9% test accuracy. That is the first attack in the suite to do this while leaving a usable model (z 4.85 / 4.54 / 1.93; the weight figures assume channel re-alignment).
   - Holdout 88–99.7% against test 78.5–89.1%: memorisation on top of a real test recovery (e.g. channel 50%: 15.8% pruned only → 78.5–81.0%).
+- 2026-09-15: Owner flagged the channel re-alignment gap as important context for P9. The Icebox entry was rewritten (why it matters after P4.6, what P9 must do about it), with a pointer under P9.2. P4.7 HANDED OFF, not done.
+  - Owner decisions: both transfer sets (5,000-image attacker holdout and all 50,000 train images), students of width 32 and 16, soft teacher outputs at T = 4 with pure KD loss, 60 epochs with the P0.5 recipe.
+  - After a CPU check, the owner also chose to run the holdout at LR 0.05 as well as 0.1, making 6 runs. The check used the real `W*` teacher and the attacker's data only; it is not a ledger number. At LR 0.1 on 50,000 images the student reached 60% teacher agreement after 460 steps. At LR 0.1 on the holdout (40-step warmup) it stalled at 19% after 4 epochs, against 36% at LR 0.05.
+  - `src/attacks/distill.py` (`distill`, strength = student width):
+    - The teacher is `W*` in eval mode, frozen, queried on augmented batches. `TeacherQueries` drops the dataset labels unread (tested by scrambling them).
+    - `DistillationLoss` is `T^2 * KL`.
+    - The student is a fresh init from seed 20260915, and the owner's seed 1337 is refused.
+    - Monitoring is teacher agreement on the un-augmented holdout.
+    - The checkpoint config binds teacher digest, transfer set, T, width and init digest.
+  - `attacker_transfer_loaders` added to `src/data/cifar10.py`.
+  - `train_one_epoch` counts agreement with the teacher's top-1 when targets are 2-D logits. The 1-D path is unchanged.
+  - Configs `experiments/configs/p4.7_distill_{holdout5k-T4-lr0.1,holdout5k-T4-lr0.05,train50k-T4-lr0.1}.json`, plus notebook, instructions and `handoff/P4.7_colab.zip`. Estimated 75–90 min on a T4 (not measured).
+  - 34 new tests.

@@ -4,7 +4,9 @@ One design decision here matters beyond P0.5, so it is made once and fixed:
 
 **The 50,000 CIFAR-10 training images are split 45,000 / 5,000.** `main_model`
 trains on the 45,000. The 5,000 are an *attacker holdout*, reserved for the
-P4.5 fine-tuning attack and the P4.6 prune-then-fine-tune attack.
+P4.5 fine-tuning attack and the P4.6 prune-then-fine-tune attack. The P4.7
+distillation attack queries the teacher on the holdout, or on all 50,000
+images, as two conditions (`TRANSFER_SETS`).
 
 The reason is that a fine-tuning attack carried out on the data the model was
 already trained on is not a realistic threat model, and it would understate how
@@ -180,6 +182,58 @@ def attacker_holdout_loaders(
         eval_full = CIFAR10(root, train=True, download=False, transform=_transforms(False))
         _, holdout_idx = cifar10_split_indices(len(train_full))
         train_set, eval_set = Subset(train_full, holdout_idx), Subset(eval_full, holdout_idx)
+    if pin_memory is None:
+        pin_memory = torch.cuda.is_available()
+    shared: dict[str, Any] = {"num_workers": num_workers, "pin_memory": pin_memory}
+    return {
+        "train": DataLoader(train_set, batch_size=batch_size, shuffle=True, drop_last=False,
+                            generator=torch_generator(seed), worker_init_fn=seed_worker, **shared),
+        "eval": DataLoader(eval_set, batch_size=eval_batch_size, shuffle=False, **shared),
+    }
+
+
+TRANSFER_SETS = {
+    "holdout5k": "attacker holdout, 5,000 CIFAR-10 train images (the P4.5/P4.6 data)",
+    "train50k": "all 50,000 CIFAR-10 train images, including the 45,000 W* was trained on",
+}
+"""Distillation transfer sets (P4.7, owner decision: both). Labels are never used."""
+
+
+def attacker_transfer_loaders(
+    root: Path | str = "data",
+    *,
+    transfer: str,
+    batch_size: int = 128,
+    eval_batch_size: int = 500,
+    num_workers: int = 0,
+    augment: bool = True,
+    download: bool = False,
+    smoke: bool = False,
+    seed: int = DEFAULT_SEED,
+    pin_memory: bool | None = None,
+) -> dict[str, DataLoader]:
+    """The images a distillation thief queries the teacher on (P4.7).
+
+    ``train`` is the transfer set, shuffled with a generator seeded by `seed`
+    and, with `augment`, augmented as in P0.5. Its labels come along only
+    because the datasets carry them; the distillation attack discards them.
+    ``eval`` is the attacker holdout un-augmented, for monitoring agreement
+    with the teacher, in both conditions. Nothing here touches the test set.
+    """
+    if transfer not in TRANSFER_SETS:
+        raise ValueError(f"transfer must be one of {sorted(TRANSFER_SETS)}, got {transfer!r}")
+    if smoke:
+        fake = _smoke_datasets(seed)
+        train_set, eval_set = fake["holdout" if transfer == "holdout5k" else "train"], fake["holdout"]
+    else:
+        from torchvision.datasets import CIFAR10
+
+        root = str(root)
+        train_full = CIFAR10(root, train=True, download=download, transform=_transforms(augment))
+        eval_full = CIFAR10(root, train=True, download=False, transform=_transforms(False))
+        _, holdout_idx = cifar10_split_indices(len(train_full))
+        train_set = Subset(train_full, holdout_idx) if transfer == "holdout5k" else train_full
+        eval_set = Subset(eval_full, holdout_idx)
     if pin_memory is None:
         pin_memory = torch.cuda.is_available()
     shared: dict[str, Any] = {"num_workers": num_workers, "pin_memory": pin_memory}

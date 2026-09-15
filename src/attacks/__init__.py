@@ -12,3 +12,4 @@ from src.attacks import structured_prune  # noqa: F401  -- P4.3 structured (filt
 from src.attacks import quantize  # noqa: F401  -- P4.4 post-training quantization
 from src.attacks import finetune  # noqa: F401  -- P4.5 fine-tuning on the attacker holdout
 from src.attacks import prune_finetune  # noqa: F401  -- P4.6 prune, then fine-tune with the mask fixed
+from src.attacks import distill  # noqa: F401  -- P4.7 knowledge distillation into a fresh student
