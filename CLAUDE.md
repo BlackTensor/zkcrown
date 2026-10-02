@@ -570,6 +570,7 @@ Each attack task must report, in one table row: attack strength, resulting clean
 - [ ] **P4.8** `[GPU]` Overwrite attack: an adversary embeds their own watermark with their own key. Does ours still extract?
 - [ ] **P4.9** Produce the master robustness table and heatmap figure across all attacks.
 - [ ] **P4.10** Write `results/ATTACK_FINDINGS.md`: what survived, what did not, and which watermark is stronger under which attack. Blunt and quantitative.
+  - Flagged by the owner (P4.7), to lead the findings as the headline limitation: neither the trigger watermark nor the weight watermark survives architecture-independent distillation when the attacker has enough query data. With all 50,000 train images both were removed at 90.67% test accuracy (drop +0.18 pp, not distinguishable from zero). Keep the two qualifiers: that set includes the owner's 45,000 training images, and P4.6 had already removed both in 3 channel-pruning runs, but at a cost of 9.9 to 12.3 pp.
 
 ## Phase 5: Cryptographic identity
 
