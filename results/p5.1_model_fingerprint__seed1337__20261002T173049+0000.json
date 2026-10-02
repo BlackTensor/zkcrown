@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "name": "p5.1_model_fingerprint",
+  "task": "P5.1",
+  "timestamp_utc": "2026-10-02T17:30:49+00:00",
+  "git": {
+    "commit": "1291311e93805b654e0b896e0147a3628929824c",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "fingerprint_version": "zk-crown/model-fingerprint/v1",
+    "hash": "SHA-256",
+    "covers": "every state_dict entry, parameters and buffers, sorted by name",
+    "routes": [
+      "model",
+      "resave",
+      "resave_twice",
+      "reversed_keys",
+      "legacy_format",
+      "npz",
+      "noncontiguous",
+      "fresh_process"
+    ],
+    "fresh_process_pythonhashseed": "4242",
+    "changes": [
+      "one_bit_flipped",
+      "cast_to_float64",
+      "one_tensor_renamed"
+    ],
+    "device": "cpu"
+  },
+  "metrics": {
+    "models": {
+      "clean_W": {
+        "task": "P0.5",
+        "file": "results/p0.5_clean_baseline_W.pt",
+        "file_sha256": "54f112f4d7edc2ddacc181f8f4db25da27874e7e65aaf9407778a3ce5122fdcf",
+        "fingerprint": {
+          "sha256": "204c6dd3e89169dcf8fc75700cb7a1b3b182f31931cdc524bebfae5b73955294",
+          "version": "zk-crown/model-fingerprint/v1",
+          "tensors": 38,
+          "elements": 308848,
+          "data_bytes": 1235416
+        },
+        "dtypes": [
+          "float32",
+          "int64"
+        ],
+        "stable_routes": {
+          "model": true,
+          "resave": true,
+          "resave_twice": true,
+          "reversed_keys": true,
+          "legacy_format": true,
+          "npz": true,
+          "noncontiguous": true,
+          "fresh_process": true
+        },
+        "resaved_file_sha256_differs": true,
+        "changed_weights_change_fingerprint": {
+          "one_bit_flipped": true,
+          "cast_to_float64": true,
+          "one_tensor_renamed": true
+        }
+      },
+      "behavioral_only_W_star": {
+        "task": "P2.3",
+        "file": "results/p2.3_behavioral_wm_W_star.pt",
+        "file_sha256": "be00f2b556979457b045b9a4925dd3e547ee586f984b6969b9266e61a7197222",
+        "fingerprint": {
+          "sha256": "cc82122ed84b5e4e9a68d4fbc2901dadbc85d5da6bc5a4fe4ce87df703754245",
+          "version": "zk-crown/model-fingerprint/v1",
+          "tensors": 38,
+          "elements": 308848,
+          "data_bytes": 1235416
+        },
+        "dtypes": [
+          "float32",
+          "int64"
+        ],
+        "stable_routes": {
+          "model": true,
+          "resave": true,
+          "resave_twice": true,
+          "reversed_keys": true,
+          "legacy_format": true,
+          "npz": true,
+          "noncontiguous": true,
+          "fresh_process": true
+        },
+        "resaved_file_sha256_differs": true,
+        "changed_weights_change_fingerprint": {
+          "one_bit_flipped": true,
+          "cast_to_float64": true,
+          "one_tensor_renamed": true
+        }
+      },
+      "dual_W_star": {
+        "task": "P3.6",
+        "file": "results/p3.6_dual_wm_W_star.pt",
+        "file_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+        "fingerprint": {
+          "sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+          "version": "zk-crown/model-fingerprint/v1",
+          "tensors": 38,
+          "elements": 308848,
+          "data_bytes": 1235416
+        },
+        "dtypes": [
+          "float32",
+          "int64"
+        ],
+        "stable_routes": {
+          "model": true,
+          "resave": true,
+          "resave_twice": true,
+          "reversed_keys": true,
+          "legacy_format": true,
+          "npz": true,
+          "noncontiguous": true,
+          "fresh_process": true
+        },
+        "resaved_file_sha256_differs": true,
+        "changed_weights_change_fingerprint": {
+          "one_bit_flipped": true,
+          "cast_to_float64": true,
+          "one_tensor_renamed": true
+        }
+      },
+      "zk_model": {
+        "task": "P0.7",
+        "file": "results/p0.7_zk_model.pt",
+        "file_sha256": "6bc298d04edfe5af136349904c53ccc9a82e80dfb03729f616e552a3df9ddec4",
+        "fingerprint": {
+          "sha256": "4d6683b73dc0dabf73abfe954f6792f38508462eae581601c707667c08241955",
+          "version": "zk-crown/model-fingerprint/v1",
+          "tensors": 8,
+          "elements": 6138,
+          "data_bytes": 24552
+        },
+        "dtypes": [
+          "float32"
+        ],
+        "stable_routes": {
+          "model": true,
+          "resave": true,
+          "resave_twice": true,
+          "reversed_keys": true,
+          "legacy_format": true,
+          "npz": true,
+          "noncontiguous": true,
+          "fresh_process": true
+        },
+        "resaved_file_sha256_differs": true,
+        "changed_weights_change_fingerprint": {
+          "one_bit_flipped": true,
+          "cast_to_float64": true,
+          "one_tensor_renamed": true
+        }
+      }
+    },
+    "all_routes_stable": true,
+    "all_changes_detected": true,
+    "fingerprints_distinct": true
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 19.88844300000028,
+  "notes": "Fingerprints identify exact weights: an equality check, not a watermark, and not robust to any modification. Stability is checked on this machine and torch build only; no second platform was run."
+}

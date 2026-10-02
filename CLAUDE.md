@@ -635,7 +635,21 @@ Each attack task must report, in one table row: attack strength, resulting clean
 
 ## Phase 5: Cryptographic identity
 
-- [ ] **P5.1** Implement SHA-256 model fingerprinting over a canonical serialization of the weights. Verify it is stable across save and reload.
+- [x] **P5.1** Implement SHA-256 model fingerprinting over a canonical serialization of the weights. Verify it is stable across save and reload.
+  - `src/crypto/fingerprint.py`: SHA-256 over the serialization `zk-crown/model-fingerprint/v1`. A magic tag and tensor count, then each state_dict entry sorted by UTF-8 name: length-prefixed name, dtype name, shape, byte count, and the elements in C order, little-endian. The exact layout is in the module docstring.
+  - Decisions:
+    - It covers every state_dict entry, so BN running statistics and `num_batches_tracked` count as part of the model.
+    - Bit-exact: `-0.0` differs from `0.0`, and nothing is rounded.
+    - Dtypes with no canonical encoding (bfloat16, complex, sparse, quantized) are refused, not converted.
+    - It does not depend on the file, its name, dict order, memory layout, host byte order or `PYTHONHASHSEED`.
+  - Why not the file hash used so far: `torch.save` embeds the file name (P3.6), so the same weights under another name hash differently.
+  - `experiments/p5_1_model_fingerprint.py`, CPU, 20 s, clean tree at `1291311`. Four models, each loaded by file hash: clean `W`, the P2.3 model, the dual `W*`, `zk_model`.
+    - **Stable through all 8 routes for all 4 models:** strict load into a model, re-save under another name, a second re-save, reversed dict order, legacy non-zip format, numpy `.npz` with no torch on the way back, non-contiguous tensors, and a fresh process with another `PYTHONHASHSEED`.
+    - The re-saved file's own SHA-256 differed from the original's in all 4.
+    - One flipped bit, a cast to float64 and one renamed tensor each changed the fingerprint.
+    - **Dual `W*` fingerprint: `c0995109…5b064a07`.** All four are in section 8.2.
+  - Limits: stability is checked on one machine and one torch build (2.14.0+cpu); no second platform was run. The fingerprint is an equality check, not a watermark. Any Phase 4 attack changes it, and so do function-preserving changes such as conv-BN fusion.
+  - 23 new tests, 777 in total, all pass. They include a known-answer vector assembled by hand with `struct`, a pinned digest, and a fresh-process check.
 - [ ] **P5.2** Integrate a Python Poseidon implementation. Validate it against known test vectors before trusting it.
 - [ ] **P5.3** Implement the commitment `C = Poseidon(K, S, nonce)`. Document the exact field layout, because the Circom circuit in P7 must match it bit for bit.
 - [ ] **P5.4** Write the commitment publication artifact: `provenance/commitment.json` holding `C`, the model fingerprint, the owner identity, and a timestamp.
@@ -813,6 +827,33 @@ All figures are measured on the weights reloaded from that file.
 The counts equal P3.5's alpha 0.1 row. Alpha was chosen from P3.5's grid after
 seeing its test-set drops, so 90.85% is an optimistic estimate of this model's
 accuracy. This is the model Phase 4 attacks.
+
+Model fingerprints from `experiments/p5_1_model_fingerprint.py` (P5.1), result
+file `results/p5.1_model_fingerprint__seed1337__20261002T173049+0000.json`,
+CPU, commit `1291311`, clean tree, torch 2.14.0+cpu. The fingerprint is the
+SHA-256 of the canonical serialization `zk-crown/model-fingerprint/v1`
+(`src/crypto/fingerprint.py`). It covers every state_dict entry, BN running
+statistics and counters included, sorted by name. Each weights file was
+checked against its recorded file SHA-256 first.
+
+| Model | Fingerprint (SHA-256) | Tensors | Elements | Data bytes |
+|---|---|---|---|---|
+| clean `W` (P0.5) | `204c6dd3e89169dcf8fc75700cb7a1b3b182f31931cdc524bebfae5b73955294` | 38 | 308,848 | 1,235,416 |
+| behavioral-only `W*` (P2.3) | `cc82122ed84b5e4e9a68d4fbc2901dadbc85d5da6bc5a4fe4ce87df703754245` | 38 | 308,848 | 1,235,416 |
+| dual `W*` (P3.6, final) | `c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07` | 38 | 308,848 | 1,235,416 |
+| `zk_model` (P0.7) | `4d6683b73dc0dabf73abfe954f6792f38508462eae581601c707667c08241955` | 8 | 6,138 | 24,552 |
+
+The 308,848 elements are the 307,946 parameters plus 896 BN running
+statistics and 6 `num_batches_tracked` counters. For every model the
+fingerprint was the same through 8 routes: a strict load into a model,
+`torch.save` under another name, a second save, reversed dict order, the
+legacy non-zip format, a numpy `.npz` archive, non-contiguous tensors, and a
+fresh process with another `PYTHONHASHSEED`. The re-saved file's own SHA-256
+differed from the original's in all four cases, which is why a file hash is
+not used. Flipping one bit, casting to float64 and renaming one tensor each
+changed the fingerprint. Stability is checked on this machine and torch build
+only. The fingerprint is an exact-equality check: it changes under every
+Phase 4 attack and is not a watermark.
 
 ## 8.3 Watermark baseline
 
@@ -2175,3 +2216,4 @@ Append one line per session: date, tasks touched, key outcome.
   - Two figure fixes after looking at the first render (scratch): clipped family titles, and accuracy shown to two decimals so 90.85% does not read as 90.8%.
   - 16 new tests, 754 in total, all pass.
 - 2026-10-02: P4.10. `results/ATTACK_FINDINGS.md` written from the committed rows and the P4.9 record; no measurement, no code. It leads with distillation as the headline limitation, with both qualifiers. A scratch check matched every accuracy, drop and z in it to the P4.9 record. Phase 4 is complete.
+- 2026-10-02: P5.1. `src/crypto/fingerprint.py`: SHA-256 over a canonical serialization of the whole state dict (sorted names, dtype, shape, little-endian data), independent of the weights file. Code committed first (`1291311`), then `experiments/p5_1_model_fingerprint.py` run from that clean tree: all 4 models stable through 8 save/reload routes, while the re-saved file's own hash changed every time; three kinds of change each altered the fingerprint. Fingerprints recorded in 8.2. One test bug fixed before the run (byte view of a 0-d tensor). 23 new tests, 777 in total, all pass.
