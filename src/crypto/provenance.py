@@ -6,8 +6,9 @@ with this fingerprint, and committed to this watermark secret and this trigger
 set". The auditor (P9) takes a suspect model plus this record.
 
 This module defines the schema, its canonical bytes and the exact bytes a
-signature covers. It creates no keypair and no signature (P6.2), verifies
-nothing beyond shape (P6.3), and holds nothing secret.
+signature covers, and reads and writes the record file. The keypair and the
+signature are `src/crypto/signing.py` (P6.2). This module verifies nothing
+beyond shape (P6.3) and holds nothing secret.
 
 Fields
 ------
@@ -88,7 +89,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+from pathlib import Path
 from typing import Any
 
 from src.crypto.publication import (
@@ -288,3 +291,32 @@ def canonical_json(record: dict[str, Any]) -> bytes:
 def record_sha256(record: dict[str, Any]) -> str:
     """SHA-256 of the signed record's canonical bytes."""
     return hashlib.sha256(canonical_json(record)).hexdigest()
+
+
+def write_record(record: dict[str, Any], path: Path | str) -> str:
+    """Write the signed record to `path`. Refuses to replace an existing one. Returns its SHA-256.
+
+    Shape is checked, the signature is not: sign with `src.crypto.signing.sign_record` first.
+    """
+    data = canonical_json(record)
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0), 0o644)
+    with os.fdopen(fd, "wb") as handle:
+        handle.write(data)
+        handle.flush()
+        os.fsync(handle.fileno())
+    return hashlib.sha256(data).hexdigest()
+
+
+def read_record(path: Path | str) -> tuple[dict[str, Any], str]:
+    """Load a signed record and check its shape. Returns the record and the SHA-256 of the file's bytes.
+
+    Raises `ValueError` if the file is not in canonical form. Does not verify the signature.
+    """
+    data = Path(path).read_bytes()
+    record = json.loads(data.decode("utf-8"))
+    validate_record(record)
+    if canonical_json(record) != data:
+        raise ValueError(f"{path} is not in canonical form (key order, indentation or line endings were changed)")
+    return record, hashlib.sha256(data).hexdigest()

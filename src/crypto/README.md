@@ -10,7 +10,8 @@ Host-side cryptography. Each module's docstring is its specification.
 | `publication.py` | P5.4 | The commitment publication artifact, `provenance/commitment.json`. |
 | `timestamping.py` | P5.5 | OpenTimestamps proof and signed-tag checks. |
 | `opening.py` | P5.6 | The non-ZK opening verifier. |
-| `provenance.py` | P6.1 | The provenance record schema. Shape and signed bytes only; signing is P6.2, verifying P6.3. |
+| `provenance.py` | P6.1 | The provenance record schema, its signed bytes and its file form. Shape checks only. |
+| `signing.py` | P6.2 | The Ed25519 keypair, signing the record, and checking a signature against the key the record names. The full verifier is P6.3. |
 
 ## Commitment field layout, `zk-crown/commitment/v1`
 

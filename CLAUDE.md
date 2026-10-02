@@ -751,7 +751,7 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - `private`: a fixed note on what is not in the file.
     - `signature`: Ed25519, 64 bytes.
   - Schema only. No keypair, no signature and no real record yet (P6.2); no verification (P6.3). `validate_record` checks shape: a record with 64 zero bytes as its signature passes it, and a test says so.
-  - My decisions, for the owner to confirm:
+  - My decisions, all confirmed by the owner on 2026-10-03 (the bundle digest, Ed25519 only, and the extra `commitment_publication` field):
     - **The trigger set commitment is the existing bundle digest (SHA-256), not a new Poseidon hash.** It names one exact trigger set and has been public since P2.3, so a hiding commitment on top would hide nothing. It has no nonce, and opening it means revealing the whole bundle. `commitment.py`'s docstring had expected a Poseidon trigger commitment here; that mention is removed.
     - **The record is built from the publication record**, so `C`, the fingerprint, the model label and the owner id are copied, not re-entered.
     - **The signature covers a domain tag plus the canonical JSON of the record without `signature`.** The public key is inside the signed bytes.
@@ -760,6 +760,7 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - Refactor: the field checks in `publication.py` are now public functions shared with the record. `validate_publication` behaves as before (its tests pass unchanged).
   - 60 new tests, 993 in total. They include a pinned digest of the signed bytes, a fresh-process check, every signed field changing the signed bytes, and 34 malformed records that validation rejects. No ledger numbers.
 - [ ] **P6.2** Sign the record with a real keypair via the `cryptography` library.
+  - **Owner requirement (2026-10-03), not yet implemented:** once the signed record `provenance/record.json` exists, stamp it with OpenTimestamps the same way P5.5 did for `commitment.json`. Without that, the trigger set commitment and the signing key have no independent time evidence (P6.1 gap). The signing itself does not do this; it needs its own go-ahead.
 - [ ] **P6.3** Write the provenance verifier: signature valid, fingerprint matches, commitment well formed.
 - [ ] **P6.4** Simulate the full theft timeline end to end: publish commitment, hand model to "attacker", attacker modifies it, we audit. Script it as `experiments/theft_simulation.py`.
 
