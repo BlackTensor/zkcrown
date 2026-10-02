@@ -665,7 +665,23 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - Not checked: the circom `Poseidon` template itself. circomlibjs is circomlib's JavaScript side; the first run of the actual circuit against this code is P7.3. The implementation is not constant time.
   - One 3-input hash takes 1.2 ms on the local CPU, once the constants for that width are generated.
   - 52 new tests, 829 in total, all pass. They include a transposed MDS matrix and a wrong round count, each of which the vectors catch.
-- [ ] **P5.3** Implement the commitment `C = Poseidon(K, S, nonce)`. Document the exact field layout, because the Circom circuit in P7 must match it bit for bit.
+- [x] **P5.3** Implement the commitment `C = Poseidon(K, S, nonce)`. Document the exact field layout, because the Circom circuit in P7 must match it bit for bit.
+  - `src/crypto/commitment.py`, layout version `zk-crown/commitment/v1`: **`C = Poseidon(DOMAIN, K_hi, K_lo, S, nonce)`**, circomlib's `Poseidon(5)` (width 6) over BN254. The layout is specified in the module docstring and tabulated in `src/crypto/README.md`.
+    - `DOMAIN`: the ASCII bytes of `zk-crown/commitment/v1` as a big-endian integer (175 bits). A public constant.
+    - `K_hi`, `K_lo`: `K[0:16]` and `K[16:32]`, big-endian, 128 bits each.
+    - `S`: its 16 bytes, big-endian, 128 bits.
+    - `nonce`: 31 random bytes, big-endian, 248 bits.
+    - `C` is one field element, written as a decimal string (circom public signal) or 32 big-endian bytes.
+  - Decisions:
+    - **`K` is split into two limbs, not reduced mod p.** `K` is 256 bits and the field is 254, so reducing would map several keys to one element. With limbs the map from `(K, S, nonce)` to the inputs is one-to-one. This answers the question P1.1 left open.
+    - **A domain element is hashed first**, to keep this hash apart from later Poseidon uses (P6.1, P7.9). It is a constant in the circuit. This makes the hash five inputs, not the three the task's formula shows.
+    - **The nonce is 31 bytes**, the most whole bytes that fit in one element unreduced. It comes from the OS random source, is passed in as an argument, and is secret.
+    - **Wrong lengths are refused**, never padded or truncated.
+  - For P7.5: private inputs `K_hi, K_lo, S, nonce`, public input `C`. The circuit should range-check the three 128-bit inputs and the 248-bit nonce, so it accepts exactly the openings the host accepts.
+  - **Independent layout check:** `experiments/p5_3_make_commitment_vector.mjs` redoes the byte slicing in JavaScript from the specification and hashes with circomlibjs 0.1.7 (both of its implementations agree). It wrote `tests/data/commitment_circomlibjs_vector.json` from public demo values. The Python inputs and `C` equal it. The file is also a fixed target for the P7.5 circuit.
+  - Written down, not measured: binding rests on Poseidon's collision resistance and hiding on its preimage resistance with a secret random `K` and nonce. `S` adds no secret, since it is derived from `K`; it ties the owner id to `C`. The commitment says nothing about when it was made (P5.5), and a non-ZK opening reveals `K` (P5.6 against P7).
+  - Not done here: the real nonce and the real `C` are not created (P5.4), and no opening verifier (P5.6). No ledger numbers.
+  - 26 new tests, 855 in total, all pass. They include a hand-written layout check, a pinned value, all 632 single-bit flips of the opening giving distinct commitments, and a fresh-process check.
 - [ ] **P5.4** Write the commitment publication artifact: `provenance/commitment.json` holding `C`, the model fingerprint, the owner identity, and a timestamp.
 - [ ] **P5.5** Timestamp it for real: GPG signed git tag, plus OpenTimestamps if it cooperates. This is what makes "I committed before the dispute" meaningful.
 - [ ] **P5.6** Write the verifier that checks a revealed secret against a published commitment (the non-ZK baseline, so the ZK version has something to be compared against).
@@ -2070,6 +2086,7 @@ Ideas that are explicitly not in scope right now. Add here instead of expanding 
   - Possible fix: the owner holds `W*`. Pruning alone leaves kept weights unchanged, so surviving filters could be matched back to their original positions and zeros re-inserted. After fine-tuning the kept weights have moved, so matching would have to be by similarity, not equality.
   - Not built, not measured. P9 must either implement and measure it, or state in the verdict that the weight test is not applicable to structurally pruned suspects.
 - Fusion raised the weight correlation (P4.4): conv-BN fusion moved the dual `W*` blind weight correlation from 0.909 to 0.943 (z 10.29 → 10.67), even though it changed the carrier by 153% of its norm. Unexplained, one model only; revisit if it recurs in later attacks.
+- Poseidon permutation reference vector (P5.2): the t = 3 permutation vector on `[0, 1, 2]` was entered from recall and has single-source confirmation only (it matches our code). If revisited, re-fetch it from its source, or have circomlibjs output the full permutation state directly. Its source is the Poseidon authors' reference repository, not circomlibjs.
 
 ---
 
@@ -2258,3 +2275,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-02: P4.10. `results/ATTACK_FINDINGS.md` written from the committed rows and the P4.9 record; no measurement, no code. It leads with distillation as the headline limitation, with both qualifiers. A scratch check matched every accuracy, drop and z in it to the P4.9 record. Phase 4 is complete.
 - 2026-10-02: P5.1. `src/crypto/fingerprint.py`: SHA-256 over a canonical serialization of the whole state dict (sorted names, dtype, shape, little-endian data), independent of the weights file. Code committed first (`1291311`), then `experiments/p5_1_model_fingerprint.py` run from that clean tree: all 4 models stable through 8 save/reload routes, while the re-saved file's own hash changed every time; three kinds of change each altered the fingerprint. Fingerprints recorded in 8.2. One test bug fixed before the run (byte view of a 0-d tensor). 23 new tests, 777 in total, all pass.
 - 2026-10-02: Owner confirmed the P5.1 defaults (buffers included, bit-exact). P5.2. `src/crypto/poseidon.py`: stdlib Poseidon over BN254 with circomlib's instance, constants generated by a re-implemented Grain LFSR. Reference vectors made with circomlibjs 0.1.7 under Node in a scratch directory and committed to `tests/data/`. Code committed first (`e5ed9d9`), then validated from that clean tree: 128 of 128 vectors, all 10,854 round constants and 16 MDS matrices, and four published vectors match, on the first run. The published vectors were entered from recall. The circom template itself is not run until P7.3. One test bug fixed (my planted wrong round count equalled the real one for t = 3). 52 new tests, 829 in total, all pass.
+- 2026-10-02: Owner confirmed the P5.2 decisions; Icebox line added for the permutation reference vector. P5.3. `src/crypto/commitment.py`: `C = Poseidon(DOMAIN, K_hi, K_lo, S, nonce)`, with `K` split into two 128-bit limbs, a 31-byte nonce and a domain element first. Layout documented in the module and `src/crypto/README.md`. A circomlibjs vector from public demo values, with the byte slicing redone in JavaScript, matches the Python layout and `C`. The real nonce and `C` are left to P5.4. 26 new tests, 855 in total, all pass.

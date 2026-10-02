@@ -1,0 +1,33 @@
+{
+ "warning": "PUBLIC DEMO VALUES. Not the owner's K, S or nonce.",
+ "source": "circomlibjs",
+ "circomlibjs_version": "0.1.7",
+ "node_version": "v24.16.0",
+ "generated_by": "experiments/p5_3_make_commitment_vector.mjs",
+ "commitment_version": "zk-crown/commitment/v1",
+ "phrases": {
+  "key": "zk-crown PUBLIC DEMO KEY v1 -- not an owner key, never protect a real model with it",
+  "signature": "zk-crown/p5.3/PUBLIC DEMO signature -- not derived from any owner key",
+  "nonce": "zk-crown/p5.3/PUBLIC DEMO nonce -- not a secret"
+ },
+ "derivation": "key = SHA-256(phrase); signature = first 16 bytes of SHA-256(phrase); nonce = first 31 bytes of SHA-256(phrase)",
+ "key_hex": "62d4f9eabb2adeb54ecdbb67b74db521e973e4790603d5aa61f994c266b855f0",
+ "signature_hex": "ea060c4652ae2e432a29b6229c7b12db",
+ "nonce_hex": "2116b85527657ebe61a3892807734df5ddf7ea1def17ab75a0dee3285227da",
+ "input_names": [
+  "DOMAIN",
+  "K_hi",
+  "K_lo",
+  "S",
+  "nonce"
+ ],
+ "inputs": [
+  "45802258934640358970089756931571905701296254198183473",
+  "131370179438238000036525734322976437537",
+  "310311871134475746214163656433766782448",
+  "311070753755296485409602219736127181531",
+  "58462761155254388583964430301285920671643662550714591507504731760708691930"
+ ],
+ "commitment_decimal": "12835853472415172648491834429620479219744047255808489160840157666924465910622",
+ "commitment_hex": "1c60d5ea7df6e4a00049a74f1f27bb6603d82613919bf45d362885b46ebe735e"
+}
