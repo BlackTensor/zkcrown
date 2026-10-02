@@ -759,8 +759,18 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - Gap written into the schema's own text: the P5.5 timestamp covers the commitment publication, not this record. So the trigger set commitment and the signing key have no independent time evidence. The record could get its own OpenTimestamps proof once it exists; that is not in any task yet.
   - Refactor: the field checks in `publication.py` are now public functions shared with the record. `validate_publication` behaves as before (its tests pass unchanged).
   - 60 new tests, 993 in total. They include a pinned digest of the signed bytes, a fresh-process check, every signed field changing the signed bytes, and 34 malformed records that validation rejects. No ledger numbers.
-- [ ] **P6.2** Sign the record with a real keypair via the `cryptography` library.
-  - **Owner requirement (2026-10-03), not yet implemented:** once the signed record `provenance/record.json` exists, stamp it with OpenTimestamps the same way P5.5 did for `commitment.json`. Without that, the trigger set commitment and the signing key have no independent time evidence (P6.1 gap). The signing itself does not do this; it needs its own go-ahead.
+- [x] **P6.2** Sign the record with a real keypair via the `cryptography` library.
+  - **Owner requirement (2026-10-03), STILL OPEN, not implemented:** stamp the signed record `provenance/record.json` with OpenTimestamps the same way P5.5 did for `commitment.json`. The record now exists, so this can be done. Until it is, the trigger set commitment and the signing key have no independent time evidence (P6.1 gap). It was noted here on the owner's instruction and needs its own go-ahead.
+  - `src/crypto/signing.py`: Ed25519 from the `cryptography` library (50.0.2 installed locally; it was listed in `requirements.txt` but not installed before this task).
+    - `create_signing_key` writes the 32-byte private seed once and never overwrites it. `sign_record` signs the P6.1 signing payload and refuses a record that names another public key. `signature_is_valid` checks a record against the public key it names.
+    - `provenance.py` gained `write_record` (write-once, canonical bytes) and `read_record` (refuses non-canonical files).
+  - **The signing key:** created in this run at `secrets/provenance_signing_key.bin` (gitignored), from the OS random source, **with no passphrase. It needs a backup.** It is separate from `K` and from the P5.5 GPG key. Public key `94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52`.
+  - `experiments/p6_2_sign_provenance_record.py`, CPU, under 1 s, clean tree at `b6b2be3`. It reads the commitment publication and the trigger bundle (digest checked against P2.3's, key kind `owner`). It does not read `K`, the nonce or a model.
+  - **Written:** `provenance/record.json`, 2,086 bytes, SHA-256 `28a3ad66…576169c1`, `created_utc` 2026-10-02T19:05:47+00:00 (this machine's clock). It holds `C`, the dual `W*` fingerprint, the trigger bundle digest `fbd65ec7…22baec8` with N = 100, and the commitment publication's SHA-256 `cbdd82d9…fb9f231c`.
+  - **Checked on the file read back from disk:** canonical; the signature verifies under the public key in the record; that key is the one in `secrets/`; the record equals a rebuild from the publication and the bundle; signing again gives the same signature; the private key does not appear in it. A later `--check` run (scratch, not committed) passed too.
+  - **Tampering, 0 accepted:** 11 single-field changes, all 512 single-bit flips of the signature, and a signature by another key over the same bytes.
+  - **What the signature does not show:** who holds the key. The same statement re-issued under a fresh key, naming that key, verifies against that key; the script checks this and records it. Trust in the public key has to come from outside the record. The record is not independently timestamped yet (see the open requirement above), and it is committed locally, not pushed or posted.
+  - 39 new tests, 1,032 in total, all pass. They include the RFC 8032 test vector for the library, a pinned signature, every signed field and every signature bit breaking verification, and a planted accept-everything verifier that the script's tamper check catches.
 - [ ] **P6.3** Write the provenance verifier: signature valid, fingerprint matches, commitment well formed.
 - [ ] **P6.4** Simulate the full theft timeline end to end: publish commitment, hand model to "attacker", attacker modifies it, we audit. Script it as `experiments/theft_simulation.py`.
 
@@ -2153,6 +2163,13 @@ against this code yet (P7.3).
 | Bitcoin block of the attestation | TBD |
 | Owner signing key (GPG, Ed25519) | `C7301BA7D92FC2A65257BFC2A759F8EC04BF66E7`, public key in `provenance/owner_signing_key.asc` |
 | Signed tag | `provenance-commitment-v1` on commit `4372159`, good signature; date is the signer's clock; not pushed |
+| Provenance record (P6.2) | `provenance/record.json`, 2,086 bytes, schema `zk-crown/provenance-record/v1` |
+| Provenance record SHA-256 | `28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1` |
+| Record signing key (Ed25519, public) | `94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52` |
+| Record signature | valid under that key; `9b2170cf…ca8db700` |
+| Trigger set commitment in the record | `fbd65ec730a3555c5921f13d1a5d4840b6310261ddcaf31d3a724195122baec8`, N = 100 (P2.3 bundle digest) |
+| Record `created_utc` (self-asserted) | 2026-10-02T19:05:47+00:00 |
+| Independent timestamp of the record | TBD: not stamped yet (owner requirement under P6.2) |
 
 From `experiments/p5_4_publish_commitment.py` (P5.4), result file
 `results/p5.4_commitment_publication__seed1337__20261002T180506+0000.json`,
@@ -2196,6 +2213,29 @@ shown to nobody.
 | Publication with the owner id changed, true opening | rejected (`C` still matches; the signature derivation fails) |
 | Time per verification, local CPU, pure Python | 3.2 ms |
 | Secret bytes a real opening reveals to the verifier | 79 (all of `K`, `S` and the nonce) |
+
+Signed provenance record from `experiments/p6_2_sign_provenance_record.py`
+(P6.2), result file
+`results/p6.2_signed_provenance_record__seed1337__20261002T190547+0000.json`,
+CPU, commit `b6b2be3`, clean tree, `cryptography` 50.0.2. The record was built
+from the commitment publication and the trigger bundle digest, signed with an
+Ed25519 key created in the same run, written once, and read back from disk.
+
+| Check | Result |
+|---|---|
+| Signature under the public key the record names | valid |
+| That key is the one in `secrets/` | yes |
+| Record equals a rebuild from the publication and the bundle | yes |
+| Signing the same record again | same 64 bytes |
+| Single-field changes that still verify | 0 of 11 |
+| Single-bit flips of the signature that still verify | 0 of 512 |
+| Another key's signature over the same bytes, under the owner's key | rejected |
+| Same statement re-issued under another key, checked against that key | verifies (expected) |
+
+The tamper counts are checks on the listed cases, not a proof and not a rate.
+The last row is the limit of the signature: it ties the record to a key, not
+the key to a person. The record's time is self-asserted, and the P5.5
+timestamp does not cover the record.
 
 The 0-of-2,635 figure is a check on the listed cases, not a proof and not a
 rate; binding rests on Poseidon's collision resistance. The last row is the
@@ -2426,3 +2466,4 @@ Append one line per session: date, tasks touched, key outcome.
   - 19 new tests.
 - 2026-10-03: Owner backed up the GPG key directory and will return to P5.5's upgrade step later; P5.5 stays `[~]`. P5.6. `src/crypto/opening.py`: the non-ZK verifier, with three checks (publication well formed, `C` matches, `S` derives from `K` for the published owner id). Code committed first (`73a4086`), then the self-check run from that clean tree on the real artifact: true opening accepted, 2,635 wrong openings and 2 tampered publications rejected, 3.2 ms per verification. The opening stayed in memory and was disclosed to nobody. A real opening reveals 79 secret bytes including all of `K`, the comparison point for P7. 23 new tests, 933 in total, all pass.
 - 2026-10-03: P6.1. `src/crypto/provenance.py` defines the provenance record schema `zk-crown/provenance-record/v1`: owner id and Ed25519 public key, model fingerprint, watermark commitment `C`, trigger set commitment (the SHA-256 bundle digest), a reference to the commitment publication by hash, a self-asserted timestamp, and the signature. It fixes the canonical bytes and the exact bytes a signature covers. Nothing is signed, written or verified (P6.2, P6.3). Decision to confirm: the trigger set commitment reuses the bundle digest rather than a new Poseidon hash. Noted gap: the P5.5 timestamp does not cover this record. `publication.py`'s field checks were made shared, behaviour unchanged. Two of my own test bugs fixed (a test signature that contained the test `S` bytes; a byte search that matched the word "signature" in the private note). Icebox line added for a per-trigger Merkle commitment. 60 new tests, 993 in total.
+- 2026-10-03: Owner confirmed the three P6.1 decisions and asked for the signed record to be timestamped with OpenTimestamps later; that requirement is noted under P6.2 and is still open. P6.2. `src/crypto/signing.py`: Ed25519 via `cryptography` (installed this session, 50.0.2), write-once private key in `secrets/`, signing and a signature check against the key the record names. Code committed first (`b6b2be3`), then `experiments/p6_2_sign_provenance_record.py` run from that clean tree: it created the signing key (gitignored, no passphrase, needs backup), and wrote `provenance/record.json` (SHA-256 `28a3ad66…576169c1`, public key `94b0224b…28b02d52`). Read-back checks passed; 11 field changes, 512 signature bit flips and a foreign signature were all rejected. A re-issue under another key verifies against that key, as expected: the signature does not identify the key holder. Not pushed or posted, not independently timestamped. 39 new tests, 1,032 in total, all pass.
