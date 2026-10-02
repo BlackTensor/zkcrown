@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "name": "p5.4_commitment_publication",
+  "task": "P5.4",
+  "timestamp_utc": "2026-10-02T18:05:06+00:00",
+  "git": {
+    "commit": "12b5998fede03a0c43530ed03df1bf42767a107c",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "schema": "zk-crown/commitment-publication/v1",
+    "commitment_version": "zk-crown/commitment/v1",
+    "fingerprint_version": "zk-crown/model-fingerprint/v1",
+    "model": {
+      "task": "P3.6",
+      "file": "results/p3.6_dual_wm_W_star.pt",
+      "file_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4"
+    },
+    "p5_1_reference": "results/p5.1_model_fingerprint__seed1337__20261002T173049+0000.json",
+    "nonce": "31 bytes from the OS random source, kept in secrets/ (gitignored)",
+    "timestamp": "created_utc is this machine's clock, self-asserted; independent timestamp is P5.5"
+  },
+  "metrics": {
+    "mode": "create",
+    "artifact_path": "provenance/commitment.json",
+    "artifact_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+    "artifact_bytes": 1215,
+    "commitment": {
+      "decimal": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+      "hex": "0549d69fda52a9fd80badb7b90b315fc47325a7a54a87e3a22b7d8c39fd798a1",
+      "version": "zk-crown/commitment/v1"
+    },
+    "model_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+    "owner_id": "blacktensor-zkcrown-owner",
+    "created_utc": "2026-10-02T18:05:06+00:00",
+    "nonce_created_this_run": true,
+    "reopened_from_secrets": true,
+    "fingerprint_matches_p5_1": true,
+    "canonical_on_disk": true,
+    "secrets_absent_from_artifact": true
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 0.4310358000002452,
+  "notes": "Public values only. The artifact is unsigned (P6.2) and its timestamp is self-asserted (P5.5). The commitment was re-computed from K, S and the nonce and equals the published one; that is the owner checking their own file, not an opening shown to anyone."
+}

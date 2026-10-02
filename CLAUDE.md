@@ -682,7 +682,24 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - Written down, not measured: binding rests on Poseidon's collision resistance and hiding on its preimage resistance with a secret random `K` and nonce. `S` adds no secret, since it is derived from `K`; it ties the owner id to `C`. The commitment says nothing about when it was made (P5.5), and a non-ZK opening reveals `K` (P5.6 against P7).
   - Not done here: the real nonce and the real `C` are not created (P5.4), and no opening verifier (P5.6). No ledger numbers.
   - 26 new tests, 855 in total, all pass. They include a hand-written layout check, a pinned value, all 632 single-bit flips of the opening giving distinct commitments, and a fresh-process check.
-- [ ] **P5.4** Write the commitment publication artifact: `provenance/commitment.json` holding `C`, the model fingerprint, the owner identity, and a timestamp.
+- [x] **P5.4** Write the commitment publication artifact: `provenance/commitment.json` holding `C`, the model fingerprint, the owner identity, and a timestamp.
+  - `src/crypto/publication.py`, schema `zk-crown/commitment-publication/v1`. The artifact holds `C` (decimal and hex, with its layout version), the hash instance and input names, the P5.1 fingerprint of the dual `W*` with its counts, a model label, the owner id and `created_utc`. It also carries two fixed notes: the timestamp is self-asserted, and `K`, `S` and the nonce are not in the file.
+  - Decisions:
+    - **Canonical bytes:** sorted keys, two-space indent, LF, one trailing newline. The same record always gives the same bytes, and reading refuses a file that is not canonical. `.gitattributes` stops git rewriting line endings under `provenance/`; the bytes git stores hash to the same value as the file.
+    - **Written once.** Writing refuses to replace an existing artifact, and the nonce file is never overwritten. `--check` re-verifies the existing artifact and writes none.
+    - **The builder takes public values only**, a `Commitment` and a `ModelFingerprint`. It never sees the opening.
+  - `experiments/p5_4_publish_commitment.py`, CPU, under 1 s, clean tree at `12b5998`:
+    - Created the real commitment nonce, 31 bytes from the OS random source, at `secrets/commitment_nonce.bin` (gitignored). **Without it `C` cannot be opened or proved, so it needs the same backup as `K`.**
+    - Computed `C` from `K`, `S` for `blacktensor-zkcrown-owner`, and the nonce.
+    - Fingerprinted the dual `W*`, loaded by file hash; the fingerprint equals P5.1's.
+    - Wrote the artifact, read it back from disk, and checked it is canonical, that its `C` is what the secrets give, and that no secret bytes appear in it.
+  - **Published values:** `C` = `2392025361986972846491658401086693087745140164949714231931670817240660809889` (hex `0549d69f…9fd798a1`). Fingerprint `c0995109…5b064a07`. `created_utc` 2026-10-02T18:05:06+00:00. Artifact SHA-256 `cbdd82d9…fb9f231c`, 1,215 bytes. A `--check` run afterwards (scratch, not committed) gave the same hash.
+  - What it does not establish:
+    - The timestamp is this machine's clock. It is evidence of nothing until P5.5 timestamps these bytes independently.
+    - The artifact is unsigned (P6.2).
+    - Nothing in the file links `C` to the fingerprint except that they are published together.
+    - The artifact is committed locally and has not been pushed or posted anywhere.
+  - 36 new tests, 891 in total, all pass. They include the script's create, refuse, check cycle on a test key, a check that fails under another nonce, and 20 malformed records that validation rejects.
 - [ ] **P5.5** Timestamp it for real: GPG signed git tag, plus OpenTimestamps if it cooperates. This is what makes "I committed before the dispute" meaningful.
 - [ ] **P5.6** Write the verifier that checks a revealed secret against a published commitment (the non-ZK baseline, so the ZK version has something to be compared against).
 
@@ -2064,6 +2081,32 @@ values are confirmed by the generated vectors, and the permutation vector is
 not confirmed a second time. The circom circuit itself has not been run
 against this code yet (P7.3).
 
+## 8.6 Provenance artifacts
+
+| Item | Value |
+|---|---|
+| Commitment `C` (decimal) | `2392025361986972846491658401086693087745140164949714231931670817240660809889` |
+| Commitment `C` (hex, 32 bytes big-endian) | `0549d69fda52a9fd80badb7b90b315fc47325a7a54a87e3a22b7d8c39fd798a1` |
+| Commitment layout | `zk-crown/commitment/v1`: `Poseidon(DOMAIN, K_hi, K_lo, S, nonce)` |
+| Model fingerprint in the artifact | `c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07` (dual `W*`, P3.6) |
+| Owner id | `blacktensor-zkcrown-owner` |
+| `created_utc` (self-asserted) | 2026-10-02T18:05:06+00:00 |
+| Artifact | `provenance/commitment.json`, 1,215 bytes |
+| Artifact SHA-256 | `cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c` |
+| Independent timestamp | TBD (P5.5) |
+
+From `experiments/p5_4_publish_commitment.py` (P5.4), result file
+`results/p5.4_commitment_publication__seed1337__20261002T180506+0000.json`,
+CPU, commit `12b5998`, clean tree. `C` was computed from `secrets/K.bin`, the
+signature `S` for the owner id, and a 31-byte nonce created in this run at
+`secrets/commitment_nonce.bin`. The script read the artifact back from disk
+and confirmed that it is in canonical form, that its `C` equals the value the
+secrets give, that its fingerprint equals P5.1's, and that no secret bytes
+appear in it. That is the owner checking their own file, not an opening shown
+to anyone. The time is the local machine's clock and is not yet backed by an
+independent timestamp. The artifact is unsigned and has not been pushed or
+posted anywhere.
+
 ---
 
 # 9. ICEBOX
@@ -2276,3 +2319,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-02: P5.1. `src/crypto/fingerprint.py`: SHA-256 over a canonical serialization of the whole state dict (sorted names, dtype, shape, little-endian data), independent of the weights file. Code committed first (`1291311`), then `experiments/p5_1_model_fingerprint.py` run from that clean tree: all 4 models stable through 8 save/reload routes, while the re-saved file's own hash changed every time; three kinds of change each altered the fingerprint. Fingerprints recorded in 8.2. One test bug fixed before the run (byte view of a 0-d tensor). 23 new tests, 777 in total, all pass.
 - 2026-10-02: Owner confirmed the P5.1 defaults (buffers included, bit-exact). P5.2. `src/crypto/poseidon.py`: stdlib Poseidon over BN254 with circomlib's instance, constants generated by a re-implemented Grain LFSR. Reference vectors made with circomlibjs 0.1.7 under Node in a scratch directory and committed to `tests/data/`. Code committed first (`e5ed9d9`), then validated from that clean tree: 128 of 128 vectors, all 10,854 round constants and 16 MDS matrices, and four published vectors match, on the first run. The published vectors were entered from recall. The circom template itself is not run until P7.3. One test bug fixed (my planted wrong round count equalled the real one for t = 3). 52 new tests, 829 in total, all pass.
 - 2026-10-02: Owner confirmed the P5.2 decisions; Icebox line added for the permutation reference vector. P5.3. `src/crypto/commitment.py`: `C = Poseidon(DOMAIN, K_hi, K_lo, S, nonce)`, with `K` split into two 128-bit limbs, a 31-byte nonce and a domain element first. Layout documented in the module and `src/crypto/README.md`. A circomlibjs vector from public demo values, with the byte slicing redone in JavaScript, matches the Python layout and `C`. The real nonce and `C` are left to P5.4. 26 new tests, 855 in total, all pass.
+- 2026-10-02: P5.4. `src/crypto/publication.py` defines the publication artifact with canonical bytes, write-once semantics and strict validation. Code committed first (`12b5998`), then `experiments/p5_4_publish_commitment.py` run from that clean tree: it created the real commitment nonce in `secrets/` (gitignored, needs backup with `K`), computed `C`, and wrote `provenance/commitment.json` with the dual `W*` fingerprint, the owner id and a self-asserted UTC time. Artifact SHA-256 `cbdd82d9…fb9f231c`; read-back and a later `--check` agree. `.gitattributes` added so git keeps the artifact's bytes. New ledger section 8.6. Not pushed or posted; independent timestamp is P5.5. 36 new tests, 891 in total, all pass.
