@@ -609,7 +609,17 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - **Against P4.5 at the same LR and 20 epochs, without overwriting** (fired 100 / 46 / 8, z 10.27 / 10.22 / 9.66, test 90.49 / 89.05 / 86.06%): adding the attacker's triggers did not remove more of the owner's watermark than fine-tuning alone. At LR 0.01 more owner triggers survived (70 against 46). That is one run each with no test between them, so no claim about direction.
   - Limits: one attacker key, one run or embedding per point, one seed, 5,000 attacker images, 20 epochs. GPU training is not bit-reproducible. No BN recalibration in the weight variant.
   - No code changed since the handoff; 738 tests.
-- [ ] **P4.9** Produce the master robustness table and heatmap figure across all attacks.
+- [x] **P4.9** Produce the master robustness table and heatmap figure across all attacks.
+  - `experiments/p4_9_master_table.py`, CPU, under 1 s, clean tree at `8341576`. **Nothing is measured here.** It reads the 85 committed rows in `results/attacks/` (the control plus 84 attack settings from P4.2 to P4.8) and lays them out. It never loads a model, the data or `K`.
+  - **Checks before a row is used:** harness row written from a clean tree; source is the dual `W*` by hash; detection level 1e-6; the same owner id, trigger bundle digest and carrier digest in every row; no setting twice; and the planned number of rows per attack (1, 9, 9, 10, 3, 12, 12, 12, 6, 5, 3, 3). A missing or extra row stops the run.
+  - **Outputs:** the result record (every row plus a summary per attack family), the table `results/p4.9_master_robustness_table.md`, and the figure `figures/p4.9_robustness_heatmap.png`.
+    - The figure has one row per setting and three columns: test accuracy, triggers fired, weight z. Each column has its own one-hue scale. A watermark not detected at 1e-6 is framed and marked ×; a weight test that cannot be run is marked n/a.
+  - **Counts over the 84 attack settings** (each watermark's own test at 1e-6, not combined):
+    - Both detected: 34. Behavioral lost, weight detected: 39. Neither detected: 11. Weight lost while behavioral detected: 0.
+    - Behavioral detected in 34 of 84, weight in 73 of 84.
+    - The 11 "neither" rows: 6 distillation students (3 of them because the weight test is not applicable), 3 channel-pruning plus fine-tuning runs (78.5–80.9% accuracy), and 2 channel-pruning rows at 80% and 90% of channels, where the model is at chance (10.0%).
+  - Limits: the counts depend on which settings were swept, so they are not rates. Every row is one run with one key. The channel-pruning weight figures assume re-alignment. Ranking the attacks and the written findings are P4.10.
+  - 16 new tests, 754 in total, all pass. A second render of the figure is byte-identical (tested).
 - [ ] **P4.10** Write `results/ATTACK_FINDINGS.md`: what survived, what did not, and which watermark is stronger under which attack. Blunt and quantitative.
   - Flagged by the owner (P4.7), to lead the findings as the headline limitation: neither the trigger watermark nor the weight watermark survives architecture-independent distillation when the attacker has enough query data. With all 50,000 train images both were removed at 90.67% test accuracy (drop +0.18 pp, not distinguishable from zero). Keep the two qualifiers: that set includes the owner's 45,000 training images, and P4.6 had already removed both in 3 channel-pruning runs, but at a cost of 9.9 to 12.3 pp.
 
@@ -1884,6 +1894,56 @@ settings, one alpha' in the combined variant. The attacker only adds their
 own watermark and does not try to cancel the owner's. Intervals cover
 test-image sampling only.
 
+Master robustness table (P4.9), from `experiments/p4_9_master_table.py`, result
+file `results/p4.9_master_table__seed1337__20261002T171216+0000.json`, CPU, commit
+`8341576`, clean tree. It is an aggregation of the 85 rows above, with no new
+measurement. The full per-setting table is
+`results/p4.9_master_robustness_table.md` and the heatmap is
+`figures/p4.9_robustness_heatmap.png`. "Detected" is each watermark's own test
+at 1e-6; the two are not combined (P9.3). A weight test that is not applicable
+counts as not detected.
+
+| Family | Task | Rows | Test acc range | Fired range | Weight z range | Behavioral detected | Weight detected | Neither detected | Highest acc with neither detected |
+|---|---|---|---|---|---|---|---|---|---|
+| No attack (control) | P4.1 | 1 | 90.85% | 100 | 10.29 | 1 of 1 | 1 of 1 | 0 | none |
+| Magnitude pruning, layer-wise | P4.2 | 9 | 11.63% to 90.83% | 15 to 100 | 9.36 to 10.27 | 6 of 9 | 9 of 9 | 0 | none |
+| Magnitude pruning, global | P4.2 | 9 | 18.28% to 90.86% | 12 to 100 | 8.17 to 10.27 | 8 of 9 | 9 of 9 | 0 | none |
+| Channel pruning (L1, zero-masked) | P4.3 | 10 | 9.97% to 86.02% | 8 to 94 | 2.08 to 10.09 | 2 of 10 | 8 of 10 | 2 | 10.00% (channels 90%) |
+| Post-training quantization | P4.4 | 3 | 90.77% to 90.85% | 100 | 10.29 to 10.67 | 3 of 3 | 3 of 3 | 0 | none |
+| Fine-tuning, 5,000-image holdout | P4.5 | 12 | 81.86% to 90.49% | 4 to 100 | 6.49 to 10.28 | 6 of 12 | 12 of 12 | 0 | none |
+| Global pruning + fine-tuning | P4.6 | 12 | 82.14% to 89.10% | 4 to 59 | 6.60 to 10.05 | 1 of 12 | 12 of 12 | 0 | none |
+| Channel pruning + fine-tuning | P4.6 | 12 | 78.51% to 88.19% | 5 to 19 | 1.93 to 9.76 | 0 of 12 | 9 of 12 | 3 | 80.92% (channels 30%, LR 0.1, 60 ep) |
+| Distillation into a fresh student | P4.7 | 6 | 69.52% to 90.67% | 1 to 7 | -1.11 to -0.19 (3 n/a) | 0 of 6 | 0 of 6 | 6 | 90.67% (50,000 images, LR 0.1, width 32) |
+| Overwrite, attacker's weight watermark | P4.8 | 5 | 39.00% to 90.57% | 18 to 100 | 9.72 to 10.28 | 4 of 5 | 5 of 5 | 0 | none |
+| Overwrite, attacker's triggers | P4.8 | 3 | 86.03% to 90.39% | 12 to 98 | 9.50 to 10.28 | 2 of 3 | 3 of 3 | 0 | none |
+| Overwrite, attacker's triggers + weights | P4.8 | 3 | 85.83% to 90.10% | 8 to 95 | 9.49 to 10.27 | 2 of 3 | 3 of 3 | 0 | none |
+| All attacks (control excluded) | P4.2 to P4.8 | 84 | 9.97% to 90.86% | 1 to 100 | -1.11 to 10.67 (3 n/a) | 34 of 84 | 73 of 84 | 11 | 90.67% (50,000 images, LR 0.1, width 32) |
+
+Outcomes over the 84 attack settings: both detected 34; behavioral lost with
+weight detected 39; weight lost with behavioral detected 0; neither detected
+11.
+
+How to read it:
+- **The counts are not rates.** They depend on which settings were swept. A
+  family with many harsh settings shows more losses than one with few.
+- **In no setting was the weight watermark lost while the behavioral one was
+  still detected.** Wherever the triggers survive at 1e-6, so does the weight
+  watermark.
+- **The 11 settings where neither is detected** are the 6 distillation
+  students, the 3 channel-pruning plus fine-tuning runs at LR 0.1, and channel
+  pruning at 80% and 90% of channels. The last two leave a model at chance
+  accuracy. For 3 of the students the weight test could not be run at all.
+- **Highest accuracy with the behavioral watermark not detected at 1e-6**, per
+  family: distillation 90.67%; global pruning plus fine-tuning 88.99% (24
+  fired, still rejects at 1e-3); channel pruning plus fine-tuning 88.19% (19
+  fired, rejects at 0.05); fine-tuning 86.06%; overwrite with triggers 86.03%.
+  The pruning-only and weight-overwrite families lose it only at or below
+  50.8% accuracy. These are single runs, not tested against each other.
+
+Limits: an aggregation of single runs with one key and one source model.
+Channel-pruning weight figures assume re-alignment (P4.3 caveat). The
+50,000-image distillation set includes the owner's 45,000 training images.
+
 ## 8.5 ZK measurements
 
 | Metric | Track A (Circom) | Track B (EZKL) |
@@ -2099,3 +2159,8 @@ Append one line per session: date, tasks touched, key outcome.
   - Owner's weight watermark detected in all 6 (z 9.49 to 10.28), so in all 11 P4.8 rows. Owner's triggers fire 98 / 70 / 12 (behavioral) and 95 / 68 / 8 (both) at LR 0.001 / 0.01 / 0.05; lost at 0.05, as with plain fine-tuning at that rate (P4.5: 8).
   - Test accuracy 90.39% down to 85.83%. The attacker's own watermarks are detected in every row.
   - No code changed; 738 tests pass.
+- 2026-10-02: P4.9. `experiments/p4_9_master_table.py` collects the 85 committed attack rows into one result record, a markdown table and a heatmap. Nothing is measured; rows are checked for clean tree, source hash, detection level, shared owner material, duplicates and planned counts.
+  - Code committed first (`8341576`), then run from that clean tree.
+  - Over the 84 attack settings: both detected 34, behavioral lost with weight detected 39, neither 11, weight lost with behavioral detected 0.
+  - Two figure fixes after looking at the first render (scratch): clipped family titles, and accuracy shown to two decimals so 90.85% does not read as 90.8%.
+  - 16 new tests, 754 in total, all pass.
