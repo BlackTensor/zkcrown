@@ -1,0 +1,314 @@
+{
+  "schema_version": 1,
+  "name": "p4.8_apply_overwrite_both_a0.1-e20_0.001",
+  "task": "P4.8",
+  "timestamp_utc": "2026-10-02T16:33:33+00:00",
+  "git": {
+    "commit": "8c2170107b1ca5efffbc89c993b5768a39df3b5e",
+    "branch": "master",
+    "dirty": false,
+    "available": false,
+    "source": "handoff"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": true
+  },
+  "params": {
+    "kind": "attack-apply/v1",
+    "config": {
+      "attack": "overwrite_both",
+      "strength": 0.001,
+      "params": {
+        "epochs": 20,
+        "weight_alpha": 0.1,
+        "attacker": "attacker-1",
+        "n_triggers": 100,
+        "amplitude": 16,
+        "triggers_per_batch": 4,
+        "weight_decay": 0.0005,
+        "momentum": 0.9,
+        "batch_size": 128,
+        "warmup_epochs": 1.0,
+        "augment": true
+      },
+      "tag": "a0.1-e20"
+    },
+    "attack": {
+      "name": "overwrite_both",
+      "strength_meaning": "peak learning rate of the fine-tuning that embeds the attacker's own triggers; then a weight overwrite at params['weight_alpha']",
+      "description": "The attacker embeds both of their own watermarks: triggers by fine-tuning, then a post-hoc weight watermark (P4.8)."
+    },
+    "source": {
+      "name": "dual",
+      "task": "P3.6",
+      "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+      "arch": {
+        "width": 32
+      }
+    },
+    "device": "cuda",
+    "key_used": false,
+    "smoke": false,
+    "gpu": "Tesla T4"
+  },
+  "metrics": {
+    "weights_file": "p4.8_overwrite_both_a0.1-e20_0.001__seed1337.pt",
+    "weights_sha256": "a49c4585e4aa1e99b0c1fa5bf4b388d767cae585b1c9808eebe70247d1c2a910",
+    "arch": {
+      "width": 32
+    },
+    "info": {
+      "version": "overwrite/v1",
+      "variant": "both",
+      "attacker": {
+        "label": "attacker-1",
+        "owner_id": "p4.8-attacker",
+        "key": "public demo key, SHA-256(\"zk-crown/p4.8/attacker-key/v1\\0\" || label); not the owner's K",
+        "owner_key_known": false
+      },
+      "source_state_sha256": "ef8a87d52f8e4283746e78f88c12dee30eb484a3191292e44046be3299d54140",
+      "behavioral": {
+        "n_triggers": 100,
+        "amplitude": 16,
+        "triggers_per_batch": 4,
+        "base_images": "attacker holdout, 5,000 CIFAR-10 train images",
+        "targets": "per-trigger keyed (P2.2), from the attacker's key",
+        "bundle_sha256": "74af53a8bb13320c827d07c6f8c2445f6b5d9e32d8702de560a3e368857b7f14",
+        "trigger_samples_per_epoch": 160,
+        "trigger_accuracy_first_epoch": 0.12999999523162842,
+        "trigger_accuracy_last_epoch": 0.5199999809265137,
+        "attacker_before": {
+          "n": 100,
+          "fired": 8,
+          "wdr": 0.08,
+          "predicted_base_label": 38,
+          "predicted_other_class": 54,
+          "target_probability_mean": 0.08998533338308334,
+          "target_probability_median": 0.003374410793185234,
+          "target_probability_min": 1.211842692167009e-12,
+          "null_fire_bound": "1/9",
+          "null_expected_fired_bound": 11.11111111111111,
+          "p_value": 0.8785059003362857,
+          "p_value_log10": -0.05625531729346278,
+          "rejects": {
+            "0.05": false,
+            "0.01": false,
+            "1e-3": false,
+            "1e-6": false,
+            "1e-9": false
+          },
+          "detected": false
+        },
+        "attacker_after": {
+          "n": 100,
+          "fired": 50,
+          "wdr": 0.5,
+          "predicted_base_label": 16,
+          "predicted_other_class": 34,
+          "target_probability_mean": 0.26568013429641724,
+          "target_probability_median": 0.21204698085784912,
+          "target_probability_min": 0.011238579638302326,
+          "null_fire_bound": "1/9",
+          "null_expected_fired_bound": 11.11111111111111,
+          "p_value": 6.173849654538396e-22,
+          "p_value_log10": -21.20944395065557,
+          "rejects": {
+            "0.05": true,
+            "0.01": true,
+            "1e-3": true,
+            "1e-6": true,
+            "1e-9": true
+          },
+          "detected": true
+        }
+      },
+      "finetune": {
+        "recipe": {
+          "weight_decay": 0.0005,
+          "momentum": 0.9,
+          "batch_size": 128,
+          "warmup_epochs": 1.0,
+          "augment": true,
+          "lr": 0.001,
+          "epochs": 20,
+          "optimizer": "SGD nesterov",
+          "schedule": "linear warmup then cosine to 0 over the run"
+        },
+        "data": "attacker holdout, 5,000 CIFAR-10 train images",
+        "train_images": 5000,
+        "steps": 800,
+        "first_epoch": {
+          "epoch": 0,
+          "lr": 0.001,
+          "train_loss": 0.5225509845933248,
+          "train_accuracy": 0.8699612403100775,
+          "holdout_accuracy": 0.912
+        },
+        "last_epoch": {
+          "epoch": 19,
+          "lr": 6.15582970243117e-06,
+          "train_loss": 0.2735249370683071,
+          "train_accuracy": 0.9054263565891473,
+          "holdout_accuracy": 0.9394
+        },
+        "final_holdout_accuracy": 0.9394,
+        "wall_seconds_this_session": 71.67,
+        "epoch_seconds_total": 68.94,
+        "device": "cuda",
+        "fine_tuned": true,
+        "selection": "final epoch, no selection"
+      },
+      "fine_tuned": true,
+      "bn_recalibrated": "by fine-tuning (running statistics updated in train mode)",
+      "order": "behavioral overwrite by fine-tuning, then the weight overwrite on the fine-tuned weights",
+      "weight": {
+        "alpha": 0.1,
+        "method": "post-hoc W + alpha' * P_K'^T * S' on the owner's carrier layout (P3.2)",
+        "embedding": {
+          "version": "weight-embedding/v1",
+          "alpha": 0.1,
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "delta_l2": 1.1323362499770058,
+          "delta_rms": 0.0020435154808545993,
+          "delta_max_abs": 0.009745323967892862,
+          "carrier_l2": 24.785200512047044,
+          "relative_l2": 0.045685983029535096,
+          "zero_fraction": 0.0701960656591975,
+          "float32_rounding_max_abs": 2.7804022992977944e-08,
+          "tensors": [
+            {
+              "name": "features.0.weight",
+              "numel": 864,
+              "delta_rms": 0.00203767049970541,
+              "weight_rms": 0.19264143920609242,
+              "relative_rms": 0.01057752946667649,
+              "energy_share": 0.0027978912940437688,
+              "zero_fraction": 0.0775462962962963
+            },
+            {
+              "name": "features.3.weight",
+              "numel": 9216,
+              "delta_rms": 0.002007446118483276,
+              "weight_rms": 0.0710524277274724,
+              "relative_rms": 0.028253026429765432,
+              "energy_share": 0.02896539391417742,
+              "zero_fraction": 0.07172309027777778
+            },
+            {
+              "name": "features.7.weight",
+              "numel": 18432,
+              "delta_rms": 0.002064310639117583,
+              "weight_rms": 0.06655214169131864,
+              "relative_rms": 0.031017944526747828,
+              "energy_share": 0.06125925937215335,
+              "zero_fraction": 0.07166883680555555
+            },
+            {
+              "name": "features.10.weight",
+              "numel": 36864,
+              "delta_rms": 0.002036824844422407,
+              "weight_rms": 0.053152011117502236,
+              "relative_rms": 0.038320748389362606,
+              "energy_share": 0.1192776305354926,
+              "zero_fraction": 0.07014973958333333
+            },
+            {
+              "name": "features.14.weight",
+              "numel": 73728,
+              "delta_rms": 0.002042369850726967,
+              "weight_rms": 0.04481423667861257,
+              "relative_rms": 0.04557413005545358,
+              "energy_share": 0.2398559040769428,
+              "zero_fraction": 0.07012261284722222
+            },
+            {
+              "name": "features.17.weight",
+              "numel": 147456,
+              "delta_rms": 0.0020443680497980524,
+              "weight_rms": 0.028762306116628354,
+              "relative_rms": 0.07107802974866963,
+              "energy_share": 0.48065094129223934,
+              "zero_fraction": 0.07038709852430555
+            },
+            {
+              "name": "classifier.2.weight",
+              "numel": 20480,
+              "delta_rms": 0.0020510317546418863,
+              "weight_rms": 0.06245167160177083,
+              "relative_rms": 0.03284190321950852,
+              "energy_share": 0.06719297951494872,
+              "zero_fraction": 0.066845703125
+            }
+          ]
+        },
+        "attacker_before": {
+          "applicable": true,
+          "version": "weight-extraction/v1",
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "centered": true,
+          "correlation": 0.04057409909002991,
+          "amplitude": 0.001742635160925264,
+          "projected_rms": 0.04294944804710337,
+          "bit_matches": 69,
+          "z": 0.45904352971352125,
+          "p_value_bound": 0.9000000311147124,
+          "p_value_bound_log10": -0.045757475546288826,
+          "p_value_floor": 1.603810890548638e-28,
+          "gaussian_tail_approximation": 0.3231014536234226,
+          "rejects": {
+            "0.05": false,
+            "0.01": false,
+            "1e-3": false,
+            "1e-6": false,
+            "1e-9": false
+          },
+          "detected": false
+        },
+        "attacker_after": {
+          "applicable": true,
+          "version": "weight-extraction/v1",
+          "rows": 128,
+          "dim": 307040,
+          "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+          "centered": true,
+          "correlation": 0.9217137982233239,
+          "amplitude": 0.10190877416100273,
+          "projected_rms": 0.1105644445786099,
+          "bit_matches": 127,
+          "z": 10.428001232590745,
+          "p_value_bound": 2.4361949573546087e-24,
+          "p_value_bound_log10": -23.61328796008046,
+          "p_value_floor": 1.603810890548638e-28,
+          "gaussian_tail_approximation": 9.236664600910052e-26,
+          "rejects": {
+            "0.05": true,
+            "0.01": true,
+            "1e-3": true,
+            "1e-6": true,
+            "1e-9": true
+          },
+          "detected": true
+        }
+      }
+    }
+  },
+  "environment": {
+    "python": "3.13.15",
+    "platform": "Linux-6.6.122+-x86_64-with-glibc2.39",
+    "torch": "2.11.0+cu130",
+    "numpy": "2.1.3",
+    "accelerator": "Tesla T4",
+    "cuda": "13.0",
+    "system_ram_gb": 12.67
+  },
+  "duration_seconds": 75.6302913259999,
+  "notes": "Attacked weights only, not scored. Score locally with run_attack_suite.py evaluate."
+}
