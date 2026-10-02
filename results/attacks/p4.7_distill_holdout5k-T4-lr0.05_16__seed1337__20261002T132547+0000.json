@@ -1,0 +1,250 @@
+{
+  "schema_version": 1,
+  "name": "p4.7_distill_holdout5k-T4-lr0.05_16",
+  "task": "P4.7",
+  "timestamp_utc": "2026-10-02T13:25:47+00:00",
+  "git": {
+    "commit": "9dd9dabc88517a472a139a8a80836f02c6242add",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "harness": "experiments/run_attack_suite.py (P4.1)",
+    "config": {
+      "attack": "distill",
+      "strength": 16.0,
+      "params": {
+        "transfer": "holdout5k",
+        "temperature": 4.0,
+        "init_seed": 20260915,
+        "epochs": 60,
+        "lr": 0.05,
+        "weight_decay": 0.0005,
+        "momentum": 0.9,
+        "batch_size": 128,
+        "warmup_epochs": 1.0,
+        "augment": true
+      },
+      "tag": "holdout5k-T4-lr0.05"
+    },
+    "source": {
+      "name": "dual",
+      "task": "P3.6",
+      "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+      "arch": {
+        "width": 32
+      }
+    },
+    "owner_id": "blacktensor-zkcrown-owner",
+    "accuracy": "eval-mode top-1 on the 10,000-image CIFAR-10 test set; paired drop vs source (P2.5 method)",
+    "behavioral": "P2.4 WDR on the N = 100 owner triggers regenerated from K; P2.8 exact binomial p-value",
+    "weight": "P3.3 blind centred extraction with K; P3.7 bound exp(-z^2/2); not attempted if the carrier layout is gone",
+    "detection_alpha": "1e-6",
+    "mode": "evaluate",
+    "device": "cpu"
+  },
+  "metrics": {
+    "row": {
+      "row_version": "attack-row/v1",
+      "table": {
+        "attack": "distill",
+        "strength": 16.0,
+        "strength_meaning": "student main_model width, trained from a fresh init on the teacher's soft outputs",
+        "clean_accuracy": 0.7468,
+        "accuracy_drop_vs_source_pp": 16.17,
+        "behavioral_wdr": 0.07,
+        "behavioral_p_value": 0.9370445912730502,
+        "behavioral_detected": false,
+        "weight_correlation": null,
+        "weight_z": null,
+        "weight_p_value": null,
+        "weight_detected": false,
+        "weight_applicable": false,
+        "detection_alpha": "1e-6"
+      },
+      "config": {
+        "attack": "distill",
+        "strength": 16.0,
+        "params": {
+          "transfer": "holdout5k",
+          "temperature": 4.0,
+          "init_seed": 20260915,
+          "epochs": 60,
+          "lr": 0.05,
+          "weight_decay": 0.0005,
+          "momentum": 0.9,
+          "batch_size": 128,
+          "warmup_epochs": 1.0,
+          "augment": true
+        },
+        "tag": "holdout5k-T4-lr0.05"
+      },
+      "attack": {
+        "name": "distill",
+        "strength_meaning": "student main_model width, trained from a fresh init on the teacher's soft outputs",
+        "description": "Knowledge distillation from the stolen model into a new student on the attacker's images, no labels, no key, no triggers (P4.7)."
+      },
+      "source": {
+        "name": "dual",
+        "task": "P3.6",
+        "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+        "arch": {
+          "width": 32
+        }
+      },
+      "attacked": {
+        "arch": {
+          "width": 16
+        },
+        "info": {
+          "version": "distill/v1",
+          "teacher": {
+            "source_state_sha256": "ef8a87d52f8e4283746e78f88c12dee30eb484a3191292e44046be3299d54140",
+            "mode": "eval (no dropout, BatchNorm running statistics), frozen",
+            "outputs_used": "logits softened at temperature 4",
+            "training_queries_planned": 300000,
+            "queries_this_session": 605000
+          },
+          "transfer": {
+            "name": "holdout5k",
+            "description": "attacker holdout, 5,000 CIFAR-10 train images (the P4.5/P4.6 data)",
+            "images": 5000,
+            "labels_used": false,
+            "augmented_before_querying": true
+          },
+          "student": {
+            "width": 16,
+            "params": 82554,
+            "init_seed": 20260915,
+            "init_state_sha256": "06820d35edb7793e33d10b858396bccec464167da6655cbaf7d212a2bcb34c77",
+            "initialisation": "fresh main_model init, not the teacher's weights"
+          },
+          "loss": "T^2 * KL(teacher_T || student_T), batch mean; no ground-truth term",
+          "temperature": 4.0,
+          "recipe": {
+            "weight_decay": 0.0005,
+            "momentum": 0.9,
+            "batch_size": 128,
+            "warmup_epochs": 1.0,
+            "augment": true,
+            "lr": 0.05,
+            "epochs": 60,
+            "optimizer": "SGD nesterov",
+            "schedule": "linear warmup then cosine to 0 over the run"
+          },
+          "monitor": "top-1 agreement with the teacher on the un-augmented attacker holdout (part of the transfer set)",
+          "steps": 2400,
+          "first_epoch": {
+            "epoch": 0,
+            "lr": 0.05,
+            "train_loss": 15.36721153717041,
+            "train_teacher_agreement": 0.257,
+            "holdout_teacher_agreement": 0.2184
+          },
+          "last_epoch": {
+            "epoch": 59,
+            "lr": 3.426163113565419e-05,
+            "train_loss": 3.231724375152588,
+            "train_teacher_agreement": 0.7884,
+            "holdout_teacher_agreement": 0.8246
+          },
+          "final_holdout_teacher_agreement": 0.8246,
+          "wall_seconds_this_session": 209.94,
+          "epoch_seconds_total": 205.72,
+          "device": "cuda",
+          "selection": "final epoch, no selection"
+        },
+        "applied_in": "apply",
+        "weights_sha256": "b6d8e9fc61ee0a69b827b4b4cd620e85798333de05132a78894f6c0ded04eac4",
+        "apply_record": {
+          "file": "p4.7_apply_distill_holdout5k-T4-lr0.05_16__seed1337__20261002T122445+0000.json",
+          "timestamp_utc": "2026-10-02T12:24:45+00:00",
+          "git": {
+            "commit": "4b19e6aa93e7014e1f76856fe94685250d5c3317",
+            "branch": "master",
+            "dirty": false,
+            "available": false,
+            "source": "handoff"
+          },
+          "seed": 1337,
+          "environment": {
+            "python": "3.13.15",
+            "platform": "Linux-6.6.122+-x86_64-with-glibc2.39",
+            "torch": "2.11.0+cu130",
+            "numpy": "2.1.3",
+            "accelerator": "Tesla T4",
+            "cuda": "13.0",
+            "system_ram_gb": 12.67
+          }
+        }
+      },
+      "clean_accuracy": {
+        "accuracy": 0.7468,
+        "correct": 7468,
+        "n": 10000,
+        "loss": 1.0522808837890625,
+        "source_accuracy": 0.9085,
+        "drop_vs_source_pp": 16.17,
+        "drop_ci95_pp": [
+          15.33074829656938,
+          17.00925170343062
+        ],
+        "source_only_right": 1856,
+        "attacked_only_right": 239,
+        "mcnemar_exact_p": 1.26929148863311e-309
+      },
+      "behavioral": {
+        "n": 100,
+        "fired": 7,
+        "wdr": 0.07,
+        "predicted_base_label": 46,
+        "predicted_other_class": 47,
+        "target_probability_mean": 0.06519652158021927,
+        "target_probability_median": 9.561249316902831e-05,
+        "target_probability_min": 4.194791389244834e-11,
+        "null_fire_bound": "1/9",
+        "null_expected_fired_bound": 11.11111111111111,
+        "p_value": 0.9370445912730502,
+        "p_value_log10": -0.028239741787743355,
+        "rejects": {
+          "0.05": false,
+          "0.01": false,
+          "1e-3": false,
+          "1e-6": false,
+          "1e-9": false
+        },
+        "detected": false
+      },
+      "weight": {
+        "applicable": false,
+        "reason": "owner carrier layout not present: carrier tensor 'features.0.weight' has shape (16, 3, 3, 3), expected (32, 3, 3, 3)",
+        "detected": false
+      },
+      "owner": {
+        "owner_id": "blacktensor-zkcrown-owner",
+        "trigger_bundle_sha256": "fbd65ec730a3555c5921f13d1a5d4840b6310261ddcaf31d3a724195122baec8",
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8"
+      }
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 49.57960389999971,
+  "notes": "One attack row. Behavioral and weight tests reported separately at alpha 1e-6; combining them is P9.3. p-values assume K was committed before the suspect was seen and a per-suspect correction when several models are audited. Aggregates only."
+}

@@ -536,7 +536,37 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - Recovery on test is still real: channel 50% goes from 15.81% (prune only, P4.3) to 78.5–81.0%. The holdout figure overstates it.
   - Limits: one run per cell, one seed, one source model and one key. 5,000 attacker images, plain SGD, no removal-specific loss. GPU training is not bit-reproducible.
   - No code changed; 687 tests pass.
-- [ ] **P4.7** `[GPU]` Knowledge distillation to a student model. Test whether either watermark transfers. **Expect the behavioral watermark to largely NOT survive distillation.** That is a real finding, not a failure. Report it prominently and honestly.
+- [x] **P4.7** `[GPU]` Knowledge distillation to a student model. Test whether either watermark transfers. **Expect the behavioral watermark to largely NOT survive distillation.** That is a real finding, not a failure. Report it prominently and honestly.
+  - **Result: neither watermark transferred to any of the 6 students.** The strongest attacker (all 50,000 train images, width-32 student) got a model at 90.67% test accuracy, a drop of +0.18 pp that is not distinguishable from zero, with no evidence of either watermark at any level.
+  - **Owner decisions:**
+    - Transfer sets: the 5,000-image attacker holdout and all 50,000 train images. Labels are discarded.
+    - Students of width 32 and 16, from a fresh init (seed 20260915).
+    - Soft teacher outputs at T = 4, pure KD loss, 60 epochs with the P0.5 recipe.
+    - Holdout run at LR 0.1 and 0.05, the 50,000 set at LR 0.1. 6 runs, fixed before the run.
+  - **Attack** (`src/attacks/distill.py`): the teacher is the dual `W*`, frozen, in eval mode, queried on augmented batches. No key, no triggers, no labels, no test set. Final-epoch weights.
+  - **Run:** 6 Colab `apply` runs, T4, commit `4b19e6a`, clean tree, torch 2.11.0+cu130. 3,233 s of training in total. The handoff estimated 75–90 min; the actual was 54 min.
+  - **Verified before scoring** (independent scratch check):
+    - Configs equal the committed configs. Source hash and teacher digest equal the dual `W*`. Not smoke, key unused.
+    - Weights hashes match, strict load at the recorded width, finite values, parameter counts 307,946 and 82,554.
+    - Steps (40 and 391 per epoch), epoch indices, planned query counts, and the final agreement equal to the last epoch's and to the owner's printout.
+    - **Init seed is 20260915, not 1337**, in all six records.
+    - **One check did not pass as written: the student init digest does not equal a local rebuild.** The three records of each width agree with each other. The local build is a different torch build on a different CPU (2.14.0+cpu, x64 Python on an ARM machine; Colab was 2.11.0+cu130 on x86-64). So the Colab init is not reproduced bit for bit here. Why exactly is not established.
+    - Substitute check on the weights themselves (scratch, not a ledger number). Cosine similarity between each returned student's conv/linear weights and a local init: +0.03 to +0.40 for seed 20260915, and within ±0.006 for seed 1337 and for an unrelated seed. So the students did start from the seed-20260915 stream and not from the owner's seed. No student tensor equals the teacher's or clean `W`'s.
+  - **Scoring:** apply records committed (`9dd9dab`), then all 6 scored locally with `evaluate` from that clean tree.
+  - **Test accuracy** (drop vs the dual `W*`, 90.85%), width 32 / width 16:
+    - Holdout, LR 0.1: 72.70% / 69.52%.
+    - Holdout, LR 0.05: 78.49% / 74.68%.
+    - 50,000 images, LR 0.1: 90.67% / 87.20%.
+  - **Behavioral watermark: not detected in any of the 6, at any level.** Fired 5 / 1, 2 / 7 and 5 / 7 of 100 (same order). The P2.8 p-values are 0.94 to 1.0. Every count is below the 11.1 that a model independent of `K` is bounded by. 42 to 58 triggers are classified as their base label.
+  - **Weight watermark: not detected in any width-32 student, at any level.** z = -1.08, -0.19 and -1.11 (correlation -0.095, -0.017, -0.098; 60, 65 and 56 of 128 bits). p ≤ 1 in all three. Width 16 is "not applicable": the owner's carrier layout is not present.
+  - **Reading:**
+    - This is the strongest attack in the suite. P4.5 and P4.6 paid at least 4.1 pp of test accuracy to remove the behavioral watermark and 9.9 pp to remove both. Distillation on 50,000 images removed both for +0.18 pp (CI [-0.27, +0.63], p = 0.46).
+    - That condition favours the attacker: the 50,000 images include the 45,000 `W*` was trained on. With only 5,000 images the student is much worse (69.5–78.5%), so there the thief pays 12.4 to 21.3 pp.
+    - The behavioral result is the expected one. The thief never queries a trigger, so the keyed responses are never shown to the student. This is a genuine limitation of trigger-based watermarking.
+    - The weight result follows from the design too. The student is a new set of weights from a different init; it never sees the teacher's weights.
+  - **Memorisation check:** agreement with the teacher on the holdout (part of the transfer set) is 75.3–94.5%. It is a fit figure, not test accuracy.
+  - Limits: one run per cell, one seed, one teacher and one key. One temperature, soft outputs only (no label-only API). 60 × the set size teacher queries, with no query budget. GPU training is not bit-reproducible.
+  - No code changed; 721 tests pass.
 - [ ] **P4.8** `[GPU]` Overwrite attack: an adversary embeds their own watermark with their own key. Does ours still extract?
 - [ ] **P4.9** Produce the master robustness table and heatmap figure across all attacks.
 - [ ] **P4.10** Write `results/ATTACK_FINDINGS.md`: what survived, what did not, and which watermark is stronger under which attack. Blunt and quantitative.
@@ -1112,7 +1142,7 @@ the behavioral one is P9.
 | Quantize INT8, static, simulated (P4.4) | 8 bits, fused | 90.77% | 100% (100/100), p = 3.8e-96 | +0.943 (z 10.67), p ≤ 1.9e-25 | both detected |
 | Fine-tune on 5,000-image attacker holdout (P4.5) | LR 0.001–0.1 × 5/20/60 epochs (12 runs) | 90.48% (LR 0.001, 5 ep) → 86.06% (0.05, 20) → 83.36% (0.1, 60) | 100% at LR 0.001; 62% → 30% at 0.01; 4–11% at 0.05 and 0.1 | +0.909 → +0.890 (0.01, 60) → +0.573 (0.1, 60), z ≥ 6.49 | behavioral removed at LR ≥ 0.05 (every length, acc ≤ 86.1%); weight detected in all 12 |
 | Prune (fixed mask) + fine-tune on attacker holdout (P4.6) | global 50/70/90%, channel 10/30/50% × LR 0.01/0.05/0.1 for 20 ep, + LR 0.1 for 60 ep (24 runs) | 89.10% (global 50%, LR 0.01) → 84.61% (global 90%, 0.01) → 78.51% (channel 50%, 0.1, 20 ep) | 59% at global 50% LR 0.01; 24% and 19% in two LR 0.01 runs; 4–11% in the other 21 | +0.889 → +0.583 (global 90%, 0.1, 60 ep) → +0.170 (channel 50%, 0.1, 60 ep), z 1.93–10.05 | behavioral not detected in 23 of 24; weight detected in 21 of 24; both lost in 3 channel runs at LR 0.1 (78.5–80.9%) |
-| Distillation | TBD | TBD | TBD | TBD | TBD |
+| Distillation into a fresh student, soft outputs at T = 4, no labels (P4.7) | 5,000-image holdout at LR 0.1 / 0.05, and all 50,000 train images at LR 0.1 × student width 32 / 16 (6 runs) | 69.52% (holdout, LR 0.1, width 16) → 78.49% (holdout, LR 0.05, width 32) → 90.67% (50,000, width 32) | 1–7% in all 6, p ≥ 0.94 | -0.095, -0.017, -0.098 (z -1.08, -0.19, -1.11) at width 32; not applicable at width 16 | neither watermark detected in any of the 6, at any level; 50,000-image width-32 student keeps 90.67% (drop +0.18 pp, not distinguishable from zero) |
 | Overwrite | TBD | TBD | TBD | TBD | TBD |
 
 Control row from `experiments/run_attack_suite.py run --attack none --strength 0`
@@ -1545,6 +1575,112 @@ Pruning criteria are global magnitude and layer-wise L1 channel only, with the
 mask fixed (no regrowth). Plain SGD, no removal-specific loss. Intervals cover
 test-image sampling only.
 
+Knowledge distillation sweep (P4.7).
+- **Training:** 6 `run_attack_suite.py apply` runs on Colab (Tesla T4,
+  commit `4b19e6a`, clean tree, torch 2.11.0+cu130), configs
+  `experiments/configs/p4.7_distill_{holdout5k-T4-lr0.1,holdout5k-T4-lr0.05,train50k-T4-lr0.1}.json`.
+  Apply records are in `results/attacks/p4.7_apply/`; the weights files are
+  gitignored. Training took 3,233 s in total: 3.2–3.5 s per epoch on the
+  holdout, 19.7–20.8 s on the 50,000 images.
+- **Scoring:** locally on CPU with `run_attack_suite.py evaluate --task P4.7`,
+  commit `9dd9dab`, clean tree, seed 1337. Result files are
+  `results/attacks/p4.7_distill_<transfer>-T4-lr<LR>_<width>__seed1337__20261002T1325…–1327…+0000.json`.
+- **Attack:** the teacher is the dual `W*` (P3.6, hash-checked), frozen, in
+  eval mode. The student is a new `main_model` of width 32 or 16, initialised
+  from seed 20260915, not from the teacher's weights and not from the
+  project's training seed 1337.
+  - It is trained for 60 epochs with the P0.5 recipe on the loss
+    `T^2 * KL(teacher_T || student_T)` at T = 4, with no ground-truth term.
+  - The teacher is queried on crop-and-flip augmented copies of the transfer
+    images, 60 × the set size queries. Dataset labels are dropped unread.
+  - No key, no triggers, no test data on Colab. Final-epoch weights.
+- **Transfer sets:** `holdout5k` is the 5,000-image attacker holdout of P4.5
+  and P4.6. `train50k` is all 50,000 CIFAR-10 train images, including the
+  45,000 `W*` was trained on, which favours the attacker.
+- **Verified before scoring:**
+  - Every config equals the committed config.
+  - Source hash and teacher state digest equal the dual `W*`.
+  - Not a smoke run, key unused, labels unused.
+  - Weights hashes match; weights load strictly at the recorded width and are
+    finite; parameter counts are 307,946 and 82,554.
+  - Steps, epoch indices and planned query counts are consistent.
+  - The init seed is 20260915 in every record.
+- **Not verified as planned:** the recorded student init digest does not equal
+  a local rebuild from the same seed.
+  - The three records of each width agree with each other.
+  - The local build differs from Colab's: torch 2.14.0+cpu under x64 Python on
+    an ARM machine, against 2.11.0+cu130 on x86-64. The cause is not
+    established.
+  - Substitute check, scratch and not a ledger figure: cosine similarity
+    between each student's conv/linear weights and a locally built init is
+    +0.03 to +0.40 for seed 20260915, and within ±0.006 for seed 1337 and for
+    an unrelated seed. That is consistent with the recorded init seed and not
+    with the owner's.
+- **Scoring detail:** as P4.5. Test accuracy with the paired drop against the
+  dual `W*` (90.85%), P2.8 behavioral p-value, P3.7 weight bound; detected
+  means p ≤ 1e-6. The weight test is one-sided, so a negative z gives p ≤ 1.
+- **Teacher agreement column:** the student's top-1 agreement with the teacher
+  on the un-augmented holdout at the end of training, measured on Colab. The
+  holdout is part of the transfer set in both conditions, so it is a fit
+  figure.
+
+| Transfer set | LR | Student width | Params | Test acc | Drop pp (95% CI) | Test loss | Teacher agreement (holdout, fit) | Fired /100 | Base label | Mean target prob | Behav. p | Behav. detected | Weight corr | z | Bits /128 | Weight p ≤ | Weight detected |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| holdout5k | 0.1 | 32 | 307,946 | 72.70% | +18.15 [+17.28, +19.02] | 1.1158 | 78.48% | 5 | 43 | 0.045 | 0.99 | no | -0.0952 | -1.08 | 60 | 1 | no |
+| holdout5k | 0.1 | 16 | 82,554 | 69.52% | +21.33 [+20.42, +22.24] | 1.1956 | 75.30% | 1 | 46 | 0.029 | 1.0 | no | n/a | n/a | n/a | n/a | not applicable |
+| holdout5k | 0.05 | 32 | 307,946 | 78.49% | +12.36 [+11.58, +13.14] | 0.8402 | 87.88% | 2 | 58 | 0.028 | 1.0 | no | -0.0172 | -0.19 | 65 | 1 | no |
+| holdout5k | 0.05 | 16 | 82,554 | 74.68% | +16.17 [+15.33, +17.01] | 1.0523 | 82.46% | 7 | 46 | 0.065 | 0.94 | no | n/a | n/a | n/a | n/a | not applicable |
+| train50k | 0.1 | 32 | 307,946 | 90.67% | +0.18 [-0.27, +0.63] | 0.3098 | 94.52% | 5 | 50 | 0.070 | 0.99 | no | -0.0984 | -1.11 | 56 | 1 | no |
+| train50k | 0.1 | 16 | 82,554 | 87.20% | +3.65 [+3.06, +4.24] | 0.4583 | 90.34% | 7 | 42 | 0.069 | 0.94 | no | n/a | n/a | n/a | n/a | not applicable |
+
+McNemar p for the drops: 0.46 for the train50k width-32 student (270 images
+only the dual `W*` got right, 252 only the student). Every other row
+≤ 1.3e-34. No behavioral test rejects at any level from 0.05 down, and no
+weight test does either. "Not applicable" is the harness's own verdict for
+width 16: `features.0.weight` has shape (16, 3, 3, 3) where the owner's
+carrier expects (32, 3, 3, 3). After the first epoch, teacher agreement on the
+holdout was 11–22% for the holdout runs and 60–61% for the train50k runs.
+
+How to read it:
+- **Behavioral watermark.** It did not transfer to any student. Fired counts
+  are 1 to 7 of 100, all below the 11.1 bound for a model independent of `K`.
+  42 to 58 triggers get their base image's label, and the mean probability of
+  the keyed target is 0.03 to 0.07. This is what was expected: the thief never
+  queries a trigger, so the teacher's keyed responses are never shown to the
+  student. Distillation removed the behavioral watermark, reducing WDR from
+  100% to at most 7%. This is a genuine limitation of trigger-based
+  watermarking.
+- **Weight watermark.** It did not transfer either. The three width-32
+  students give z between -1.11 and -0.19 and 56 to 65 of 128 bits, which is
+  what a model independent of `K` gives (P3.7 null: z sd about 1, 64 bits).
+  The student is a different set of weights from a different init, and it
+  only ever sees the teacher's outputs. For a width-16 student the test cannot
+  be run at all.
+- **Cost to the thief.** It depends on how much data they hold.
+  - With all 50,000 train images, the width-32 student scores 90.67%. Its
+    drop of +0.18 pp is not distinguishable from zero. The width-16 student,
+    with 27% of the parameters, scores 87.20% (drop +3.65 pp).
+  - With the 5,000-image holdout, students reach 69.5% to 78.5%, a cost of
+    12.4 to 21.3 pp. LR 0.05 did better than LR 0.1 at both widths (one run
+    each).
+- **Against the other attacks.** P4.5 and P4.6 removed the behavioral
+  watermark for at least 4.10 pp of test accuracy, and both watermarks for at
+  least 9.93 pp. Distillation on 50,000 images removed both for +0.18 pp.
+  That makes it the strongest attack in the suite so far. The two settings
+  are not like for like: the fine-tuning attacks used 5,000 images, and with
+  5,000 images distillation costs more than they do.
+- **Caveat on the 50,000-image condition.** It includes the 45,000 images
+  `W*` was trained on. A real thief would rarely hold the owner's training
+  set. CIFAR-10 has no further images from the same distribution to use
+  instead, so how well distillation does on 50,000 unseen images is not
+  measured.
+
+Limits: one run per grid cell and one seed. GPU training is not
+bit-reproducible. One teacher and one key. One temperature (4), soft outputs
+only; a label-only API is not tested. No query budget. The thief does not try
+to query near the triggers. The student init is not reproduced bit for bit
+locally. Intervals cover test-image sampling only.
+
 ## 8.5 ZK measurements
 
 | Metric | Track A (Circom) | Track B (EZKL) |
@@ -1739,3 +1875,10 @@ Append one line per session: date, tasks touched, key outcome.
   - `train_one_epoch` counts agreement with the teacher's top-1 when targets are 2-D logits. The 1-D path is unchanged.
   - Configs `experiments/configs/p4.7_distill_{holdout5k-T4-lr0.1,holdout5k-T4-lr0.05,train50k-T4-lr0.1}.json`, plus notebook, instructions and `handoff/P4.7_colab.zip`. Estimated 75–90 min on a T4 (not measured).
   - 34 new tests.
+- 2026-10-02: P4.7 DONE. Colab returned 6 apply records and 6 weights files (commit `4b19e6a`, T4, 3,233 s of training). The owner moved them into `results/attacks/p4.7_apply/`; nothing was retrained.
+  - Verified all 6: configs, source hash, teacher digest, not smoke, key unused, weights hashes, strict load, finite values, steps, init seed 20260915 (not 1337).
+  - One planned check did not pass: the student init digest does not equal a local rebuild (different torch build and CPU; cause not established). The records agree with each other. A scratch cosine check ties the students to the seed-20260915 init (+0.03 to +0.40) and not to seed 1337 (within ±0.006).
+  - Records committed (`9dd9dab`), then all 6 scored with `evaluate` from that clean tree.
+  - Neither watermark detected in any student, at any level. Behavioral: 1–7 of 100 fired, p ≥ 0.94. Weight, width 32: z -1.08, -0.19, -1.11. Width 16: not applicable.
+  - Test accuracy: 69.5–78.5% with 5,000 images; 90.67% (width 32, drop +0.18 pp, p = 0.46) and 87.20% (width 16) with 50,000 images. That is the strongest attack in the suite so far; the 50,000 set includes the owner's training images.
+  - I started Docker Desktop while diagnosing the digest; it was not used for any result.
