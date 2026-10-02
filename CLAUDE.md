@@ -620,8 +620,18 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - The 11 "neither" rows: 6 distillation students (3 of them because the weight test is not applicable), 3 channel-pruning plus fine-tuning runs (78.5–80.9% accuracy), and 2 channel-pruning rows at 80% and 90% of channels, where the model is at chance (10.0%).
   - Limits: the counts depend on which settings were swept, so they are not rates. Every row is one run with one key. The channel-pruning weight figures assume re-alignment. Ranking the attacks and the written findings are P4.10.
   - 16 new tests, 754 in total, all pass. A second render of the figure is byte-identical (tested).
-- [ ] **P4.10** Write `results/ATTACK_FINDINGS.md`: what survived, what did not, and which watermark is stronger under which attack. Blunt and quantitative.
+- [x] **P4.10** Write `results/ATTACK_FINDINGS.md`: what survived, what did not, and which watermark is stronger under which attack. Blunt and quantitative.
   - Flagged by the owner (P4.7), to lead the findings as the headline limitation: neither the trigger watermark nor the weight watermark survives architecture-independent distillation when the attacker has enough query data. With all 50,000 train images both were removed at 90.67% test accuracy (drop +0.18 pp, not distinguishable from zero). Keep the two qualifiers: that set includes the owner's 45,000 training images, and P4.6 had already removed both in 3 channel-pruning runs, but at a cost of 9.9 to 12.3 pp.
+  - Written. It leads with distillation as the headline limitation and keeps both qualifiers. No new measurement and no ledger number: every figure is copied from the committed attack rows and the P4.9 record.
+  - Contents: how to read the numbers; the headline; what removed what, with the cheapest removal per attack; each watermark's survivals and failures; a per-attack "which is stronger" table; the two-claims point after an overwrite; what the results do not show; sources.
+  - Conclusions stated:
+    - Distillation removes both watermarks (50,000 images: 90.67%, drop +0.18 pp, not distinguishable from zero).
+    - The behavioral watermark survives everything that does not retrain, while the model is still useful. It is removed by fine-tuning at LR 0.05 or more, for about 4 to 5 pp.
+    - The weight watermark survives everything that keeps the stolen weights, except channel pruning plus fine-tuning at LR 0.1 (3 runs, 78.5–80.9%).
+    - In no setting was the weight watermark lost while the behavioral one was detected.
+    - The weight test needs white-box access and the owner's layout; the behavioral test works from queries. That last comparison is by design, not measured.
+  - The near-equal removal costs (85.9–86.8%) are explicitly not ranked: single runs, no test between them.
+  - Scratch check: every accuracy, drop and z printed in the document matches a row of the P4.9 record, and the outcome counts match its summary.
 
 ## Phase 5: Cryptographic identity
 
@@ -2164,3 +2174,4 @@ Append one line per session: date, tasks touched, key outcome.
   - Over the 84 attack settings: both detected 34, behavioral lost with weight detected 39, neither 11, weight lost with behavioral detected 0.
   - Two figure fixes after looking at the first render (scratch): clipped family titles, and accuracy shown to two decimals so 90.85% does not read as 90.8%.
   - 16 new tests, 754 in total, all pass.
+- 2026-10-02: P4.10. `results/ATTACK_FINDINGS.md` written from the committed rows and the P4.9 record; no measurement, no code. It leads with distillation as the headline limitation, with both qualifiers. A scratch check matched every accuracy, drop and z in it to the P4.9 record. Phase 4 is complete.
