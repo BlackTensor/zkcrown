@@ -1,4 +1,4 @@
-"""Removal attacks: prune, quantize, fine-tune, distill.
+"""Removal attacks: prune, quantize, fine-tune, distill, overwrite.
 
 `harness` defines the attack interface and registry (P4.1); importing it
 registers the ``none`` control. Each Phase 4 attack module registers itself
@@ -13,3 +13,4 @@ from src.attacks import quantize  # noqa: F401  -- P4.4 post-training quantizati
 from src.attacks import finetune  # noqa: F401  -- P4.5 fine-tuning on the attacker holdout
 from src.attacks import prune_finetune  # noqa: F401  -- P4.6 prune, then fine-tune with the mask fixed
 from src.attacks import distill  # noqa: F401  -- P4.7 knowledge distillation into a fresh student
+from src.attacks import overwrite  # noqa: F401  -- P4.8 overwrite with the attacker's own key

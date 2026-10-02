@@ -8,6 +8,9 @@ P4.5 fine-tuning attack and the P4.6 prune-then-fine-tune attack. The P4.7
 distillation attack queries the teacher on the holdout, or on all 50,000
 images, as two conditions (`TRANSFER_SETS`).
 
+The P4.8 overwrite attack builds the attacker's own triggers from the holdout
+(`attacker_holdout_arrays`).
+
 The reason is that a fine-tuning attack carried out on the data the model was
 already trained on is not a realistic threat model, and it would understate how
 much fine-tuning removes a watermark. The thief has their own data. Carving the
@@ -27,6 +30,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset, Subset, TensorDataset
 
@@ -190,6 +194,28 @@ def attacker_holdout_loaders(
                             generator=torch_generator(seed), worker_init_fn=seed_worker, **shared),
         "eval": DataLoader(eval_set, batch_size=eval_batch_size, shuffle=False, **shared),
     }
+
+
+def attacker_holdout_arrays(
+    root: Path | str = "data", *, smoke: bool = False, seed: int = DEFAULT_SEED
+) -> tuple[np.ndarray, np.ndarray]:
+    """The attacker holdout as raw arrays (P4.8): ``(5000, 32, 32, 3)`` uint8 images and int64 labels.
+
+    Row `i` is the `i`-th holdout image, in `cifar10_split_indices` order. An
+    attacker who watermarks the stolen model builds their own triggers from
+    these, the only images they hold. With `smoke`, 128 seeded random images
+    stand in.
+    """
+    if smoke:
+        rng = np.random.default_rng(seed)
+        return (rng.integers(0, 256, size=(128, 32, 32, 3), dtype=np.uint8),
+                rng.integers(0, NUM_CLASSES, size=128).astype(np.int64))
+    from torchvision.datasets import CIFAR10
+
+    train_full = CIFAR10(str(root), train=True, download=False)
+    _, holdout_idx = cifar10_split_indices(len(train_full.data))
+    return (np.ascontiguousarray(train_full.data[holdout_idx]),
+            np.asarray(train_full.targets, dtype=np.int64)[holdout_idx])
 
 
 TRANSFER_SETS = {

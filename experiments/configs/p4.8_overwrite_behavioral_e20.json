@@ -1,0 +1,1 @@
+{"attack": "overwrite_behavioral", "tag": "e20", "strengths": [0.001, 0.01, 0.05], "params": {"epochs": 20, "attacker": "attacker-1", "n_triggers": 100, "amplitude": 16, "triggers_per_batch": 4, "weight_decay": 0.0005, "momentum": 0.9, "batch_size": 128, "warmup_epochs": 1.0, "augment": true}}

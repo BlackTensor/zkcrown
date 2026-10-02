@@ -102,13 +102,15 @@ def _epoch_summary(record: dict) -> dict:
 
 
 def run_finetune(model: torch.nn.Module, recipe: dict, context, extra: dict, *,
-                 epoch_metrics=None) -> tuple[dict, dict]:
+                 epoch_metrics=None, wrap_train=None) -> tuple[dict, dict]:
     """Fine-tune `model` in place on the attacker holdout with `recipe`. Returns fit's summary and fine-tuning info.
 
-    Shared by P4.5 and P4.6. `extra` goes into the checkpoint config, so a
-    resume under anything else it names is refused. Checkpoints go to
+    Shared by P4.5, P4.6 and P4.8. `extra` goes into the checkpoint config, so
+    a resume under anything else it names is refused. Checkpoints go to
     ``context.work_dir`` and resume from there; without one, a throwaway
-    directory is used.
+    directory is used. `wrap_train` (P4.8) maps the holdout training loader to
+    the loader actually trained on, for example one that mixes in the
+    attacker's own triggers.
     """
     loaders = attacker_holdout_loaders(
         context.data_root, batch_size=recipe["batch_size"], num_workers=context.num_workers,
@@ -119,9 +121,10 @@ def run_finetune(model: torch.nn.Module, recipe: dict, context, extra: dict, *,
         weight_decay=recipe["weight_decay"], nesterov=True, batch_size=recipe["batch_size"], max_minutes=None,
         extra=extra,
     )
+    train_loader = loaders["train"] if wrap_train is None else wrap_train(loaders["train"])
 
     def train(checkpoint_dir: Path, resume: bool) -> dict:
-        return fit(model, loaders["train"], loaders["eval"], config, checkpoint_dir=checkpoint_dir,
+        return fit(model, train_loader, loaders["eval"], config, checkpoint_dir=checkpoint_dir,
                    device=context.device, seed=context.seed, resume=resume, epoch_metrics=epoch_metrics)
 
     if context.work_dir is None:

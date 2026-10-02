@@ -567,7 +567,20 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - **Memorisation check:** agreement with the teacher on the holdout (part of the transfer set) is 75.3–94.5%. It is a fit figure, not test accuracy.
   - Limits: one run per cell, one seed, one teacher and one key. One temperature, soft outputs only (no label-only API). 60 × the set size teacher queries, with no query budget. GPU training is not bit-reproducible.
   - No code changed; 721 tests pass.
-- [ ] **P4.8** `[GPU]` Overwrite attack: an adversary embeds their own watermark with their own key. Does ours still extract?
+- [~] **P4.8** `[GPU]` Overwrite attack: an adversary embeds their own watermark with their own key. Does ours still extract?
+  - In progress: the two training variants are handed off to Colab and not yet run. Not ticked until they return.
+  - **Owner decisions:**
+    - Three variants, all from the dual `W*`: weight overwrite, behavioral overwrite, and both.
+    - Weight overwrite: alpha' = 0.1, 0.2, 0.5, 1.0, 2.0, post-hoc. No training, so it runs on local CPU.
+    - Behavioral overwrite: fine-tune on the 5,000-image attacker holdout with the attacker's own triggers, at LR 0.001 / 0.01 / 0.05 for 20 epochs. Each has a matching P4.5 row without overwriting.
+  - My choices where the owner's answers left a gap: the combined variant uses alpha' = 0.1 (the owner's own strength), applied after the fine-tuning, the order the owner used. The attacker copies the owner's trigger settings: N = 100, amplitude 16, 4 per batch.
+  - **Attack** (`src/attacks/overwrite.py`, `overwrite_weight`, `overwrite_behavioral`, `overwrite_both`):
+    - The attacker's key is a public demo key, `SHA-256("zk-crown/p4.8/attacker-key/v1\0" || "attacker-1")`. The attack never receives `K`.
+    - The attacker's triggers, targets, `P_K'` and `S'` are derived from that key with the owner's own code. Trigger bases are attacker-holdout images.
+    - `info` also holds the attacker's own tests (P2.8, P3.7) before and after, so a row shows whether the attacker ends up with a detectable claim.
+  - `finetune.run_finetune` takes an optional `wrap_train`; without it P4.5 and P4.6 behave as before (their tests pass unchanged). `attacker_holdout_arrays` added to `src/data/cifar10.py`.
+  - Configs `experiments/configs/p4.8_overwrite_{weight,behavioral_e20,both_a0.1-e20}.json`, 11 runs. Notebook `notebooks/P4.8_colab.ipynb`, instructions, `handoff/P4.8_colab.zip` for the 6 training runs. Estimated ~20 min on a T4 (not measured).
+  - 17 new tests, 738 in total, all pass.
 - [ ] **P4.9** Produce the master robustness table and heatmap figure across all attacks.
 - [ ] **P4.10** Write `results/ATTACK_FINDINGS.md`: what survived, what did not, and which watermark is stronger under which attack. Blunt and quantitative.
   - Flagged by the owner (P4.7), to lead the findings as the headline limitation: neither the trigger watermark nor the weight watermark survives architecture-independent distillation when the attacker has enough query data. With all 50,000 train images both were removed at 90.67% test accuracy (drop +0.18 pp, not distinguishable from zero). Keep the two qualifiers: that set includes the owner's 45,000 training images, and P4.6 had already removed both in 3 channel-pruning runs, but at a cost of 9.9 to 12.3 pp.
