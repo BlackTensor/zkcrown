@@ -1,0 +1,317 @@
+{
+  "schema_version": 1,
+  "name": "p4.8_overwrite_weight_2",
+  "task": "P4.8",
+  "timestamp_utc": "2026-10-02T13:50:29+00:00",
+  "git": {
+    "commit": "8c2170107b1ca5efffbc89c993b5768a39df3b5e",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": false
+  },
+  "params": {
+    "harness": "experiments/run_attack_suite.py (P4.1)",
+    "config": {
+      "attack": "overwrite_weight",
+      "strength": 2.0,
+      "params": {
+        "attacker": "attacker-1"
+      }
+    },
+    "source": {
+      "name": "dual",
+      "task": "P3.6",
+      "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+      "arch": {
+        "width": 32
+      }
+    },
+    "owner_id": "blacktensor-zkcrown-owner",
+    "accuracy": "eval-mode top-1 on the 10,000-image CIFAR-10 test set; paired drop vs source (P2.5 method)",
+    "behavioral": "P2.4 WDR on the N = 100 owner triggers regenerated from K; P2.8 exact binomial p-value",
+    "weight": "P3.3 blind centred extraction with K; P3.7 bound exp(-z^2/2); not attempted if the carrier layout is gone",
+    "detection_alpha": "1e-6",
+    "mode": "run",
+    "device": "cpu"
+  },
+  "metrics": {
+    "row": {
+      "row_version": "attack-row/v1",
+      "table": {
+        "attack": "overwrite_weight",
+        "strength": 2.0,
+        "strength_meaning": "alpha', the amplitude of the attacker's own weight watermark",
+        "clean_accuracy": 0.39,
+        "accuracy_drop_vs_source_pp": 51.849999999999994,
+        "behavioral_wdr": 0.18,
+        "behavioral_p_value": 0.026650927147014454,
+        "behavioral_detected": false,
+        "weight_correlation": 0.8589195430636413,
+        "weight_z": 9.717565334303226,
+        "weight_p_value": 3.1228590351717354e-21,
+        "weight_detected": true,
+        "weight_applicable": true,
+        "detection_alpha": "1e-6"
+      },
+      "config": {
+        "attack": "overwrite_weight",
+        "strength": 2.0,
+        "params": {
+          "attacker": "attacker-1"
+        }
+      },
+      "attack": {
+        "name": "overwrite_weight",
+        "strength_meaning": "alpha', the amplitude of the attacker's own weight watermark",
+        "description": "The attacker adds their own spread-spectrum weight watermark, with their own key, post-hoc (P4.8)."
+      },
+      "source": {
+        "name": "dual",
+        "task": "P3.6",
+        "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+        "arch": {
+          "width": 32
+        }
+      },
+      "attacked": {
+        "arch": {
+          "width": 32
+        },
+        "info": {
+          "version": "overwrite/v1",
+          "variant": "weight",
+          "attacker": {
+            "label": "attacker-1",
+            "owner_id": "p4.8-attacker",
+            "key": "public demo key, SHA-256(\"zk-crown/p4.8/attacker-key/v1\\0\" || label); not the owner's K",
+            "owner_key_known": false
+          },
+          "source_state_sha256": "ef8a87d52f8e4283746e78f88c12dee30eb484a3191292e44046be3299d54140",
+          "weight": {
+            "alpha": 2.0,
+            "method": "post-hoc W + alpha' * P_K'^T * S' on the owner's carrier layout (P3.2)",
+            "embedding": {
+              "version": "weight-embedding/v1",
+              "alpha": 2.0,
+              "rows": 128,
+              "dim": 307040,
+              "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+              "delta_l2": 22.646724999539973,
+              "delta_rms": 0.04087030961709173,
+              "delta_max_abs": 0.1949064793578572,
+              "carrier_l2": 24.84097285268793,
+              "relative_l2": 0.9116681997053699,
+              "zero_fraction": 0.0701960656591975,
+              "float32_rounding_max_abs": 2.911364825608498e-08,
+              "tensors": [
+                {
+                  "name": "features.0.weight",
+                  "numel": 864,
+                  "delta_rms": 0.040753409994108196,
+                  "weight_rms": 0.19295629813907578,
+                  "relative_rms": 0.21120538892560348,
+                  "energy_share": 0.0027978912940438035,
+                  "zero_fraction": 0.0775462962962963
+                },
+                {
+                  "name": "features.3.weight",
+                  "numel": 9216,
+                  "delta_rms": 0.040148922369665524,
+                  "weight_rms": 0.07117114562528107,
+                  "relative_rms": 0.564117972486367,
+                  "energy_share": 0.028965393914177778,
+                  "zero_fraction": 0.07172309027777778
+                },
+                {
+                  "name": "features.7.weight",
+                  "numel": 18432,
+                  "delta_rms": 0.04128621278235165,
+                  "weight_rms": 0.06665837332363125,
+                  "relative_rms": 0.619370241483453,
+                  "energy_share": 0.061259259372154116,
+                  "zero_fraction": 0.07166883680555555
+                },
+                {
+                  "name": "features.10.weight",
+                  "numel": 36864,
+                  "delta_rms": 0.04073649688844814,
+                  "weight_rms": 0.05323699388996244,
+                  "relative_rms": 0.7651915315250134,
+                  "energy_share": 0.11927763053549409,
+                  "zero_fraction": 0.07014973958333333
+                },
+                {
+                  "name": "features.14.weight",
+                  "numel": 73728,
+                  "delta_rms": 0.04084739701453934,
+                  "weight_rms": 0.04488551376135587,
+                  "relative_rms": 0.910035189342243,
+                  "energy_share": 0.23985590407694574,
+                  "zero_fraction": 0.07012261284722222
+                },
+                {
+                  "name": "features.17.weight",
+                  "numel": 147456,
+                  "delta_rms": 0.04088736099596104,
+                  "weight_rms": 0.028811207185521256,
+                  "relative_rms": 1.4191477897013811,
+                  "energy_share": 0.4806509412922453,
+                  "zero_fraction": 0.07038709852430555
+                },
+                {
+                  "name": "classifier.2.weight",
+                  "numel": 20480,
+                  "delta_rms": 0.041020635092837716,
+                  "weight_rms": 0.06285171688700587,
+                  "relative_rms": 0.6526573516930996,
+                  "energy_share": 0.06719297951494956,
+                  "zero_fraction": 0.066845703125
+                }
+              ]
+            },
+            "attacker_before": {
+              "applicable": true,
+              "version": "weight-extraction/v1",
+              "rows": 128,
+              "dim": 307040,
+              "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+              "centered": true,
+              "correlation": 0.03950109582997753,
+              "amplitude": 0.0016990589236072315,
+              "projected_rms": 0.04301295667645273,
+              "bit_matches": 69,
+              "z": 0.4469038836108283,
+              "p_value_bound": 0.9049627099618155,
+              "p_value_bound_log10": -0.04336931603399319,
+              "p_value_floor": 1.603810890548638e-28,
+              "gaussian_tail_approximation": 0.32747222989861613,
+              "rejects": {
+                "0.05": false,
+                "0.01": false,
+                "1e-3": false,
+                "1e-6": false,
+                "1e-9": false
+              },
+              "detected": false
+            },
+            "attacker_after": {
+              "applicable": true,
+              "version": "weight-extraction/v1",
+              "rows": 128,
+              "dim": 307040,
+              "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+              "centered": true,
+              "correlation": 0.9995846109299967,
+              "amplitude": 2.0050218178807473,
+              "projected_rms": 2.005855028135446,
+              "bit_matches": 128,
+              "z": 11.30900890813308,
+              "p_value_bound": 1.691374245841299e-28,
+              "p_value_bound_log10": -27.77176028659456,
+              "p_value_floor": 1.603810890548638e-28,
+              "gaussian_tail_approximation": 5.9209778778854835e-30,
+              "rejects": {
+                "0.05": true,
+                "0.01": true,
+                "1e-3": true,
+                "1e-6": true,
+                "1e-9": true
+              },
+              "detected": true
+            }
+          },
+          "fine_tuned": false,
+          "bn_recalibrated": false
+        },
+        "applied_in": "run",
+        "scored_on": "state_dict loaded into main_model"
+      },
+      "clean_accuracy": {
+        "accuracy": 0.39,
+        "correct": 3900,
+        "n": 10000,
+        "loss": 5.694553149414062,
+        "source_accuracy": 0.9085,
+        "drop_vs_source_pp": 51.849999999999994,
+        "drop_ci95_pp": [
+          50.8101883072449,
+          52.889811692755096
+        ],
+        "source_only_right": 5344,
+        "attacked_only_right": 159,
+        "mcnemar_exact_p": 0.0
+      },
+      "behavioral": {
+        "n": 100,
+        "fired": 18,
+        "wdr": 0.18,
+        "predicted_base_label": 20,
+        "predicted_other_class": 62,
+        "target_probability_mean": 0.17533458769321442,
+        "target_probability_median": 0.0001420907792635262,
+        "target_probability_min": 2.958618159493165e-12,
+        "null_fire_bound": "1/9",
+        "null_expected_fired_bound": 11.11111111111111,
+        "p_value": 0.026650927147014454,
+        "p_value_log10": -1.5742876779008839,
+        "rejects": {
+          "0.05": true,
+          "0.01": false,
+          "1e-3": false,
+          "1e-6": false,
+          "1e-9": false
+        },
+        "detected": false
+      },
+      "weight": {
+        "applicable": true,
+        "version": "weight-extraction/v1",
+        "rows": 128,
+        "dim": 307040,
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8",
+        "centered": true,
+        "correlation": 0.8589195430636413,
+        "amplitude": 0.10042522774611828,
+        "projected_rms": 0.11692041304348026,
+        "bit_matches": 122,
+        "z": 9.717565334303226,
+        "p_value_bound": 3.1228590351717354e-21,
+        "p_value_bound_log10": -20.505447619237223,
+        "p_value_floor": 1.603810890548638e-28,
+        "gaussian_tail_approximation": 1.2688835003852763e-22,
+        "rejects": {
+          "0.05": true,
+          "0.01": true,
+          "1e-3": true,
+          "1e-6": true,
+          "1e-9": true
+        },
+        "detected": true
+      },
+      "owner": {
+        "owner_id": "blacktensor-zkcrown-owner",
+        "trigger_bundle_sha256": "fbd65ec730a3555c5921f13d1a5d4840b6310261ddcaf31d3a724195122baec8",
+        "carrier_digest": "0e9cb91b5fd1e26efd081620290a304afe714fb70b3449f293b25d68f765aff8"
+      }
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 170.11894669999947,
+  "notes": "One attack row. Behavioral and weight tests reported separately at alpha 1e-6; combining them is P9.3. p-values assume K was committed before the suspect was seen and a per-suspect correction when several models are audited. Aggregates only."
+}
