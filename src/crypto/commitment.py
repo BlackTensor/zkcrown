@@ -40,7 +40,7 @@ Why this layout:
   commitments to the same ``(K, S)`` unlinkable, and it hides `S` even from
   someone who could guess `K`-independent candidates for it.
 - **A domain element comes first.** It keeps this hash apart from every other
-  Poseidon use in the project (P6.1's trigger-set commitment, P7.9), so a
+  Poseidon use in the project (P7.9), so a
   value computed for one purpose can never be presented as another. In the
   circuit it is a hard-coded constant and costs no witness.
 

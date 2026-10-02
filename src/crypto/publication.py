@@ -123,7 +123,20 @@ def validate_publication(record: Any) -> None:
     if record["schema"] != PUBLICATION_SCHEMA:
         raise ValueError(f"unknown publication schema {record['schema']!r}")
 
-    c = record["commitment"]
+    check_commitment_fields(record["commitment"], record["commitment_scheme"])
+    check_fingerprint_fields(record["model_fingerprint"])
+    check_model_and_owner(record["model"], record["owner_id"])
+    check_created_utc(record["created_utc"])
+
+    if record["timestamp_status"] != TIMESTAMP_STATUS or record["private"] != PRIVATE_NOTE:
+        raise ValueError("the timestamp_status and private notes must be the standard text")
+
+
+# The field checks below are shared with the provenance record (P6.1), which carries the same values.
+
+
+def check_commitment_fields(c: Any, scheme: Any) -> None:
+    """Raise `ValueError` unless `c` and `scheme` are a well-formed ``commitment`` / ``commitment_scheme`` pair."""
     if not isinstance(c, dict) or set(c) != {"version", "decimal", "hex"}:
         raise ValueError("commitment must hold version, decimal and hex")
     if c["version"] != COMMITMENT_VERSION:
@@ -131,12 +144,12 @@ def validate_publication(record: Any) -> None:
     commitment = Commitment.from_decimal(c["decimal"])
     if c["hex"] != commitment.hex():
         raise ValueError("commitment decimal and hex disagree")
-
-    scheme = record["commitment_scheme"]
     if not isinstance(scheme, dict) or scheme.get("hash") != POSEIDON_INSTANCE or scheme.get("inputs") != list(INPUT_NAMES):
         raise ValueError("commitment_scheme does not describe this project's commitment")
 
-    f = record["model_fingerprint"]
+
+def check_fingerprint_fields(f: Any) -> None:
+    """Raise `ValueError` unless `f` is a well-formed ``model_fingerprint`` object."""
     if not isinstance(f, dict) or set(f) != {"sha256", "version", "tensors", "elements", "data_bytes"}:
         raise ValueError("model_fingerprint must hold sha256, version, tensors, elements and data_bytes")
     if f["version"] != FINGERPRINT_VERSION:
@@ -147,22 +160,24 @@ def validate_publication(record: Any) -> None:
         if isinstance(f[count], bool) or not isinstance(f[count], int) or f[count] < 1:
             raise ValueError(f"model_fingerprint.{count} must be a positive integer")
 
-    if not isinstance(record["model"], str) or not record["model"].strip():
-        raise ValueError("model must be a non-empty label")
-    if not isinstance(record["owner_id"], str):
-        raise ValueError("owner_id must be a string")
-    check_owner_id(record["owner_id"])
 
-    created = record["created_utc"]
+def check_model_and_owner(model: Any, owner_id: Any) -> None:
+    """Raise `ValueError` unless `model` is a non-empty label and `owner_id` a valid owner id."""
+    if not isinstance(model, str) or not model.strip():
+        raise ValueError("model must be a non-empty label")
+    if not isinstance(owner_id, str):
+        raise ValueError("owner_id must be a string")
+    check_owner_id(owner_id)
+
+
+def check_created_utc(created: Any) -> None:
+    """Raise `ValueError` unless `created` looks like ``2026-01-31T12:00:00+00:00`` and is a real time."""
     if not isinstance(created, str) or not _UTC.fullmatch(created):
         raise ValueError("created_utc must look like 2026-01-31T12:00:00+00:00")
     try:
         datetime.fromisoformat(created)
     except ValueError as error:
         raise ValueError(f"created_utc is not a real date and time: {created!r}") from error
-
-    if record["timestamp_status"] != TIMESTAMP_STATUS or record["private"] != PRIVATE_NOTE:
-        raise ValueError("the timestamp_status and private notes must be the standard text")
 
 
 def canonical_json(record: dict[str, Any]) -> bytes:

@@ -740,7 +740,25 @@ Each attack task must report, in one table row: attack strength, resulting clean
 
 ## Phase 6: Provenance record
 
-- [ ] **P6.1** Define the provenance record schema: owner, model fingerprint, watermark commitment, trigger set commitment, timestamp, signature.
+- [x] **P6.1** Define the provenance record schema: owner, model fingerprint, watermark commitment, trigger set commitment, timestamp, signature.
+  - `src/crypto/provenance.py`, schema `zk-crown/provenance-record/v1`, specified in the module docstring and tabulated in `src/crypto/README.md`. Fields:
+    - `owner`: the owner id, and the 32-byte Ed25519 public key that signs the record.
+    - `model`: a label and the P5.1 fingerprint.
+    - `watermark_commitment`: `C` and its scheme.
+    - `trigger_set_commitment`: scheme `sha256/trigger-bundle/v1`, the trigger bundle digest, and N.
+    - `commitment_publication`: path and SHA-256 of the P5.4 artifact the record was built from.
+    - `timestamp`: `created_utc` and a fixed "self-asserted" note.
+    - `private`: a fixed note on what is not in the file.
+    - `signature`: Ed25519, 64 bytes.
+  - Schema only. No keypair, no signature and no real record yet (P6.2); no verification (P6.3). `validate_record` checks shape: a record with 64 zero bytes as its signature passes it, and a test says so.
+  - My decisions, for the owner to confirm:
+    - **The trigger set commitment is the existing bundle digest (SHA-256), not a new Poseidon hash.** It names one exact trigger set and has been public since P2.3, so a hiding commitment on top would hide nothing. It has no nonce, and opening it means revealing the whole bundle. `commitment.py`'s docstring had expected a Poseidon trigger commitment here; that mention is removed.
+    - **The record is built from the publication record**, so `C`, the fingerprint, the model label and the owner id are copied, not re-entered.
+    - **The signature covers a domain tag plus the canonical JSON of the record without `signature`.** The public key is inside the signed bytes.
+    - **Ed25519**, named in the schema; any other algorithm is refused.
+  - Gap written into the schema's own text: the P5.5 timestamp covers the commitment publication, not this record. So the trigger set commitment and the signing key have no independent time evidence. The record could get its own OpenTimestamps proof once it exists; that is not in any task yet.
+  - Refactor: the field checks in `publication.py` are now public functions shared with the record. `validate_publication` behaves as before (its tests pass unchanged).
+  - 60 new tests, 993 in total. They include a pinned digest of the signed bytes, a fresh-process check, every signed field changing the signed bytes, and 34 malformed records that validation rejects. No ledger numbers.
 - [ ] **P6.2** Sign the record with a real keypair via the `cryptography` library.
 - [ ] **P6.3** Write the provenance verifier: signature valid, fingerprint matches, commitment well formed.
 - [ ] **P6.4** Simulate the full theft timeline end to end: publish commitment, hand model to "attacker", attacker modifies it, we audit. Script it as `experiments/theft_simulation.py`.
@@ -2205,6 +2223,7 @@ Ideas that are explicitly not in scope right now. Add here instead of expanding 
   - Possible fix: the owner holds `W*`. Pruning alone leaves kept weights unchanged, so surviving filters could be matched back to their original positions and zeros re-inserted. After fine-tuning the kept weights have moved, so matching would have to be by similarity, not equality.
   - Not built, not measured. P9 must either implement and measure it, or state in the verdict that the weight test is not applicable to structurally pruned suspects.
 - Fusion raised the weight correlation (P4.4): conv-BN fusion moved the dual `W*` blind weight correlation from 0.909 to 0.943 (z 10.29 → 10.67), even though it changed the carrier by 153% of its norm. Unexplained, one model only; revisit if it recurs in later attacks.
+- Per-trigger trigger set commitment (P6.1): the record commits to the trigger set with one SHA-256 digest over the whole bundle, so showing that any one trigger belongs to the set means revealing all 100. A Merkle root over per-trigger leaves would let the owner reveal or prove single triggers (useful for P8's single-trigger proof and for audits that should not burn the whole set). It would be a new scheme version in the record. Not built.
 - Poseidon permutation reference vector (P5.2): the t = 3 permutation vector on `[0, 1, 2]` was entered from recall and has single-source confirmation only (it matches our code). If revisited, re-fetch it from its source, or have circomlibjs output the full permutation state directly. Its source is the Poseidon authors' reference repository, not circomlibjs.
 
 ---
@@ -2405,3 +2424,4 @@ Append one line per session: date, tasks touched, key outcome.
   - Listing GPG keys the first time created the empty `~/.gnupg` directory, before the owner had answered; harmless, noted for completeness.
   - 19 new tests.
 - 2026-10-03: Owner backed up the GPG key directory and will return to P5.5's upgrade step later; P5.5 stays `[~]`. P5.6. `src/crypto/opening.py`: the non-ZK verifier, with three checks (publication well formed, `C` matches, `S` derives from `K` for the published owner id). Code committed first (`73a4086`), then the self-check run from that clean tree on the real artifact: true opening accepted, 2,635 wrong openings and 2 tampered publications rejected, 3.2 ms per verification. The opening stayed in memory and was disclosed to nobody. A real opening reveals 79 secret bytes including all of `K`, the comparison point for P7. 23 new tests, 933 in total, all pass.
+- 2026-10-03: P6.1. `src/crypto/provenance.py` defines the provenance record schema `zk-crown/provenance-record/v1`: owner id and Ed25519 public key, model fingerprint, watermark commitment `C`, trigger set commitment (the SHA-256 bundle digest), a reference to the commitment publication by hash, a self-asserted timestamp, and the signature. It fixes the canonical bytes and the exact bytes a signature covers. Nothing is signed, written or verified (P6.2, P6.3). Decision to confirm: the trigger set commitment reuses the bundle digest rather than a new Poseidon hash. Noted gap: the P5.5 timestamp does not cover this record. `publication.py`'s field checks were made shared, behaviour unchanged. Two of my own test bugs fixed (a test signature that contained the test `S` bytes; a byte search that matched the word "signature" in the private note). Icebox line added for a per-trigger Merkle commitment. 60 new tests, 993 in total.
