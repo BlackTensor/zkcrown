@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "name": "p4.7_apply_distill_holdout5k-T4-lr0.1_16",
+  "task": "P4.7",
+  "timestamp_utc": "2026-10-02T12:17:42+00:00",
+  "git": {
+    "commit": "4b19e6aa93e7014e1f76856fe94685250d5c3317",
+    "branch": "master",
+    "dirty": false,
+    "available": false,
+    "source": "handoff"
+  },
+  "seed": 1337,
+  "seeded_backends": {
+    "python": true,
+    "numpy": true,
+    "torch": true,
+    "cuda": true
+  },
+  "params": {
+    "kind": "attack-apply/v1",
+    "config": {
+      "attack": "distill",
+      "strength": 16.0,
+      "params": {
+        "transfer": "holdout5k",
+        "temperature": 4.0,
+        "init_seed": 20260915,
+        "epochs": 60,
+        "lr": 0.1,
+        "weight_decay": 0.0005,
+        "momentum": 0.9,
+        "batch_size": 128,
+        "warmup_epochs": 1.0,
+        "augment": true
+      },
+      "tag": "holdout5k-T4-lr0.1"
+    },
+    "attack": {
+      "name": "distill",
+      "strength_meaning": "student main_model width, trained from a fresh init on the teacher's soft outputs",
+      "description": "Knowledge distillation from the stolen model into a new student on the attacker's images, no labels, no key, no triggers (P4.7)."
+    },
+    "source": {
+      "name": "dual",
+      "task": "P3.6",
+      "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+      "arch": {
+        "width": 32
+      }
+    },
+    "device": "cuda",
+    "key_used": false,
+    "smoke": false,
+    "gpu": "Tesla T4"
+  },
+  "metrics": {
+    "weights_file": "p4.7_distill_holdout5k-T4-lr0.1_16__seed1337.pt",
+    "weights_sha256": "8e93cfd976975a005c20b95ee68badc74d3af401c16c87234a85e13c4f3e2a73",
+    "arch": {
+      "width": 16
+    },
+    "info": {
+      "version": "distill/v1",
+      "teacher": {
+        "source_state_sha256": "ef8a87d52f8e4283746e78f88c12dee30eb484a3191292e44046be3299d54140",
+        "mode": "eval (no dropout, BatchNorm running statistics), frozen",
+        "outputs_used": "logits softened at temperature 4",
+        "training_queries_planned": 300000,
+        "queries_this_session": 605000
+      },
+      "transfer": {
+        "name": "holdout5k",
+        "description": "attacker holdout, 5,000 CIFAR-10 train images (the P4.5/P4.6 data)",
+        "images": 5000,
+        "labels_used": false,
+        "augmented_before_querying": true
+      },
+      "student": {
+        "width": 16,
+        "params": 82554,
+        "init_seed": 20260915,
+        "init_state_sha256": "06820d35edb7793e33d10b858396bccec464167da6655cbaf7d212a2bcb34c77",
+        "initialisation": "fresh main_model init, not the teacher's weights"
+      },
+      "loss": "T^2 * KL(teacher_T || student_T), batch mean; no ground-truth term",
+      "temperature": 4.0,
+      "recipe": {
+        "weight_decay": 0.0005,
+        "momentum": 0.9,
+        "batch_size": 128,
+        "warmup_epochs": 1.0,
+        "augment": true,
+        "lr": 0.1,
+        "epochs": 60,
+        "optimizer": "SGD nesterov",
+        "schedule": "linear warmup then cosine to 0 over the run"
+      },
+      "monitor": "top-1 agreement with the teacher on the un-augmented attacker holdout (part of the transfer set)",
+      "steps": 2400,
+      "first_epoch": {
+        "epoch": 0,
+        "lr": 0.1,
+        "train_loss": 16.803536462402345,
+        "train_teacher_agreement": 0.2394,
+        "holdout_teacher_agreement": 0.1816
+      },
+      "last_epoch": {
+        "epoch": 59,
+        "lr": 6.852326227130838e-05,
+        "train_loss": 4.756280319213867,
+        "train_teacher_agreement": 0.7172,
+        "holdout_teacher_agreement": 0.753
+      },
+      "final_holdout_teacher_agreement": 0.753,
+      "wall_seconds_this_session": 196.42,
+      "epoch_seconds_total": 192.46,
+      "device": "cuda",
+      "selection": "final epoch, no selection"
+    }
+  },
+  "environment": {
+    "python": "3.13.15",
+    "platform": "Linux-6.6.122+-x86_64-with-glibc2.39",
+    "torch": "2.11.0+cu130",
+    "numpy": "2.1.3",
+    "accelerator": "Tesla T4",
+    "cuda": "13.0",
+    "system_ram_gb": 12.67
+  },
+  "duration_seconds": 197.52700146099994,
+  "notes": "Attacked weights only, not scored. Score locally with run_attack_suite.py evaluate."
+}
