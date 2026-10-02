@@ -700,7 +700,26 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - Nothing in the file links `C` to the fingerprint except that they are published together.
     - The artifact is committed locally and has not been pushed or posted anywhere.
   - 36 new tests, 891 in total, all pass. They include the script's create, refuse, check cycle on a test key, a check that fails under another nonce, and 20 malformed records that validation rejects.
-- [ ] **P5.5** Timestamp it for real: GPG signed git tag, plus OpenTimestamps if it cooperates. This is what makes "I committed before the dispute" meaningful.
+- [~] **P5.5** Timestamp it for real: GPG signed git tag, plus OpenTimestamps if it cooperates. This is what makes "I committed before the dispute" meaningful.
+  - **Status: the signed tag is done. The OpenTimestamps proof is submitted and still pending Bitcoin confirmation, so there is no independent time evidence yet.** To finish: run `python experiments/p5_5_timestamp.py upgrade` until it merges a Bitcoin attestation, check that block's Merkle root against the chain, re-run `record`, then tick this box.
+  - **Owner decisions:** I create the GPG key (no passphrase, since I cannot type one), and the artifact's hash is submitted to the public OpenTimestamps calendars.
+  - **What each mechanism is evidence of** (`src/crypto/timestamping.py`):
+    - The GPG tag shows who vouched for the commit. Its date is the signer's own clock, so alone it is not time evidence. It would become so only through a third party, such as a host recording the push. This repo has no remote.
+    - OpenTimestamps is the time evidence, but only once the proof carries a Bitcoin attestation that has been checked against the chain. A pending proof holds the calendars' promises only.
+  - **GPG key:** Ed25519, sign-only, no expiry, no passphrase, user id `blacktensor-zkcrown-owner <shayanx13@gmail.com>`, fingerprint `C7301BA7D92FC2A65257BFC2A759F8EC04BF66E7`. The private key is in `~/.gnupg` on this machine and **needs a backup**; a revocation certificate is in `~/.gnupg/openpgp-revocs.d/`. The public key is committed at `provenance/owner_signing_key.asc`.
+  - **Signed tag:** `provenance-commitment-v1`, annotated, on commit `4372159`, which holds the artifact, the proof and the public key. Local only.
+  - **OpenTimestamps:** the `ots` command line client does not start on this machine (its `python-bitcoinlib` dependency fails to load OpenSSL at import). The `opentimestamps` library underneath works, so stamping was done with it, following the reference client: a 16-byte nonce is appended and hashed, so the calendars never see the file's own hash. All 3 default calendars accepted. Proof: `provenance/commitment.json.ots`, 619 bytes, standard format.
+  - **Recorded** (`experiments/p5_5_timestamp.py record`, offline, clean tree at `4372159`). All of these checks passed:
+    - The artifact is canonical and has P5.4's SHA-256 `cbdd82d9…fb9f231c`.
+    - The proof is for exactly that SHA-256.
+    - The tag has a good signature from the expected fingerprint.
+    - The tagged commit holds byte-identical artifact, proof and public key files.
+    - The committed public key file is the key that signed.
+    - Reported: proof status **pending**, 3 calendars, 0 Bitcoin attestations.
+  - An `upgrade` attempt after the record still returned "pending confirmation in Bitcoin blockchain" from all 3 calendars.
+  - Not built yet: the check of a Bitcoin attestation against the chain. `describe_proof` reports the block height and the Merkle root the header must have, and labels the status "unverified". The check will be written when there is an attestation to test it on.
+  - After an upgrade the proof file changes, so the tag will hold the older, pending proof. The record reports that as `proof_in_tag_is_current`. The upgraded proof still covers the same artifact hash.
+  - 19 new tests, 910 in total, all pass. They use a fake calendar, with no network and no real key, and cover refusal to replace a proof, the two-calendar minimum, the whitelist on upgrade, and 7 signature outputs that must not count as good.
 - [ ] **P5.6** Write the verifier that checks a revealed secret against a published commitment (the non-ZK baseline, so the ZK version has something to be compared against).
 
 ## Phase 6: Provenance record
@@ -2093,7 +2112,12 @@ against this code yet (P7.3).
 | `created_utc` (self-asserted) | 2026-10-02T18:05:06+00:00 |
 | Artifact | `provenance/commitment.json`, 1,215 bytes |
 | Artifact SHA-256 | `cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c` |
-| Independent timestamp | TBD (P5.5) |
+| Independent timestamp | TBD: OpenTimestamps proof submitted 2026-10-02, pending Bitcoin confirmation (P5.5) |
+| OpenTimestamps proof | `provenance/commitment.json.ots`, 619 bytes, SHA-256 `69b9adbb52a997a064cf3276b1819aa8e38613d117cb825e430f07f6781a58e7` (pending form) |
+| Calendars that accepted the digest | 3 of 3 (`a.pool.opentimestamps.org`, `b.pool.opentimestamps.org`, `a.pool.eternitywall.com`) |
+| Bitcoin block of the attestation | TBD |
+| Owner signing key (GPG, Ed25519) | `C7301BA7D92FC2A65257BFC2A759F8EC04BF66E7`, public key in `provenance/owner_signing_key.asc` |
+| Signed tag | `provenance-commitment-v1` on commit `4372159`, good signature; date is the signer's clock; not pushed |
 
 From `experiments/p5_4_publish_commitment.py` (P5.4), result file
 `results/p5.4_commitment_publication__seed1337__20261002T180506+0000.json`,
@@ -2106,6 +2130,18 @@ appear in it. That is the owner checking their own file, not an opening shown
 to anyone. The time is the local machine's clock and is not yet backed by an
 independent timestamp. The artifact is unsigned and has not been pushed or
 posted anywhere.
+
+Timestamp rows from `experiments/p5_5_timestamp.py record` (P5.5), result
+file `results/p5.5_timestamp__seed1337__20261002T181949+0000.json`, commit
+`4372159`, clean tree, run offline. The proof was created with the
+`opentimestamps` library, because the `ots` command line client does not start
+on this machine. The proof's digest equals the artifact's SHA-256, and the
+tagged commit holds byte-identical copies of the artifact, the proof and the
+public key. The proof is pending: it holds three calendars' promises and no
+Bitcoin attestation, so it is not yet evidence of time. The tag's signature
+is good, and its date (2026-10-02, the signer's clock) is self-asserted. P5.5
+stays `[~]` until the proof is upgraded and its Bitcoin attestation is checked
+against the chain.
 
 ---
 
@@ -2320,3 +2356,11 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-02: Owner confirmed the P5.1 defaults (buffers included, bit-exact). P5.2. `src/crypto/poseidon.py`: stdlib Poseidon over BN254 with circomlib's instance, constants generated by a re-implemented Grain LFSR. Reference vectors made with circomlibjs 0.1.7 under Node in a scratch directory and committed to `tests/data/`. Code committed first (`e5ed9d9`), then validated from that clean tree: 128 of 128 vectors, all 10,854 round constants and 16 MDS matrices, and four published vectors match, on the first run. The published vectors were entered from recall. The circom template itself is not run until P7.3. One test bug fixed (my planted wrong round count equalled the real one for t = 3). 52 new tests, 829 in total, all pass.
 - 2026-10-02: Owner confirmed the P5.2 decisions; Icebox line added for the permutation reference vector. P5.3. `src/crypto/commitment.py`: `C = Poseidon(DOMAIN, K_hi, K_lo, S, nonce)`, with `K` split into two 128-bit limbs, a 31-byte nonce and a domain element first. Layout documented in the module and `src/crypto/README.md`. A circomlibjs vector from public demo values, with the byte slicing redone in JavaScript, matches the Python layout and `C`. The real nonce and `C` are left to P5.4. 26 new tests, 855 in total, all pass.
 - 2026-10-02: P5.4. `src/crypto/publication.py` defines the publication artifact with canonical bytes, write-once semantics and strict validation. Code committed first (`12b5998`), then `experiments/p5_4_publish_commitment.py` run from that clean tree: it created the real commitment nonce in `secrets/` (gitignored, needs backup with `K`), computed `C`, and wrote `provenance/commitment.json` with the dual `W*` fingerprint, the owner id and a self-asserted UTC time. Artifact SHA-256 `cbdd82d9…fb9f231c`; read-back and a later `--check` agree. `.gitattributes` added so git keeps the artifact's bytes. New ledger section 8.6. Not pushed or posted; independent timestamp is P5.5. 36 new tests, 891 in total, all pass.
+- 2026-10-02: Owner backed up the nonce and confirmed the P5.4 decisions. P5.5 PARTLY DONE, checkbox `[~]`.
+  - Owner decisions: I create the GPG key without a passphrase; submit the artifact hash to OpenTimestamps.
+  - Created an Ed25519 signing key (`C7301BA7…04BF66E7`) in `~/.gnupg`; public key committed under `provenance/`.
+  - The `ots` CLI fails at import on this machine (OpenSSL loading in `python-bitcoinlib`), so `src/crypto/timestamping.py` stamps with the `opentimestamps` library. 3 of 3 calendars accepted; proof is pending.
+  - Committed (`4372159`), then created the signed tag `provenance-commitment-v1` on that commit and ran `record` from the clean tree: good signature, proof bound to the artifact hash, tagged files byte-identical.
+  - An `upgrade` attempt afterwards was still "pending confirmation in Bitcoin blockchain". Remaining: upgrade, check the Bitcoin attestation against the chain, re-record, tick.
+  - Listing GPG keys the first time created the empty `~/.gnupg` directory, before the owner had answered; harmless, noted for completeness.
+  - 19 new tests.

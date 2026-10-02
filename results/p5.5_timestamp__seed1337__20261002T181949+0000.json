@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "name": "p5.5_timestamp",
+  "task": "P5.5",
+  "timestamp_utc": "2026-10-02T18:19:49+00:00",
+  "git": {
+    "commit": "4372159765455ac0625e5353c442b44ab1656c92",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "artifact": "provenance/commitment.json",
+    "p5_4_reference": "results/p5.4_commitment_publication__seed1337__20261002T180506+0000.json",
+    "tag": "provenance-commitment-v1",
+    "calendars_submitted_to": [
+      "https://a.pool.opentimestamps.org",
+      "https://b.pool.opentimestamps.org",
+      "https://a.pool.eternitywall.com"
+    ],
+    "ots_client": "opentimestamps library (the ots CLI does not start on this machine)",
+    "bitcoin_attestation_checked_against_chain": false
+  },
+  "metrics": {
+    "artifact_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+    "artifact_created_utc_self_asserted": "2026-10-02T18:05:06+00:00",
+    "opentimestamps": {
+      "hash_op": "OpSHA256",
+      "file_digest": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+      "matches_file": true,
+      "pending_calendars": [
+        "https://alice.btc.calendar.opentimestamps.org",
+        "https://bob.btc.calendar.opentimestamps.org",
+        "https://finney.calendar.eternitywall.com"
+      ],
+      "bitcoin_attestations": [],
+      "other_attestations": [],
+      "status": "pending",
+      "ots_sha256": "69b9adbb52a997a064cf3276b1819aa8e38613d117cb825e430f07f6781a58e7",
+      "ots_bytes": 619,
+      "proof_path": "provenance/commitment.json.ots",
+      "independent_time_evidence": false,
+      "proof_in_tag_is_current": true
+    },
+    "gpg_tag": {
+      "good": true,
+      "fingerprint": "C7301BA7D92FC2A65257BFC2A759F8EC04BF66E7",
+      "signed_date": "2026-10-02",
+      "signed_unix": 1790965185,
+      "tag": "provenance-commitment-v1",
+      "verify_exit_code": 0,
+      "object_type": "tag",
+      "commit": "4372159765455ac0625e5353c442b44ab1656c92",
+      "expected_fingerprint": "C7301BA7D92FC2A65257BFC2A759F8EC04BF66E7",
+      "tagged_commit_holds_artifact": true,
+      "tagged_commit_holds_public_key": true,
+      "public_key_path": "provenance/owner_signing_key.asc",
+      "public_key_file_fingerprint": "C7301BA7D92FC2A65257BFC2A759F8EC04BF66E7",
+      "signature_time_is_self_asserted": true,
+      "pushed_to_a_third_party": false
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 1.1030541999998604,
+  "notes": "The GPG tag shows who vouched for the commit; its date is the signer's clock. The OpenTimestamps proof is time evidence only once it carries a Bitcoin attestation that has been checked against the chain. A pending proof holds calendar promises only."
+}
