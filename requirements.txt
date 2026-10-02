@@ -18,6 +18,9 @@ onnxruntime
 # --- Cryptography ------------------------------------------------------------
 # hashlib is stdlib. `cryptography` provides the provenance-record keypair.
 cryptography
+# OpenTimestamps proofs for provenance/ (P5.5). The library, not the `ots` CLI:
+# the CLI's python-bitcoinlib dependency fails to load OpenSSL on Windows.
+opentimestamps
 
 # --- Zero-knowledge, Track B (zkML) ------------------------------------------
 # Track A (circom / snarkjs / circomlib) is npm-installed, not pip. See P7.2.
