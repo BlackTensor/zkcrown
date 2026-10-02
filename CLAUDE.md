@@ -720,7 +720,23 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - Not built yet: the check of a Bitcoin attestation against the chain. `describe_proof` reports the block height and the Merkle root the header must have, and labels the status "unverified". The check will be written when there is an attestation to test it on.
   - After an upgrade the proof file changes, so the tag will hold the older, pending proof. The record reports that as `proof_in_tag_is_current`. The upgraded proof still covers the same artifact hash.
   - 19 new tests, 910 in total, all pass. They use a fake calendar, with no network and no real key, and cover refusal to replace a proof, the two-calendar minimum, the whitelist on upgrade, and 7 signature outputs that must not count as good.
-- [ ] **P5.6** Write the verifier that checks a revealed secret against a published commitment (the non-ZK baseline, so the ZK version has something to be compared against).
+- [x] **P5.6** Write the verifier that checks a revealed secret against a published commitment (the non-ZK baseline, so the ZK version has something to be compared against).
+  - `src/crypto/opening.py`: `verify_opening(publication, Opening(K, S, nonce))` returns a verdict with three checks, and is valid only if all hold:
+    - `publication_well_formed`: the record passes P5.4's validation.
+    - `commitment_matches`: the P5.3 hash of the opening equals the published `C`.
+    - `signature_derives_from_key`: `S` is what `K` gives for the published owner id (P2.1).
+  - Decisions:
+    - **The third check goes beyond the task's wording.** The commitment binds `S` only as an opaque value. Without this check, someone could republish the same `C` under another owner id and the opening would still fit. It is possible only because `K` is revealed.
+    - **A mismatch is a verdict, not an exception.** Malformed openings (wrong lengths or types) raise.
+    - **The verifier takes only the artifact and the opening.** It reads nothing under `secrets/` and needs no model. The script's `--opening file.json` mode is what a third party would run.
+  - **What an opening costs** (written in the module): the verifier ends up holding `K`, 79 secret bytes in all (32 + 16 + 31). From `K` they can derive every trigger, target and `P_K`, so after a real opening the key is burned. That is the comparison point for P7 and P9.6.
+  - **Self-check** (`experiments/p5_6_verify_opening.py`, CPU, 9 s, clean tree at `73a4086`), against the real artifact (SHA-256 equal to P5.4's), with the opening held in memory only:
+    - **The true opening is accepted.**
+    - **2,635 wrong openings tried, 0 accepted:** all 632 single-bit flips of `K`, `S` and the nonce; `K`'s halves swapped; `S` and the nonce zeroed; and 1,000 public wrong keys, each with the true `S` and with its own correctly derived `S`.
+    - **Two tampered publications rejected with the true opening:** `C` changed by one; and the owner id changed, which leaves `C` matching and fails the derivation check.
+    - One verification takes 3.2 ms on the local CPU, pure Python.
+  - Limits: nothing was disclosed to anyone; this is the owner checking their own artifact. Rejection is checked on the listed cases, not proved; binding rests on Poseidon's collision resistance. A valid opening says nothing about when `C` was published (P5.5), who the opener is, or any model.
+  - 23 new tests, 933 in total, all pass. They include a planted verifier that accepts everything, which the self-check catches.
 
 ## Phase 6: Provenance record
 
@@ -2143,6 +2159,30 @@ is good, and its date (2026-10-02, the signer's clock) is self-asserted. P5.5
 stays `[~]` until the proof is upgraded and its Bitcoin attestation is checked
 against the chain.
 
+Non-ZK opening baseline from `experiments/p5_6_verify_opening.py` (P5.6),
+result file
+`results/p5.6_opening_verifier__seed1337__20261002T183741+0000.json`, CPU,
+seed 1337, commit `73a4086`, clean tree. The verifier is
+`src/crypto/opening.py`. The opening was built in memory from `secrets/` and
+shown to nobody.
+
+| Check | Result |
+|---|---|
+| True opening against `provenance/commitment.json` | accepted: `C` matches, and `S` derives from `K` for the published owner id |
+| Wrong openings | 2,635 tried, 0 accepted |
+| of which single-bit flips of `K` / `S` / nonce | 256 / 128 / 248 |
+| of which public wrong keys, with the true `S` / with their own derived `S` | 1,000 / 1,000 |
+| of which `K` halves swapped, `S` zeroed, nonce zeroed | 3 |
+| Publication with `C` changed by one, true opening | rejected |
+| Publication with the owner id changed, true opening | rejected (`C` still matches; the signature derivation fails) |
+| Time per verification, local CPU, pure Python | 3.2 ms |
+| Secret bytes a real opening reveals to the verifier | 79 (all of `K`, `S` and the nonce) |
+
+The 0-of-2,635 figure is a check on the listed cases, not a proof and not a
+rate; binding rests on Poseidon's collision resistance. The last row is the
+point of comparison for Track A (P7): a ZK proof of the same statement is
+meant to reveal none of those bytes. That is not measured yet.
+
 ---
 
 # 9. ICEBOX
@@ -2364,3 +2404,4 @@ Append one line per session: date, tasks touched, key outcome.
   - An `upgrade` attempt afterwards was still "pending confirmation in Bitcoin blockchain". Remaining: upgrade, check the Bitcoin attestation against the chain, re-record, tick.
   - Listing GPG keys the first time created the empty `~/.gnupg` directory, before the owner had answered; harmless, noted for completeness.
   - 19 new tests.
+- 2026-10-03: Owner backed up the GPG key directory and will return to P5.5's upgrade step later; P5.5 stays `[~]`. P5.6. `src/crypto/opening.py`: the non-ZK verifier, with three checks (publication well formed, `C` matches, `S` derives from `K` for the published owner id). Code committed first (`73a4086`), then the self-check run from that clean tree on the real artifact: true opening accepted, 2,635 wrong openings and 2 tampered publications rejected, 3.2 ms per verification. The opening stayed in memory and was disclosed to nobody. A real opening reveals 79 secret bytes including all of `K`, the comparison point for P7. 23 new tests, 933 in total, all pass.

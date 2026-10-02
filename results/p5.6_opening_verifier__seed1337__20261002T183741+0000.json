@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "name": "p5.6_opening_verifier",
+  "task": "P5.6",
+  "timestamp_utc": "2026-10-02T18:37:41+00:00",
+  "git": {
+    "commit": "73a408694c3694b58c2cecfe3819eb1d7b0539b4",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "artifact": "provenance/commitment.json",
+    "p5_4_reference": "results/p5.4_commitment_publication__seed1337__20261002T180506+0000.json",
+    "checks": [
+      "publication_well_formed",
+      "commitment_matches",
+      "signature_derives_from_key"
+    ],
+    "wrong_key_family": "SHA-256('zk-crown/p5.6/wrong-key/v1' || u64 seed || u64 j), public",
+    "n_wrong_keys": 1000,
+    "timing_repeats": 50,
+    "device": "cpu"
+  },
+  "metrics": {
+    "artifact_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+    "true_opening": {
+      "valid": true,
+      "publication_well_formed": true,
+      "commitment_matches": true,
+      "signature_derives_from_key": true,
+      "published_commitment": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+      "owner_id": "blacktensor-zkcrown-owner",
+      "problem": null,
+      "secret_bytes_revealed_to_verifier": 79
+    },
+    "wrong_openings_tried": 2635,
+    "wrong_openings_accepted": 0,
+    "wrong_openings_rejected_by_kind": {
+      "key_bit_flip": 256,
+      "signature_bit_flip": 128,
+      "nonce_bit_flip": 248,
+      "key_halves_swapped": 1,
+      "signature_zero": 1,
+      "nonce_zero": 1,
+      "wrong_key_true_signature": 1000,
+      "wrong_key_own_signature": 1000
+    },
+    "tampered_publications": {
+      "commitment_changed": {
+        "valid": false,
+        "commitment_matches": false
+      },
+      "owner_id_changed": {
+        "valid": false,
+        "commitment_matches": true,
+        "signature_derives_from_key": false
+      }
+    },
+    "seconds_per_verification": 0.003173964000015985,
+    "secret_bytes_revealed_by_an_opening": 79,
+    "opening_disclosed_to_anyone": false
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 8.601583000000574,
+  "notes": "Owner self-check with the opening held in memory only; nothing was disclosed. A real non-ZK opening hands the verifier K. Rejection of wrong openings is checked on the listed cases, not proved here; binding rests on Poseidon's collision resistance."
+}
