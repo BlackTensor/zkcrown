@@ -567,8 +567,8 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - **Memorisation check:** agreement with the teacher on the holdout (part of the transfer set) is 75.3–94.5%. It is a fit figure, not test accuracy.
   - Limits: one run per cell, one seed, one teacher and one key. One temperature, soft outputs only (no label-only API). 60 × the set size teacher queries, with no query budget. GPU training is not bit-reproducible.
   - No code changed; 721 tests pass.
-- [~] **P4.8** `[GPU]` Overwrite attack: an adversary embeds their own watermark with their own key. Does ours still extract?
-  - In progress: the two training variants are handed off to Colab and not yet run. Not ticked until they return.
+- [x] **P4.8** `[GPU]` Overwrite attack: an adversary embeds their own watermark with their own key. Does ours still extract?
+  - **Result: the owner's weight watermark extracts after every overwrite (11 of 11 rows, lowest z 9.49). The owner's behavioral watermark is lost in 3 rows:** weight overwrite at alpha' 2.0 (39.0% accuracy) and both training variants at LR 0.05 (85.8–86.0%). The LR 0.05 loss matches plain fine-tuning at that rate (P4.5: 8/100), so it is not attributed to the overwrite. The attacker ends up with detectable watermarks of their own in every row.
   - **Owner decisions:**
     - Three variants, all from the dual `W*`: weight overwrite, behavioral overwrite, and both.
     - Weight overwrite: alpha' = 0.1, 0.2, 0.5, 1.0, 2.0, post-hoc. No training, so it runs on local CPU.
@@ -587,7 +587,28 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - Owner's weight z: 10.28, 10.28, 10.24, 10.13, 9.72 (unattacked 10.29).
     - Attacker's own weight z afterwards: 10.43, 11.07, 11.27, 11.30, 11.31 (0.45 before).
   - **Reading so far:** a weight overwrite with another key does not remove the owner's weight watermark. It is detected at 1e-6 at every alpha', even at 20 times the owner's strength, where the model is at 39.0%. The behavioral watermark is detected up to alpha' = 1.0 and lost at 2.0 (18 fired), only after accuracy has collapsed. The attacker's watermark is detected too, in every row, so the model carries two valid claims. Which came first is a question for the P5 commitment, not for these tests.
-  - Limits: one attacker key, one embedding per point, no BN recalibration. The training variants are not measured yet.
+  - **Training variants, run:** 6 Colab `apply` runs, T4, commit `8c21701`, clean tree, torch 2.11.0+cu130. 416 s of fine-tuning in total, 3.4–3.5 s per epoch.
+  - **Verified before scoring** (independent scratch check, all passed):
+    - Configs equal the committed configs. Source hash and source-state digest equal the dual `W*`. Not smoke, key unused.
+    - Weights hashes match, strict load, finite values, every carrier tensor changed.
+    - 5,000 images, 800 steps, epoch indices 0–19, final-epoch weights.
+    - **The attacker's trigger bundle digest `74af53a8…57b7f14` equals a local rebuild** from the public attacker key.
+    - **The attacker's own tests reproduce locally on the returned weights:** fired counts exactly, and the weight z of the three `both` models to 1e-6.
+    - The `both` runs record the same first- and last-epoch holdout figures as the matching behavioral runs. So each `both` model is the same fine-tuning plus the weight embedding, not an independent training run.
+  - **Scoring:** apply records committed (`ea7ff6e`), then all 6 scored locally with `evaluate` from that clean tree.
+  - **Behavioral overwrite, LR 0.001 / 0.01 / 0.05:**
+    - Test accuracy: 90.39, 89.16, 86.03% (drops +0.46, +1.69, +4.82 pp).
+    - Owner's triggers fired: 98, 70, 12. Detected at 1e-6 at the first two; 12 is p = 0.43, no rejection at any level.
+    - Owner's weight z: 10.28, 10.18, 9.50.
+    - Attacker's own triggers fired afterwards: 52, 100, 100 (8 before).
+  - **Both, LR 0.001 / 0.01 / 0.05, then alpha' 0.1:**
+    - Test accuracy: 90.10, 88.83, 85.83% (drops +0.75, +2.02, +5.02 pp).
+    - Owner's triggers fired: 95, 68, 8. Detected at the first two; 8 is p = 0.88.
+    - Owner's weight z: 10.27, 10.18, 9.49.
+    - Attacker's own: triggers 50, 100, 100; weight z 10.43, 10.38, 10.20.
+  - **Against P4.5 at the same LR and 20 epochs, without overwriting** (fired 100 / 46 / 8, z 10.27 / 10.22 / 9.66, test 90.49 / 89.05 / 86.06%): adding the attacker's triggers did not remove more of the owner's watermark than fine-tuning alone. At LR 0.01 more owner triggers survived (70 against 46). That is one run each with no test between them, so no claim about direction.
+  - Limits: one attacker key, one run or embedding per point, one seed, 5,000 attacker images, 20 epochs. GPU training is not bit-reproducible. No BN recalibration in the weight variant.
+  - No code changed since the handoff; 738 tests.
 - [ ] **P4.9** Produce the master robustness table and heatmap figure across all attacks.
 - [ ] **P4.10** Write `results/ATTACK_FINDINGS.md`: what survived, what did not, and which watermark is stronger under which attack. Blunt and quantitative.
   - Flagged by the owner (P4.7), to lead the findings as the headline limitation: neither the trigger watermark nor the weight watermark survives architecture-independent distillation when the attacker has enough query data. With all 50,000 train images both were removed at 90.67% test accuracy (drop +0.18 pp, not distinguishable from zero). Keep the two qualifiers: that set includes the owner's 45,000 training images, and P4.6 had already removed both in 3 channel-pruning runs, but at a cost of 9.9 to 12.3 pp.
@@ -1164,8 +1185,9 @@ the behavioral one is P9.
 | Fine-tune on 5,000-image attacker holdout (P4.5) | LR 0.001–0.1 × 5/20/60 epochs (12 runs) | 90.48% (LR 0.001, 5 ep) → 86.06% (0.05, 20) → 83.36% (0.1, 60) | 100% at LR 0.001; 62% → 30% at 0.01; 4–11% at 0.05 and 0.1 | +0.909 → +0.890 (0.01, 60) → +0.573 (0.1, 60), z ≥ 6.49 | behavioral removed at LR ≥ 0.05 (every length, acc ≤ 86.1%); weight detected in all 12 |
 | Prune (fixed mask) + fine-tune on attacker holdout (P4.6) | global 50/70/90%, channel 10/30/50% × LR 0.01/0.05/0.1 for 20 ep, + LR 0.1 for 60 ep (24 runs) | 89.10% (global 50%, LR 0.01) → 84.61% (global 90%, 0.01) → 78.51% (channel 50%, 0.1, 20 ep) | 59% at global 50% LR 0.01; 24% and 19% in two LR 0.01 runs; 4–11% in the other 21 | +0.889 → +0.583 (global 90%, 0.1, 60 ep) → +0.170 (channel 50%, 0.1, 60 ep), z 1.93–10.05 | behavioral not detected in 23 of 24; weight detected in 21 of 24; both lost in 3 channel runs at LR 0.1 (78.5–80.9%) |
 | Distillation into a fresh student, soft outputs at T = 4, no labels (P4.7) | 5,000-image holdout at LR 0.1 / 0.05, and all 50,000 train images at LR 0.1 × student width 32 / 16 (6 runs) | 69.52% (holdout, LR 0.1, width 16) → 78.49% (holdout, LR 0.05, width 32) → 90.67% (50,000, width 32) | 1–7% in all 6, p ≥ 0.94 | -0.095, -0.017, -0.098 (z -1.08, -0.19, -1.11) at width 32; not applicable at width 16 | neither watermark detected in any of the 6, at any level; 50,000-image width-32 student keeps 90.67% (drop +0.18 pp, not distinguishable from zero) |
-| Overwrite, attacker's weight watermark with their own key, post-hoc (P4.8, weight variant only) | alpha' 0.1 → 0.5 → 1.0 → 2.0 (ours is 0.1) | 90.57% → 88.93% → 80.68% → 39.00% | 100% → 100% → 52% → 18% | +0.909 → +0.906 → +0.896 → +0.859 (z 10.28 → 9.72) | weight detected at all 5; behavioral detected up to alpha' 1.0; the attacker's own watermark is detected too |
-| Overwrite, attacker's triggers by fine-tuning, and both (P4.8, Colab) | TBD | TBD | TBD | TBD | TBD |
+| Overwrite, attacker's weight watermark with their own key, post-hoc (P4.8, weight variant) | alpha' 0.1 → 0.5 → 1.0 → 2.0 (ours is 0.1) | 90.57% → 88.93% → 80.68% → 39.00% | 100% → 100% → 52% → 18% | +0.909 → +0.906 → +0.896 → +0.859 (z 10.28 → 9.72) | weight detected at all 5; behavioral detected up to alpha' 1.0; the attacker's own watermark is detected too |
+| Overwrite, attacker's triggers by fine-tuning on the attacker holdout (P4.8, behavioral variant) | LR 0.001 → 0.01 → 0.05, 20 epochs | 90.39% → 89.16% → 86.03% | 98% → 70% → 12% | +0.908 → +0.900 → +0.840 (z 10.28 → 9.50) | weight detected at all 3; behavioral detected at LR 0.001 and 0.01, lost at 0.05 (as plain fine-tuning at that LR, P4.5); attacker's triggers fire 52 / 100 / 100 |
+| Overwrite, both: that fine-tuning, then the attacker's weight watermark at alpha' 0.1 (P4.8) | LR 0.001 → 0.01 → 0.05, 20 epochs | 90.10% → 88.83% → 85.83% | 95% → 68% → 8% | +0.908 → +0.900 → +0.839 (z 10.27 → 9.49) | weight detected at all 3; behavioral detected at LR 0.001 and 0.01, lost at 0.05; both attacker watermarks detected in all 3 |
 
 Control row from `experiments/run_attack_suite.py run --attack none --strength 0`
 (P4.1), result file
@@ -1703,8 +1725,8 @@ only; a label-only API is not tested. No query budget. The thief does not try
 to query near the triggers. The student init is not reproduced bit for bit
 locally. Intervals cover test-image sampling only.
 
-Overwrite attack, weight variant (P4.8). The two training variants are handed
-off to Colab and are `TBD`.
+Overwrite attack, weight variant (P4.8). The two training variants follow
+below.
 - **Run:** `experiments/run_attack_suite.py run --config
   experiments/configs/p4.8_overwrite_weight.json --task P4.8`, 5 result files
   `results/attacks/p4.8_overwrite_weight_<alpha'>__seed1337__20261002T1348…–1350…+0000.json`,
@@ -1764,6 +1786,103 @@ embedding per point, no fine-tuning and no BN recalibration afterwards. The
 attacker only adds their own watermark; without `K` they cannot aim at the
 owner's directions. An attacker who knew `K` is outside the threat model.
 Intervals cover test-image sampling only.
+
+Overwrite attack, behavioral and combined variants (P4.8).
+- **Training:** 6 `run_attack_suite.py apply` runs on Colab (Tesla T4,
+  commit `8c21701`, clean tree, torch 2.11.0+cu130), configs
+  `experiments/configs/p4.8_overwrite_behavioral_e20.json` and
+  `p4.8_overwrite_both_a0.1-e20.json`. Apply records are in
+  `results/attacks/p4.8_apply/`; the weights files are gitignored.
+  Fine-tuning took 416 s in total, 3.4–3.5 s per epoch.
+- **Scoring:** locally on CPU with `run_attack_suite.py evaluate --task P4.8`,
+  commit `ea7ff6e`, clean tree, seed 1337. Result files are
+  `results/attacks/p4.8_overwrite_{behavioral_e20,both_a0.1-e20}_<LR>__seed1337__20261002T1652…–1653…+0000.json`.
+- **Attack:** start from the dual `W*` (P3.6, hash-checked). Fine-tune for 20
+  epochs on the 5,000-image attacker holdout with the P4.5 recipe, with 4 of
+  the attacker's own 100 triggers added to every batch of 128.
+  - The attacker's triggers are built from holdout images at amplitude 16 with
+    per-trigger keyed targets, from the public demo key `K'` (the same key as
+    the weight variant). The attack never receives `K`.
+  - `both` then adds the attacker's weight watermark at alpha' = 0.1 to the
+    fine-tuned weights.
+  - Final-epoch weights; no owner key, owner triggers or test data on Colab.
+- **Verified before scoring:**
+  - Every config equals the committed config.
+  - Source hash and source-state digest equal the dual `W*`.
+  - Not a smoke run, key unused.
+  - Weights hashes match; weights load strictly and are finite; every carrier
+    tensor differs from the source.
+  - 5,000 images, 800 steps, epoch indices 0 to 19.
+  - The attacker's trigger bundle digest (`74af53a8…57b7f14`) equals a local
+    rebuild from `K'` and the holdout.
+  - The attacker's own tests, recomputed locally on the returned weights, give
+    the recorded fired counts exactly and the recorded weight z to 1e-6.
+- **Not independent runs:** each `both` record reports the same first- and
+  last-epoch holdout figures as the behavioral run at that LR, and its attacker weight z
+  before embedding equals the behavioral model's. So a `both` model is the
+  same fine-tuning followed by the embedding.
+- **Scoring detail:** as P4.5. Test accuracy with the paired drop against the
+  dual `W*` (90.85%), P2.8 and P3.7 tests with the owner's `K`; detected means
+  p ≤ 1e-6.
+- **Holdout column:** accuracy on the attacker's own training images at the
+  end of fine-tuning, measured on Colab. A fit figure, not test accuracy.
+- **Attacker columns:** the attacker's own P2.8 and P3.7 tests with `K'`, from
+  the apply record. Before the attack `K'` fires on 8 of 100 and gives weight
+  z = 0.45.
+
+| Variant | LR | Test acc | Drop pp (95% CI) | McNemar p | Test loss | Holdout (train data) | Owner fired /100 | Base label | Mean target prob | Behav. p | Behav. detected | Owner weight corr | z | Bits /128 | Weight p ≤ | Weight detected | Attacker fired /100 | Attacker weight z |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| behavioral | 0.001 | 90.39% | +0.46 [+0.09, +0.83] | 0.016 | 0.3062 | 93.94% | 98 | 0 | 0.675 | 1.2e-90 | yes | +0.9083 | 10.28 | 126 | 1.2e-23 | yes | 52 | 0.46 (not embedded) |
+| behavioral | 0.01 | 89.16% | +1.69 [+1.19, +2.19] | 3.1e-11 | 0.3618 | 98.00% | 70 | 7 | 0.546 | 1.4e-43 | yes | +0.8999 | 10.18 | 126 | 3.1e-23 | yes | 100 | 0.39 (not embedded) |
+| behavioral | 0.05 | 86.03% | +4.82 [+4.20, +5.44] | 1.3e-53 | 0.4844 | 97.96% | 12 | 42 | 0.107 | 0.43 | no | +0.8396 | 9.50 | 121 | 2.5e-20 | yes | 100 | 0.29 (not embedded) |
+| both | 0.001 | 90.10% | +0.75 [+0.37, +1.13] | 1.2e-4 | 0.3118 | 93.94% | 95 | 0 | 0.667 | 9.3e-84 | yes | +0.9080 | 10.27 | 126 | 1.2e-23 | yes | 50 | 10.43 |
+| both | 0.01 | 88.83% | +2.02 [+1.52, +2.52] | 4.2e-15 | 0.3709 | 98.00% | 68 | 8 | 0.535 | 4.5e-41 | yes | +0.8995 | 10.18 | 126 | 3.2e-23 | yes | 100 | 10.38 |
+| both | 0.05 | 85.83% | +5.02 [+4.40, +5.64] | 1.0e-57 | 0.4920 | 97.96% | 8 | 45 | 0.103 | 0.88 | no | +0.8387 | 9.49 | 121 | 2.8e-20 | yes | 100 | 10.20 |
+
+The `both` holdout figure is from before the weight embedding. The attacker's
+"not embedded" z values are their weight test on a model they put no weight
+watermark into; they are null-level. Every owner weight row also rejects at
+1e-9. The attacker's 50 and 52 fired give p = 6.2e-22 and 8.8e-24, so their
+half-embedded trigger set is still detected.
+
+Fine-tuning alone at the same LR for 20 epochs (P4.5), for comparison. Test
+accuracy / owner fired / owner weight z: LR 0.001 90.49% / 100 / 10.27;
+LR 0.01 89.05% / 46 / 10.22; LR 0.05 86.06% / 8 / 9.66.
+
+How to read it:
+- **Owner's weight watermark.** Detected at 1e-6, and at 1e-9, in all 6 rows.
+  z falls with the learning rate, from 10.28 to 9.49, close to what
+  fine-tuning alone did (10.27 to 9.66). Adding the attacker's weight
+  watermark on top moves it by at most 0.01 z, as in the weight variant.
+- **Owner's behavioral watermark.** Detected at LR 0.001 (98 and 95 fired) and
+  at LR 0.01 (70 and 68). Lost at LR 0.05: 12 and 8 fired, which is what a
+  model independent of `K` gives (bound 11.1), with 42 to 45 triggers on their
+  base label.
+  - That loss is not evidence that overwriting works. Fine-tuning alone at
+    LR 0.05 left 8 of 100 (P4.5), at 86.06% accuracy against 86.03% here.
+  - At LR 0.01 the overwrite left more owner triggers firing than fine-tuning
+    alone did (70 against 46). At LR 0.001 it left slightly fewer (98 against
+    100). These are single runs with no test between them, so no claim that
+    the attacker's triggers protect or harm the owner's.
+- **The attacker's claim.** At LR 0.01 and 0.05 all 100 of the attacker's
+  triggers fire; at LR 0.001 about half do, still detected. With the weight
+  step their weight z is 10.20 to 10.43. So at LR 0.001 and 0.01 the model
+  passes all four tests: both of the owner's and both of the attacker's.
+  Detection cannot say who was first. That is what the commitment published
+  before the theft is for (Phase 5).
+- **Cost to the attacker.** +0.46 to +5.02 pp of test accuracy, all
+  distinguishable from zero. The `both` models are 0.20 to 0.33 pp below the
+  behavioral ones, the same size as the weight variant's cost at alpha' 0.1
+  (+0.28 pp); not tested pairwise.
+- **Memorisation.** Holdout accuracy of 93.9–98.0% is on the attacker's
+  training images. Test accuracy is 85.8–90.4%.
+
+Limits: one fine-tuning run per LR (shared by the two variants) and one seed.
+GPU training is not bit-reproducible. One source model, one owner key, one
+attacker key. 5,000 attacker images, 20 epochs, the owner's own trigger
+settings, one alpha' in the combined variant. The attacker only adds their
+own watermark and does not try to cancel the owner's. Intervals cover
+test-image sampling only.
 
 ## 8.5 ZK measurements
 
@@ -1973,3 +2092,10 @@ Append one line per session: date, tasks touched, key outcome.
   - Weight variant run locally from a clean tree at `8c21701`, 5 rows. Owner's weight z 10.28 to 9.72, detected at every alpha'. Owner's triggers fire 100, 100, 100, 52, 18. Accuracy 90.57% down to 39.00%. The attacker's watermark is detected too.
   - Notebook, instructions and `handoff/P4.8_colab.zip` for the 6 training runs. Estimated ~20 min on a T4 (not measured). The extracted zip passed its tests and the smoke command on CPU.
   - 17 new tests, 738 in total, all pass.
+- 2026-10-02: P4.8 DONE. Colab returned 6 apply records and 6 weights files (commit `8c21701`, T4, 416 s of fine-tuning). The owner moved them into `results/attacks/p4.8_apply/`; nothing was retrained.
+  - Verified all 6: configs, source hash and digest, not smoke, key unused, weights hashes, strict load, finite values, steps and epochs. The attacker's bundle digest equals a local rebuild, and the attacker's own tests reproduce on the returned weights.
+  - The `both` models are the behavioral runs' fine-tuning plus the weight embedding, not independent training runs.
+  - Records committed (`ea7ff6e`), then all 6 scored with `evaluate` from that clean tree.
+  - Owner's weight watermark detected in all 6 (z 9.49 to 10.28), so in all 11 P4.8 rows. Owner's triggers fire 98 / 70 / 12 (behavioral) and 95 / 68 / 8 (both) at LR 0.001 / 0.01 / 0.05; lost at 0.05, as with plain fine-tuning at that rate (P4.5: 8).
+  - Test accuracy 90.39% down to 85.83%. The attacker's own watermarks are detected in every row.
+  - No code changed; 738 tests pass.
