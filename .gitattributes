@@ -1,0 +1,3 @@
+# Provenance artifacts are hashed and timestamped byte for byte (P5.4, P5.5).
+# Git must not rewrite their line endings on checkout or commit.
+provenance/** -text
