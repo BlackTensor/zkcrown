@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "name": "p8.4_ezkl_prove",
+  "task": "P8.4",
+  "timestamp_utc": "2026-10-03T18:58:38+00:00",
+  "git": {
+    "commit": "d461271fe6ac75a96e589eb5fee6f2f37fc16482",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "ezkl_version": "23.0.5",
+    "test_image": {
+      "split": "MNIST test (official 10,000)",
+      "index": 0,
+      "chosen": "fixed before the run, by position (first image); not selected by results",
+      "normalisation": "as in training, (x - 0.1307) / 0.3081"
+    },
+    "visibility": {
+      "input_visibility": "Public",
+      "output_visibility": "Public",
+      "param_visibility": "Fixed"
+    },
+    "scales": {
+      "input_scale": 13,
+      "param_scale": 13
+    },
+    "logrows": 18,
+    "p8_3_artifacts_sha256_checked": {
+      "vk": "c582aec46db7e6bd4ea6aae5c7675882e58940b56d776d6a7797d623f7da8023",
+      "pk": "26eea202b695940d4883a3636d595cf1ec8c6a1a84a9cff075fcca3f170c46c2",
+      "settings": "f4480ce9bed9864545c0d764879b2c59e17a4d986a40830d4231b09d2633563f",
+      "compiled_circuit": "78acdba682bb68ae0dfb7ae1ef49823a8a3198a5a9047dc10c70ffedfabbac10",
+      "srs": "d0148475717a2ba269784a178cb0ab617bc77f16c58d4a3cbdfe785b591c7034"
+    },
+    "srs_fetched": false,
+    "limits": {
+      "stage_timeout_seconds": 3600,
+      "stage_memory_limit_bytes": 8589934592
+    },
+    "measurement": "each stage in its own Python process, which reads its own peak memory (P8.3)"
+  },
+  "metrics": {
+    "label": 7,
+    "pytorch": {
+      "logits": [
+        -0.9820234775543213,
+        0.7094557285308838,
+        2.6110570430755615,
+        4.530601501464844,
+        -8.903693199157715,
+        -2.9543511867523193,
+        -11.300566673278809,
+        16.543540954589844,
+        -1.811173915863037,
+        1.1265888214111328
+      ],
+      "class": 7
+    },
+    "circuit": {
+      "rescaled_output_logits": [
+        -0.98193359375,
+        0.7083740234375,
+        2.60791015625,
+        4.5281982421875,
+        -8.90380859375,
+        -2.9515380859375,
+        -11.30224609375,
+        16.5438232421875,
+        -1.8095703125,
+        1.126953125
+      ],
+      "class": 7
+    },
+    "class_matches_pytorch": true,
+    "max_abs_logit_diff_vs_pytorch": 0.0031468868255615234,
+    "max_abs_input_quantisation_error": 6.079673767089844e-05,
+    "stages": [
+      {
+        "stage": "baseline",
+        "returncode": 0,
+        "process_seconds": 0.432,
+        "launcher_peak_working_set_bytes": 24625152,
+        "watchdog_peak_tree_working_set_bytes": null,
+        "log_tail": "RESULT {\"stage\": \"baseline\", \"value\": \"23.0.5\", \"seconds\": 0.006644499999310938, \"peak_working_set_bytes\": 46960640, \"peak_private_bytes\": 28073984}\n",
+        "value": "23.0.5",
+        "call_seconds": 0.007,
+        "peak_working_set_bytes": 46960640,
+        "peak_private_bytes": 28073984
+      },
+      {
+        "stage": "gen_witness",
+        "returncode": 0,
+        "process_seconds": 0.693,
+        "launcher_peak_working_set_bytes": 24674304,
+        "watchdog_peak_tree_working_set_bytes": null,
+        "log_tail": "RESULT {\"stage\": \"gen_witness\", \"value\": \"dict\", \"seconds\": 0.3054511000000275, \"peak_working_set_bytes\": 68304896, \"peak_private_bytes\": 47489024}\n",
+        "value": "dict",
+        "call_seconds": 0.305,
+        "peak_working_set_bytes": 68304896,
+        "peak_private_bytes": 47489024
+      },
+      {
+        "stage": "prove",
+        "returncode": 0,
+        "process_seconds": 22.108,
+        "launcher_peak_working_set_bytes": 24625152,
+        "watchdog_peak_tree_working_set_bytes": 2650492928,
+        "log_tail": "RESULT {\"stage\": \"prove\", \"value\": \"dict\", \"seconds\": 21.71990249999999, \"peak_working_set_bytes\": 2626232320, \"peak_private_bytes\": 2627125248}\n",
+        "value": "dict",
+        "call_seconds": 21.72,
+        "peak_working_set_bytes": 2626232320,
+        "peak_private_bytes": 2627125248
+      }
+    ],
+    "proof_file_bytes": 140052,
+    "proof_bytes": 3072,
+    "public_instances_file_bytes": 136813,
+    "witness_file_bytes": 123206,
+    "key_bytes": {
+      "pk": 1107822347,
+      "vk": 525575,
+      "srs": 33554692
+    },
+    "sanity_check": {
+      "proof_file_parses": true,
+      "proof_bytes_nonzero": true,
+      "public_instance_count": 794,
+      "public_instance_count_expected": 794,
+      "instances_equal_witness_input_and_output": true,
+      "ezkl_verify_called": false
+    },
+    "proof_sha256": "f02b10439632891b85d431ee3cb7ea84bfd728e26614c79b6c89e748f7b8a40d"
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 34.183048199999575,
+  "notes": "One proof of one image on local Windows CPU (x64 Python emulated on ARM), not Colab. Not verified here (P8.5). One image says nothing general about circuit fidelity (P8.6)."
+}
