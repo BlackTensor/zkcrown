@@ -1062,7 +1062,34 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - The recorded kernel peak working set, 24 MB, is not used. It is implausibly low next to the 138 MB proving key, probably the launcher process rather than the kernel.
   - **The committed P8.1 `results/zk/p8.1/zk_model.onnx` loads in EZKL** (same run, SHA-256 `6416735f…f7f5ca9` checked). `ezkl.gen_settings` with default run args returned True: logrows 17 and 145,820 rows at the default scales 7/7, uncalibrated. P8.1 already uses the legacy exporter (`dynamo=False`, opset 13), so change 1 does not affect it.
   - Machine: x64 Python 3.11.9 under emulation on an ARM CPU, Windows. No ARM-specific problem appeared. The cached SRS was deleted after the run.
-- [ ] **P8.3** Run the EZKL pipeline on `zk_model`: gen-settings, calibrate-settings, compile, setup. Record peak RAM at each stage.
+- [x] **P8.3** Run the EZKL pipeline on `zk_model`: gen-settings, calibrate-settings, compile, setup. Record peak RAM at each stage.
+  - **Setup finished locally in 25 s at a peak of 1.84 GiB, well inside the owner's limits (8 GiB, 1 hour).** Circuit: logrows 18, 145,820 rows. Proving key 1,107,822,347 bytes (gitignored); verification key 525,575 bytes (committed).
+  - `experiments/p8_3_ezkl_setup.py`, local CPU, 360 s in all, clean tree at `abb0353`, result `results/p8.3_ezkl_setup__seed1337__20261003T185318+0000.json`. Input: the P8.1 ONNX file, SHA-256 checked. ezkl 23.0.5.
+  - **Settings, fixed before the run:**
+    - Input public, output public, parameters `fixed`: the weights are built into the circuit, so the verification key is tied to them (Phase 8 decision (c3): inference on a public input).
+    - Scales not set by hand. `gen_settings` defaults were input/param scale 7, logrows 17.
+    - Calibration target `accuracy` (for P8.6), other calibration arguments at ezkl defaults.
+    - Calibration data: 200 MNIST **training** images, drawn without replacement with numpy seed 1337 (index SHA-256 `6f5acacf…2ac90a69`), normalised as in training.
+  - **Calibration chose input scale 13, param scale 13, rebase multiplier 1, and logrows 18**, above 17. The owner was told the SRS size first (about 33.6 MB) and approved option 1 on 2026-10-04. The first run stopped before `get_srs` and wrote no record.
+  - **SRS:** `kzg18.srs`, fetched by an awaited `ezkl.get_srs` into `zk/ezkl/srs/` (gitignored). **33,554,692 bytes, exactly the estimate** (2^k × 128 + 260, inferred from P8.2's `kzg15.srs`). SHA-256 `d0148475717a2ba269784a178cb0ab617bc77f16c58d4a3cbdfe785b591c7034`.
+  - **Per stage**, each in its own Python process, which measures its own peak (Windows `GetProcessMemoryInfo`):
+
+    | Stage | ezkl call | Process | Peak working set | Peak private |
+    |---|---|---|---|---|
+    | baseline (start Python, import ezkl) | 0.01 s | 0.41 s | 44.8 MiB | 26.8 MiB |
+    | gen_settings | 0.23 s | 0.73 s | 64.0 MiB | 43.5 MiB |
+    | calibrate_settings | 320.83 s | 321.31 s | 333.3 MiB | 316.5 MiB |
+    | compile_circuit | 0.03 s | 0.46 s | 50.7 MiB | 30.2 MiB |
+    | get_srs (download) | 4.45 s | 4.84 s | 117.9 MiB | 110.6 MiB |
+    | setup | 24.58 s | 25.03 s | **1,881.7 MiB** | 1,865.1 MiB |
+
+  - **Files:** proving key 1,107,822,347 bytes (SHA-256 `26eea202…3f170c46c2`); verification key 525,575 bytes (`c582aec4…f7da8023`); compiled circuit 226,145 bytes; settings 2,029 bytes. The settings and verification key are committed in `results/zk/p8.3/`. The proving key, compiled circuit, calibration data and SRS stay in `zk/ezkl/` (gitignored) for P8.4.
+  - **Measurement fix made during this task:** on Windows the venv `python.exe` is a launcher that runs the real interpreter as a separate child process. A first attempt read the launcher and got about 23.5 MiB for every stage, and P8.2's 24 MB kernel figure has the same cause. Each stage now measures itself, and a test checks the reading against a 300 MiB allocation. A watchdog over the process tree enforces the owner's limits; its peak readings agree with the self-measured ones.
+  - **Observed, not investigated:**
+    - The settings carry `check_mode: UNSAFE`, the ezkl default. Its meaning matters for P8.7.
+    - Calibration did not change the 145,820 rows. It raised logrows from 17 to 18 and the scales from 7 to 13; why it needed 2^18 is not established.
+    - The proving key is about 33 times the SRS.
+  - Limits: one run, local Windows CPU (x64 Python emulated on ARM), not Colab. Nothing was proved; that is P8.4.
   - Note from P8.2: the runner must `await ezkl.get_srs(...)` (async in ezkl 23.0.5), or run it to completion in an event loop, before `setup`. Unawaited, it returns a pending Future and `setup` fails to load the SRS. Export, if redone, stays `dynamo=False`.
 - [ ] **P8.4** Generate a witness and a proof of `zk_model` inference on one MNIST test image (public input). Record prove time, proof size, and key sizes. (Reworded 2026-10-03, owner decision (c3); was: a single trigger input.)
 - [ ] **P8.5** Verify the proof locally, off chain. Record verify time.
@@ -2383,10 +2410,10 @@ Channel-pruning weight figures assume re-alignment (P4.3 caveat). The
 
 | Metric | Track A (Circom) | Track B (EZKL) |
 |---|---|---|
-| Constraint count / circuit rows | 1,471 constraints, 1,472 wires (P7.5, circom -O1) | TBD |
-| Setup peak RAM | 333 MiB peak working set (402 MiB private), `zkey verify` step; local Windows CPU, not Colab (P7.6) | TBD |
-| Proving key size | 715,458 bytes `.zkey` (P7.6; single phase 2 contributor) | TBD |
-| Verification key size | 2,926 bytes, snarkjs JSON (P7.6) | TBD |
+| Constraint count / circuit rows | 1,471 constraints, 1,472 wires (P7.5, circom -O1) | 145,820 rows, logrows 18 (2^18 = 262,144), input/param scale 13 after `accuracy` calibration (P8.3) |
+| Setup peak RAM | 333 MiB peak working set (402 MiB private), `zkey verify` step; local Windows CPU, not Colab (P7.6) | 1,881.7 MiB peak working set (1,865.1 MiB private), `setup` step, 24.6 s; local Windows CPU, not Colab (P8.3) |
+| Proving key size | 715,458 bytes `.zkey` (P7.6; single phase 2 contributor) | 1,107,822,347 bytes (P8.3; not committed); SRS `kzg18.srs` 33,554,692 bytes |
+| Verification key size | 2,926 bytes, snarkjs JSON (P7.6) | 525,575 bytes (P8.3, committed) |
 | Prove time | 2.42 s, one `groth16 prove` incl. Node start-up; peak 317 MiB working set; local CPU (P7.7) | TBD |
 | Verify time | 1.94 s median of 5 (1.85–1.97), incl. Node start-up; local CPU (P7.7) | TBD |
 | Proof size | 806 bytes, snarkjs JSON; public signals `[C]` only (P7.7) | TBD |
@@ -2935,4 +2962,5 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-03: P8.2 BLOCKED `[!]`. Installed ezkl 23.0.5, onnxscript, nbclient and ipykernel (owner OK). EZKL's `simple_demo_all_public.ipynb` at `v23.0.5`, run unchanged and hash-pinned, from a clean tree at `dee2479`: cells 1–3 ran, `gen_settings` failed with a tract load error. Cause: torch 2.14 exports with dynamo by default (opset 18, IR 10, external data), which tract rejects. In a scratch check, a `dynamo=False` export of the same model ran the whole pipeline to a verified proof on this machine. Not pinned; the owner chooses the route. P8.3 not started.
 - 2026-10-03: P8.2 still `[!]`. Option 1 run (only `dynamo=False`, clean tree at `582a02b`): fails at `setup`, because the notebook's `get_srs` call is never awaited, so the SRS is never downloaded. An earlier 11/11 pass relied on an SRS cached by my scratch diagnostic and was discarded. In a scratch check, adding `await` as a second change passes. The P8.1 ONNX file loads in `gen_settings` (logrows 17 at default settings). Corrected my stale note that P8.1 had to switch exporters: P8.1 was already done with `dynamo=False`. `%TEMP%` work dirs and the cached SRS cleaned up. Not pinned; waiting for the owner. P8.3 not started.
 - 2026-10-04: P8.2 DONE, passed with two documented changes: `dynamo=False` in the export call, and `await` on `get_srs`. The runner now refuses a cached SRS. Run from a clean tree at `5ac8074` with an empty cache: 11/11 cells to `verified`. The P8.1 ONNX file loads in `gen_settings`. ezkl 23.0.5 pinned and ledger 8.1 filled (torch 2.14.0+cpu export). P8.3 note added. Cached SRS deleted. P8.3 not started.
+- 2026-10-04: P8.3 DONE. Owner approved logrows 18 (option 1). Calibration on 200 MNIST training images with the `accuracy` target chose scale 13/13 and logrows 18. The awaited `get_srs` fetched `kzg18.srs`, 33,554,692 bytes, exactly the estimate. Setup took 24.6 s at a 1.84 GiB peak. Proving key 1.11 GB (gitignored); verification key 525,575 bytes (committed). Found and fixed a memory-measurement flaw: the parent was reading the venv launcher stub, not the interpreter, so stages now measure themselves, and a watchdog enforces the owner's 8 GiB / 1 h limits. P8.4 not started.
 - 2026-10-03: Owner chose Phase 8 option (c3): plain inference on the P0.7 `zk_model` first, with the watermarked `zk_model` (a) to be revisited after P8.5. The decision is recorded at the top of Phase 8; P8.4, P8.6 and P8.7 were reworded, and (a) went to the Icebox with its per-trigger commitment requirement (`868d864`). That commit also removed a stray NUL byte in the P7.3 note. The byte had made git store CLAUDE.md as binary, so the commit renormalises every line ending. P8.1: installed onnx 1.23.1 and onnxruntime 1.30.0, then exported `zk_model` (opset 13, Conv/Relu/Flatten/Gemm, 26,214 bytes, deterministic, weights bit-identical) and compared ONNX Runtime with PyTorch: 10,000/10,000 test and 1,000/1,000 random top-1 agree, max logit diff 1.53e-5, accuracy 98.96% both. Code committed first (`6acbc55`), run from that clean tree. EZKL not installed. P8.2 not started.

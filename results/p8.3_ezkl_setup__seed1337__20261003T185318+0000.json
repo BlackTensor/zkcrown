@@ -1,0 +1,238 @@
+{
+  "schema_version": 1,
+  "name": "p8.3_ezkl_setup",
+  "task": "P8.3",
+  "timestamp_utc": "2026-10-03T18:53:18+00:00",
+  "git": {
+    "commit": "abb03533cf50f3eac9315599aa8631839a500432",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "ezkl_version": "23.0.5",
+    "onnx": {
+      "path": "results/zk/p8.1/zk_model.onnx",
+      "sha256": "6416735f6d7eef04d30906003a40b85c210b61253a9e53935426f3b56f7f5ca9"
+    },
+    "visibility": {
+      "input_visibility": "public",
+      "output_visibility": "public",
+      "param_visibility": "fixed"
+    },
+    "scales": "not set by hand: gen_settings defaults, then chosen by calibrate_settings",
+    "calibration_target": "accuracy",
+    "calibration_other_args": "ezkl defaults (lookup_safety_margin, scales, scale_rebase_multiplier, max_logrows)",
+    "calibration_data": {
+      "split": "MNIST train (60,000)",
+      "n": 200,
+      "numpy_seed": 1337,
+      "indices_sha256": "6f5acacf218a81ba723706b2920847bb7f5f7aca78c21f86bf3b70682ac90a69",
+      "normalisation": "ToTensor then Normalize((0.1307,), (0.3081,)), as in training",
+      "value_range": [
+        -0.4242129623889923,
+        2.821486711502075
+      ]
+    },
+    "srs": {
+      "path": "zk/ezkl/srs/kzg18.srs",
+      "fetched_by": "ezkl.get_srs, awaited",
+      "cached_before_run": false
+    },
+    "kept_out_of_git": [
+      "pk.key",
+      "network.compiled",
+      "calibration.json",
+      "SRS"
+    ],
+    "limits": {
+      "stage_timeout_seconds": 3600,
+      "stage_memory_limit_bytes": 8589934592,
+      "watch_interval_seconds": 1.0
+    },
+    "measurement": "each stage in its own Python process, which reads its own peak working set and peak private bytes with GetProcessMemoryInfo after the ezkl call; includes the Python + ezkl import cost measured by the baseline stage. The parent's reading is of the venv launcher stub and is recorded only as launcher_peak_working_set_bytes"
+  },
+  "metrics": {
+    "stages": [
+      {
+        "stage": "baseline",
+        "returncode": 0,
+        "process_seconds": 0.411,
+        "launcher_peak_working_set_bytes": 24612864,
+        "watchdog_peak_tree_working_set_bytes": null,
+        "log_tail": "RESULT {\"stage\": \"baseline\", \"value\": \"23.0.5\", \"seconds\": 0.005137999999533349, \"peak_working_set_bytes\": 46972928, \"peak_private_bytes\": 28098560}\n",
+        "value": "23.0.5",
+        "call_seconds": 0.005,
+        "peak_working_set_bytes": 46972928,
+        "peak_private_bytes": 28098560
+      },
+      {
+        "stage": "gen_settings",
+        "returncode": 0,
+        "process_seconds": 0.727,
+        "launcher_peak_working_set_bytes": 24580096,
+        "watchdog_peak_tree_working_set_bytes": null,
+        "log_tail": "RESULT {\"stage\": \"gen_settings\", \"value\": true, \"seconds\": 0.23337679999985994, \"peak_working_set_bytes\": 67125248, \"peak_private_bytes\": 45637632}\n",
+        "value": true,
+        "call_seconds": 0.233,
+        "peak_working_set_bytes": 67125248,
+        "peak_private_bytes": 45637632
+      },
+      {
+        "stage": "calibrate",
+        "returncode": 0,
+        "process_seconds": 321.308,
+        "launcher_peak_working_set_bytes": 24276992,
+        "watchdog_peak_tree_working_set_bytes": 370159616,
+        "log_tail": "l synthesis error\"\n[tensor] decomposition error: integer 71181569852 is too large to be represented by base 16384 and n 2\nforward pass failed: \"failed to forward: [halo2] General synthesis error\"\n[tensor] decomposition error: integer 271038470 is too large to be represented by base 16384 and n 2\nforward pass failed: \"failed to forward: [halo2] General synthesis error\"\n\n\n <------------- Numerical Fidelity Report (input_scale: 13, param_scale: 13, scale_input_multiplier: 1) ------------->\n\n+------------+------------------+--------------+--------------+----------------+------------------+---------------+-----------------+--------------------+--------------------+------------------------+\n| mean_error | median_error     | max_error    | min_error    | mean_abs_error | median_abs_error | max_abs_error | min_abs_error   | mean_squared_error | mean_percent_error | mean_abs_percent_error |\n+------------+------------------+--------------+--------------+----------------+------------------+---------------+-----------------+--------------------+--------------------+------------------------+\n| 0.00007257 | -0.0000019073486 | 0.0064110756 | -0.007966995 | 0.0017681402   | 0.0000019073486  | 0.007966995   | 0.0000019073486 | 0.000005109402     | -0.00006575225     | 0.0012859376           |\n+------------+------------------+--------------+--------------+----------------+------------------+---------------+-----------------+--------------------+--------------------+------------------------+\n\n\n",
+        "value": true,
+        "call_seconds": 320.831,
+        "peak_working_set_bytes": 349483008,
+        "peak_private_bytes": 331862016
+      },
+      {
+        "stage": "compile",
+        "returncode": 0,
+        "process_seconds": 0.457,
+        "launcher_peak_working_set_bytes": 24629248,
+        "watchdog_peak_tree_working_set_bytes": null,
+        "log_tail": "RESULT {\"stage\": \"compile\", \"value\": true, \"seconds\": 0.025854200000139826, \"peak_working_set_bytes\": 53153792, \"peak_private_bytes\": 31694848}\n",
+        "value": true,
+        "call_seconds": 0.026,
+        "peak_working_set_bytes": 53153792,
+        "peak_private_bytes": 31694848
+      },
+      {
+        "stage": "get_srs",
+        "returncode": 0,
+        "process_seconds": 4.837,
+        "launcher_peak_working_set_bytes": 24621056,
+        "watchdog_peak_tree_working_set_bytes": 109322240,
+        "log_tail": "RESULT {\"stage\": \"get_srs\", \"value\": true, \"seconds\": 4.4455579000004946, \"peak_working_set_bytes\": 123666432, \"peak_private_bytes\": 115949568}\n",
+        "value": true,
+        "call_seconds": 4.446,
+        "peak_working_set_bytes": 123666432,
+        "peak_private_bytes": 115949568
+      },
+      {
+        "stage": "setup",
+        "returncode": 0,
+        "process_seconds": 25.031,
+        "launcher_peak_working_set_bytes": 24616960,
+        "watchdog_peak_tree_working_set_bytes": 1997410304,
+        "log_tail": "RESULT {\"stage\": \"setup\", \"value\": true, \"seconds\": 24.578413799999907, \"peak_working_set_bytes\": 1973133312, \"peak_private_bytes\": 1955659776}\n",
+        "value": true,
+        "call_seconds": 24.578,
+        "peak_working_set_bytes": 1973133312,
+        "peak_private_bytes": 1955659776
+      }
+    ],
+    "settings_initial": {
+      "run_args": {
+        "logrows": 17,
+        "input_scale": 7,
+        "param_scale": 7,
+        "scale_rebase_multiplier": 1,
+        "lookup_range": [
+          -32768,
+          32768
+        ],
+        "input_visibility": "Public",
+        "output_visibility": "Public",
+        "param_visibility": "Fixed",
+        "num_inner_cols": 2,
+        "decomp_base": 16384,
+        "decomp_legs": 2,
+        "check_mode": "UNSAFE",
+        "bounded_log_lookup": false
+      },
+      "num_rows": 145820,
+      "total_assignments": 291640,
+      "total_const_size": 182,
+      "required_lookups": [],
+      "required_range_checks": [
+        [
+          0,
+          16383
+        ],
+        [
+          -1,
+          1
+        ]
+      ],
+      "version": "23.0.5"
+    },
+    "settings_calibrated": {
+      "run_args": {
+        "logrows": 18,
+        "input_scale": 13,
+        "param_scale": 13,
+        "scale_rebase_multiplier": 1,
+        "lookup_range": [
+          0,
+          0
+        ],
+        "input_visibility": "Public",
+        "output_visibility": "Public",
+        "param_visibility": "Fixed",
+        "num_inner_cols": 2,
+        "decomp_base": 16384,
+        "decomp_legs": 2,
+        "check_mode": "UNSAFE",
+        "bounded_log_lookup": false
+      },
+      "num_rows": 145820,
+      "total_assignments": 291640,
+      "total_const_size": 3156,
+      "required_lookups": [],
+      "required_range_checks": [
+        [
+          0,
+          16383
+        ],
+        [
+          -1,
+          1
+        ]
+      ],
+      "version": "23.0.5"
+    },
+    "logrows": 18,
+    "file_bytes": {
+      "pk": 1107822347,
+      "vk": 525575,
+      "compiled_circuit": 226145,
+      "settings": 2029,
+      "srs": 33554692,
+      "calibration_data": 3253243
+    },
+    "srs_bytes_expected": 33554692,
+    "srs_bytes_matches_expected": true,
+    "calibrated_scales": {
+      "input_scale": 13,
+      "param_scale": 13,
+      "scale_rebase_multiplier": 1
+    },
+    "sha256": {
+      "vk": "c582aec46db7e6bd4ea6aae5c7675882e58940b56d776d6a7797d623f7da8023",
+      "pk": "26eea202b695940d4883a3636d595cf1ec8c6a1a84a9cff075fcca3f170c46c2",
+      "settings": "f4480ce9bed9864545c0d764879b2c59e17a4d986a40830d4231b09d2633563f",
+      "compiled_circuit": "78acdba682bb68ae0dfb7ae1ef49823a8a3198a5a9047dc10c70ffedfabbac10",
+      "srs": "d0148475717a2ba269784a178cb0ab617bc77f16c58d4a3cbdfe785b591c7034"
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 360.10696709999957,
+  "notes": "Local Windows CPU, x64 Python under emulation on ARM; not Colab. Single run. The proving key, compiled circuit and SRS stay in zk/ezkl/ (gitignored); settings and vk are committed in results/zk/p8.3/."
+}
