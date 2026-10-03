@@ -231,3 +231,96 @@ def test_script_refuses_a_record_that_is_not_the_p6_2_one(script, monkeypatch):
         pytest.skip("no committed record")
     with pytest.raises(SystemExit):
         script.read_target("record")
+
+
+# --- the chain check (no network: a fake explorer) ----------------------------
+
+GENESIS_HEADER = bytes.fromhex(
+    "0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3"
+    "888a51323a9fb8aa4b1e5e4a29ab5f49ffff001d1dac2b7c")
+GENESIS_HASH = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
+GENESIS_ROOT = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
+# Block 969627, the block the P5.5 proof attests to, as served by blockstream.info on 2026-10-03.
+B969627_HEADER = bytes.fromhex(
+    "0000002490e70f57a93955780d0b50b88e540fe7fcd8b6d3554e000000000000000000002ff417df88d9c3faffba479026050cd1896037d7"
+    "0014bdcb9f8f5edd22f70e37fd07c06ac51e0217c2d63618")
+B969627_HASH = "000000000000000000000d8e10dd470dd91b1125eaef9ac881f931e3152b426d"
+B969627_ROOT = "370ef722dd5e8f9fcbbd1400d7376089d10c05269047bafffac3d988df17f42f"
+
+
+def test_parse_block_header_known_answers():
+    genesis = timestamping.parse_block_header(GENESIS_HEADER)
+    assert genesis["block_hash"] == GENESIS_HASH and genesis["merkle_root"] == GENESIS_ROOT
+    assert genesis["time"] == 1231006505 and genesis["meets_target"]
+    block = timestamping.parse_block_header(B969627_HEADER)
+    assert block["block_hash"] == B969627_HASH and block["merkle_root"] == B969627_ROOT and block["meets_target"]
+
+
+def test_header_without_work_fails_the_target():
+    forged = bytearray(B969627_HEADER)
+    forged[76:80] = b"\x00\x00\x00\x00"  # a different nonce: same root, but the hash no longer meets the target
+    assert not timestamping.parse_block_header(bytes(forged))["meets_target"]
+    with pytest.raises(ValueError):
+        timestamping.parse_block_header(B969627_HEADER[:79])
+
+
+def explorer(chain: dict, *, down=(), lie=None):
+    """A fake explorer API: `chain` maps height to header bytes. `lie` serves another header for one base."""
+
+    def fetch(url, timeout):
+        base = url.rsplit("/block", 1)[0]
+        if base in down:
+            raise ConnectionError("unreachable")
+        if "/block-height/" in url:
+            height = int(url.rsplit("/", 1)[1])
+            header = lie[1] if lie and lie[0] == base else chain[height]
+            return timestamping.parse_block_header(header)["block_hash"]
+        block_hash = url.split("/block/")[1].split("/")[0]
+        for header in [*chain.values(), *([lie[1]] if lie else [])]:
+            if timestamping.parse_block_header(header)["block_hash"] == block_hash:
+                return header.hex()
+        raise KeyError(block_hash)
+
+    return fetch
+
+
+EXPLORERS = ("https://e1.test/api", "https://e2.test/api")
+ATTESTED = [{"height": 969627, "merkle_root": B969627_ROOT}, {"height": 969627, "merkle_root": B969627_ROOT}]
+
+
+def check(attestations=ATTESTED, **kwargs):
+    return timestamping.check_bitcoin_attestations(attestations, EXPLORERS, fetch=explorer({969627: B969627_HEADER},
+                                                                                          **kwargs))
+
+
+def test_matching_block_verifies_on_both_explorers():
+    result = check()
+    assert result["all_verified"] and len(result["blocks"]) == 1
+    block = result["blocks"][0]
+    assert block["block_hash"] == B969627_HASH and block["header_time_utc"] == "2026-10-02T19:37:33+00:00"
+    assert result["earliest_verified_block"]["height"] == 969627
+
+
+def test_wrong_merkle_root_is_not_verified():
+    assert not check([{"height": 969627, "merkle_root": "00" * 32}])["all_verified"]
+
+
+def test_one_explorer_down_is_not_verified():
+    result = check(down=(EXPLORERS[1],))
+    assert not result["all_verified"] and "error" in result["blocks"][0]["explorers"][EXPLORERS[1]]
+
+
+def test_one_explorer_serving_another_block_is_not_verified():
+    assert not check(lie=(EXPLORERS[0], GENESIS_HEADER))["all_verified"]
+
+
+def test_a_single_explorer_is_not_enough():
+    result = timestamping.check_bitcoin_attestations(ATTESTED, EXPLORERS[:1],
+                                                     fetch=explorer({969627: B969627_HEADER}))
+    assert not result["all_verified"]
+
+
+def test_two_roots_for_one_height_and_no_attestations_are_not_verified():
+    assert not check([{"height": 969627, "merkle_root": B969627_ROOT},
+                      {"height": 969627, "merkle_root": GENESIS_ROOT}])["all_verified"]
+    assert not check([])["all_verified"]

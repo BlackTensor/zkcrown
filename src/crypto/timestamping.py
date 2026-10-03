@@ -27,6 +27,12 @@ time. It shows that the holder of that key vouched for exactly this commit.
 It becomes time evidence only through a third party: a host that records when
 the tag was pushed, or an OpenTimestamps proof.
 
+A Bitcoin attestation is checked by `check_bitcoin_attestations`: the
+attested block's header is fetched from two public explorers, hashed here,
+checked for proof of work, and compared with the Merkle root the proof
+requires. That trusts the explorers' view of which block sits at a height
+(two must agree); it is not a full node.
+
 The ``ots`` command line client does not start on this Windows machine: its
 `python-bitcoinlib` dependency fails to load OpenSSL at import. The
 `opentimestamps` library underneath works, so the stamp, upgrade and
@@ -39,6 +45,7 @@ from __future__ import annotations
 import hashlib
 import os
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -195,6 +202,116 @@ def upgrade_proof(ots_path: Path | str, *, timeout: float = 20.0, calendar_facto
     if after["file_digest"] != before["file_digest"]:
         raise RuntimeError("the upgraded proof is for another digest")
     return {"calendars": outcome, "changed": changed, "status": after["status"]}
+
+
+# --- checking a Bitcoin attestation against the chain -------------------------
+
+DEFAULT_EXPLORERS = ("https://blockstream.info/api", "https://mempool.space/api")
+"""Two independent public block explorers with the same Esplora-style API."""
+MIN_EXPLORERS = 2
+"""A block counts as checked only if this many explorers answered and agreed."""
+_BLOCK_HASH = re.compile(r"[0-9a-f]{64}")
+
+
+def parse_block_header(header: bytes) -> dict[str, Any]:
+    """Decode an 80-byte Bitcoin block header and check its proof of work.
+
+    The block hash is SHA-256d of the header, shown byte-reversed as explorers
+    do. The Merkle root is header bytes 36 to 68, also shown reversed. The
+    work check is that the hash, as a number, is at most the target encoded in
+    the header's ``bits`` field.
+    """
+    if not isinstance(header, (bytes, bytearray)) or len(header) != 80:
+        raise ValueError("a block header is exactly 80 bytes")
+    header = bytes(header)
+    block_hash = hashlib.sha256(hashlib.sha256(header).digest()).digest()[::-1]
+    bits = int.from_bytes(header[72:76], "little")
+    exponent, mantissa = bits >> 24, bits & 0x007FFFFF
+    target = mantissa << (8 * (exponent - 3)) if exponent >= 3 else mantissa >> (8 * (3 - exponent))
+    return {
+        "block_hash": block_hash.hex(),
+        "merkle_root": header[36:68][::-1].hex(),
+        "time": int.from_bytes(header[68:72], "little"),
+        "bits": f"{bits:08x}",
+        "meets_target": 0 < target and int.from_bytes(block_hash, "big") <= target,
+    }
+
+
+def _http_get(url: str, timeout: float) -> str:
+    from urllib.request import Request, urlopen
+
+    with urlopen(Request(url, headers={"User-Agent": "zk-crown-p5.5"}), timeout=timeout) as response:  # noqa: S310
+        return response.read().decode("ascii").strip()
+
+
+def check_bitcoin_attestations(attestations, explorers=DEFAULT_EXPLORERS, *, timeout: float = 20.0,
+                               fetch=_http_get) -> dict[str, Any]:
+    """Check each attested block's Merkle root against block headers fetched from several explorers.
+
+    `attestations` is ``describe_proof(...)["bitcoin_attestations"]``. For each
+    distinct height, every explorer is asked for the block hash at that height
+    and for the raw 80-byte header. The header is hashed here, so it must hash
+    to the block hash the explorer named, meet its own proof-of-work target,
+    and carry the Merkle root the proof requires. A block is ``verified`` only
+    if at least ``MIN_EXPLORERS`` explorers were asked, every one answered and
+    passed those checks, and all named the same block.
+
+    Only block heights and block hashes are sent. A failed lookup is recorded,
+    not raised.
+
+    What this does not do: validate the chain itself. It relies on the
+    explorers' view of which block is at each height. Requiring two of them to
+    agree, and checking the header's work, makes that harder to fake, but this
+    is not a full node.
+    """
+    blocks = []
+    expected: dict[int, set] = {}
+    for attestation in attestations:
+        expected.setdefault(int(attestation["height"]), set()).add(attestation["merkle_root"])
+    for height in sorted(expected):
+        if len(expected[height]) != 1:
+            blocks.append({"height": height, "verified": False, "problem": "the proof requires two roots for one block"})
+            continue
+        root = next(iter(expected[height]))
+        answers = {}
+        for base in explorers:
+            try:
+                block_hash = fetch(f"{base}/block-height/{height}", timeout).lower()
+                if not _BLOCK_HASH.fullmatch(block_hash):
+                    raise ValueError(f"not a block hash: {block_hash[:80]!r}")
+                header = parse_block_header(bytes.fromhex(fetch(f"{base}/block/{block_hash}/header", timeout)))
+                answers[base] = {
+                    "block_hash": block_hash,
+                    "header_hashes_to_block_hash": header["block_hash"] == block_hash,
+                    "meets_target": header["meets_target"],
+                    "merkle_root": header["merkle_root"],
+                    "merkle_root_matches": header["merkle_root"] == root,
+                    "header_time": header["time"],
+                }
+            except Exception as error:  # noqa: BLE001 - one explorer failing is a finding, not a crash
+                answers[base] = {"error": f"{type(error).__name__}: {error}"}
+        good = [a for a in answers.values() if "error" not in a and a["header_hashes_to_block_hash"]
+                and a["meets_target"] and a["merkle_root_matches"]]
+        agreed = len({a["block_hash"] for a in good}) == 1
+        verified = len(good) == len(answers) and len(good) >= MIN_EXPLORERS and agreed
+        blocks.append({
+            "height": height,
+            "expected_merkle_root": root,
+            "verified": verified,
+            "block_hash": good[0]["block_hash"] if verified else None,
+            "header_time_utc": (datetime.fromtimestamp(good[0]["header_time"], timezone.utc).isoformat(timespec="seconds")
+                                if verified else None),
+            "explorers": answers,
+        })
+    verified_blocks = [b for b in blocks if b["verified"]]
+    return {
+        "explorers": list(explorers),
+        "min_explorers": MIN_EXPLORERS,
+        "blocks": blocks,
+        "all_verified": bool(blocks) and len(verified_blocks) == len(blocks),
+        "earliest_verified_block": (None if not verified_blocks else
+                                    {k: verified_blocks[0][k] for k in ("height", "block_hash", "header_time_utc")}),
+    }
 
 
 # --- the GPG-signed tag -------------------------------------------------------

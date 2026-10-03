@@ -12,7 +12,8 @@ proof is ``provenance/record.json.ots``. The P5.5 timestamp does not cover the
 record, so the record gets its own proof. ``status`` reports both proofs.
 
 ``stamp`` and ``upgrade`` contact public calendar servers and send them a
-hash. ``record`` and ``status`` contact nobody.
+hash. ``record`` contacts two public block explorers and sends them only block
+heights and hashes. ``status`` contacts nobody.
 
 The signed tag is made by hand, once, after the commit that holds the artifact,
 its ``.ots`` proof and the owner's public key:
@@ -29,9 +30,11 @@ What ``record`` checks, and stops on:
 - the committed public key file is the key that signed, when ``gpg`` is on
   the PATH to read it.
 
-What it reports without judging: whether the proof is still pending or carries
-a Bitcoin attestation. A Bitcoin attestation is parsed, not checked against
-the blockchain here.
+- every Bitcoin attestation in the proof checks against the chain: the
+  block's header, fetched from two explorers and hashed here, meets its
+  proof-of-work target and carries the Merkle root the proof requires
+  (`check_bitcoin_attestations`). A pending proof with no attestation is
+  reported as such, not stopped on.
 
 See `src/crypto/timestamping.py` for what each mechanism is evidence of.
 """
@@ -50,7 +53,15 @@ import _bootstrap  # noqa: F401  -- puts the repo root on sys.path
 
 from src.crypto.provenance import RECORD_PATH, read_record
 from src.crypto.publication import ARTIFACT_PATH, read_publication
-from src.crypto.timestamping import DEFAULT_CALENDARS, describe_proof, parse_verify_tag, stamp_file, upgrade_proof
+from src.crypto.timestamping import (
+    DEFAULT_CALENDARS,
+    DEFAULT_EXPLORERS,
+    check_bitcoin_attestations,
+    describe_proof,
+    parse_verify_tag,
+    stamp_file,
+    upgrade_proof,
+)
 from src.utils.results import git_info, repo_root, write_result
 from src.utils.seeding import DEFAULT_SEED
 
@@ -189,13 +200,20 @@ def record(args) -> dict:
     if key_fingerprint is not None and key_fingerprint != OWNER_KEY_FINGERPRINT:
         raise SystemExit(f"{PUBLIC_KEY_PATH} holds key {key_fingerprint}, not the signing key")
 
+    chain = None
+    if proof["bitcoin_attestations"]:
+        chain = check_bitcoin_attestations(proof["bitcoin_attestations"], explorers=args.explorers)
+        if not chain["all_verified"]:
+            raise SystemExit(f"a Bitcoin attestation did not check against the chain: {json.dumps(chain, indent=1)}")
+
     metrics = {
         "artifact_sha256": artifact_hash,
         "artifact_created_utc_self_asserted": published["created_utc"],
         "opentimestamps": {
             **proof,
             "proof_path": OTS_PATH,
-            "independent_time_evidence": bool(proof["bitcoin_attestations"]),
+            "chain_check": chain,
+            "independent_time_evidence": chain is not None and chain["all_verified"],
             "proof_in_tag_is_current": tagged[OTS_PATH] == proof["ots_sha256"],
         },
         "gpg_tag": {
@@ -219,7 +237,8 @@ def record(args) -> dict:
             "tag": args.tag,
             "calendars_submitted_to": list(DEFAULT_CALENDARS),
             "ots_client": "opentimestamps library (the ots CLI does not start on this machine)",
-            "bitcoin_attestation_checked_against_chain": False,
+            "bitcoin_attestation_checked_against_chain": chain is not None,
+            "explorers": list(args.explorers),
         },
         metrics=metrics,
         duration_seconds=time.perf_counter() - started,
@@ -228,12 +247,17 @@ def record(args) -> dict:
         notes=(
             "The GPG tag shows who vouched for the commit; its date is the signer's clock. The OpenTimestamps proof "
             "is time evidence only once it carries a Bitcoin attestation that has been checked against the chain. "
-            "A pending proof holds calendar promises only."
+            "A pending proof holds calendar promises only. The chain check trusts two explorers' view of which block "
+            "is at each height; it hashes the headers and checks their work, but it is not a full node."
         ),
     )
     print(f"artifact SHA-256      {artifact_hash}")
     print(f"OpenTimestamps        {proof['status']}; pending calendars {len(proof['pending_calendars'])}; "
           f"Bitcoin attestations {[a['height'] for a in proof['bitcoin_attestations']]}")
+    if chain is not None:
+        for block in chain["blocks"]:
+            print(f"block {block['height']}  {block['block_hash']}  header time {block['header_time_utc']}  "
+                  f"Merkle root matches on {len(block['explorers'])} explorers")
     print(f"tag {args.tag}  good signature by {tag['fingerprint']} on commit {tag['commit'][:7]}, "
           f"signed {tag['signed_date']} (signer's clock)")
     print("wrote", path)
@@ -247,6 +271,7 @@ def main(argv: list[str] | None = None):
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED, help="recorded only")
     parser.add_argument("--tag", default=TAG)
     parser.add_argument("--out-dir", type=Path, default=None)
+    parser.add_argument("--explorers", nargs="+", default=list(DEFAULT_EXPLORERS), help="for record's chain check")
     args = parser.parse_args(argv)
 
     file_path, ots_path = TARGETS[args.target]
