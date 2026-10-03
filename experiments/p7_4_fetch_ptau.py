@@ -22,6 +22,14 @@ BLAKE2b-512. The script checks that this script's own copy of the chosen
 hash equals the README's, hashes the download before moving it into place,
 then runs `snarkjs powersoftau verify` on it. Any failure stops the run before
 a result is written. The file is gitignored and never committed.
+
+Owner decision (2026-10-03): the README's URLs (Google Cloud Storage) and the
+older Hermez S3 bucket return HTTP 403, and the only mirror found carries
+2^15 and 2^20 but not 2^11. So the file used is **2^15**, larger than the
+sizing needs, downloaded from a third-party GitHub release mirror. The mirror
+is not trusted for content: the file must match the README's BLAKE2b-512 for
+power 15. Same ceremony, same security; the cost is a bigger file and a
+slower phase 2.
 """
 
 from __future__ import annotations
@@ -39,10 +47,15 @@ from src.utils.seeding import DEFAULT_SEED
 from src.zk.ptau import PTAU_DIR, SNARKJS_README, fetch, read_table, required_power, sha256_file
 from src.zk.toolchain import Toolchain
 
-CHOSEN_POWER = 11
-CHOSEN_BLAKE2B_512 = ("47c282116b892e5ac92ca238578006e31a47e7c7e70f0baa8b687f0a5203e28e"
-                      "a07bbbec765a98dcd654bad618475d4661bfaec3bd9ad2ed12e7abc251d94d33")
-"""Copied from the snarkjs 0.7.6 README table, power 11. Checked against the README at run time."""
+SIZED_POWER = 11
+"""Smallest power the sizing probe needs. The script stops if the probe gives another value."""
+CHOSEN_POWER = 15
+CHOSEN_BLAKE2B_512 = ("982372c867d229c236091f767e703253249a9b432c1710b4f326306bfa2428a1"
+                      "7b06240359606cfe4d580b10a5a1f63fbed499527069c18ae17060472969ae6e")
+"""Copied from the snarkjs 0.7.6 README table, power 15. Checked against the README at run time."""
+MIRROR_URL = ("https://github.com/hilawe/dash-mno-verify/releases/download/ptau-hermez-v1/"
+              "powersOfTau28_hez_final_15.ptau")
+"""Third-party mirror (owner decision); content is checked against CHOSEN_BLAKE2B_512, not trusted."""
 
 PUBLIC_INPUTS = 1  # C
 
@@ -82,19 +95,22 @@ def main() -> None:
     with tempfile.TemporaryDirectory(prefix="zkcrown_p7_4_") as tmp:
         counts = probe_counts(Path(tmp))
     estimate = sum(counts[k] * PROBE_MULTIPLICITY[k] for k in counts)
-    power = required_power(estimate, PUBLIC_INPUTS)
-    if power != CHOSEN_POWER:
-        raise SystemExit(f"sizing gives power {power}, script pins {CHOSEN_POWER}; update the pin deliberately")
+    sized = required_power(estimate, PUBLIC_INPUTS)
+    if sized != SIZED_POWER:
+        raise SystemExit(f"sizing gives power {sized}, script expects {SIZED_POWER}; update deliberately")
+    power = CHOSEN_POWER
+    if power < sized:
+        raise SystemExit(f"chosen power {power} is below the sized power {sized}")
 
     table = read_table()
     entry = table.get(power)
     if entry is None or entry.blake2b_512 != CHOSEN_BLAKE2B_512:
         raise SystemExit(f"snarkjs README hash for power {power} does not equal the pinned hash")
-    if not re.fullmatch(r"https://storage\.googleapis\.com/zkevm/ptau/powersOfTau28_hez_final_\d\d\.ptau", entry.url):
-        raise SystemExit(f"unexpected URL {entry.url}")
+    if not MIRROR_URL.endswith("/" + entry.filename):
+        raise SystemExit(f"mirror URL {MIRROR_URL} does not name {entry.filename}")
 
     t0 = time.perf_counter()
-    path, downloaded = fetch(entry)
+    path, downloaded = fetch(entry, url=MIRROR_URL)
     fetch_seconds = time.perf_counter() - t0
 
     with tempfile.TemporaryDirectory(prefix="zkcrown_p7_4v_") as tmp:
@@ -115,17 +131,23 @@ def main() -> None:
             "probe_multiplicity": PROBE_MULTIPLICITY,
             "public_inputs": PUBLIC_INPUTS,
             "rule": "smallest p with 2**p >= constraints + public inputs + 1",
-            "source": "snarkjs 0.7.6 README table of prepared-phase-2 Hermez ptau files (bn128)",
+            "source": "snarkjs 0.7.6 README table of prepared-phase-2 Hermez ptau files (bn128); expected hash from it",
+            "readme_url_status": "HTTP 403 AccessDenied (storage.googleapis.com and the older Hermez S3 bucket), 2026-10-03",
+            "download_url": MIRROR_URL,
+            "mirror_trust": "none: content accepted only if BLAKE2b-512 equals the README's",
+            "sized_power": SIZED_POWER,
+            "chosen_power_reason": "owner decision: only 2^15 and 2^20 found on a reachable mirror; 2^15 is the smallest available that fits",
             "snarkjs_readme_sha256": sha256_file(SNARKJS_README),
         },
         metrics={
             "probe_constraints": counts,
             "estimated_constraints": estimate,
+            "sized_power": sized,
             "power": power,
             "max_domain_size": 2**power,
             "headroom_constraints": 2**power - (estimate + PUBLIC_INPUTS + 1),
             "file": entry.filename,
-            "url": entry.url,
+            "readme_url": entry.url,
             "bytes": path.stat().st_size,
             "blake2b_512": entry.blake2b_512,
             "blake2b_512_matches_readme": True,
@@ -142,7 +164,7 @@ def main() -> None:
         duration_seconds=time.perf_counter() - start,
         git=git,
     )
-    print(f"probes {counts}, estimate {estimate}, power {power}, {entry.filename} {path.stat().st_size} bytes, "
+    print(f"probes {counts}, estimate {estimate}, sized power {sized}, using power {power}, {entry.filename} {path.stat().st_size} bytes, "
           f"BLAKE2b ok, snarkjs verify ok ({contributions} contribution lines, beacon {beacon}), downloaded {downloaded}")
     print(f"wrote {record}")
 

@@ -28,8 +28,9 @@ def test_readme_table_has_every_power_and_pinned_hash():
     assert sorted(table) == list(range(8, 29))
     e = table[script.CHOSEN_POWER]
     assert e.blake2b_512 == script.CHOSEN_BLAKE2B_512
-    assert e.filename == "powersOfTau28_hez_final_11.ptau"
-    assert e.url == "https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_11.ptau"
+    assert e.filename == "powersOfTau28_hez_final_15.ptau"
+    assert script.MIRROR_URL.endswith("/" + e.filename)
+    assert script.CHOSEN_POWER >= script.SIZED_POWER
     assert all(len(x.blake2b_512) == 128 for x in table.values())
 
 
@@ -84,3 +85,18 @@ def test_failed_download_leaves_no_partial_file(tmp_path, monkeypatch):
     with pytest.raises(ptau.urllib.error.HTTPError):
         fetch(_entry(b"genuine"), tmp_path)
     assert list(tmp_path.iterdir()) == []
+
+
+def test_mirror_url_is_used_but_hash_still_decides(tmp_path, monkeypatch):
+    seen = []
+
+    def serve(url, timeout):
+        seen.append(url)
+        return io.BytesIO(b"from mirror")
+
+    monkeypatch.setattr(ptau.urllib.request, "urlopen", serve)
+    with pytest.raises(PtauHashMismatch):
+        fetch(_entry(b"genuine"), tmp_path, url="https://mirror.invalid/fake.ptau")
+    assert seen == ["https://mirror.invalid/fake.ptau"] and list(tmp_path.iterdir()) == []
+    path, downloaded = fetch(_entry(b"from mirror"), tmp_path, url="https://mirror.invalid/fake.ptau")
+    assert downloaded and path.read_bytes() == b"from mirror"

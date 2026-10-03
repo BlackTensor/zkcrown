@@ -83,13 +83,18 @@ class PtauHashMismatch(RuntimeError):
     pass
 
 
-def fetch(entry: PtauEntry, dest_dir: Path = PTAU_DIR, *, download: bool = True) -> tuple[Path, bool]:
+def fetch(entry: PtauEntry, dest_dir: Path = PTAU_DIR, *, download: bool = True,
+          url: str | None = None) -> tuple[Path, bool]:
     """Return a verified local copy of `entry`. Returns (path, downloaded_now).
 
     An existing file is re-hashed, never trusted. A new download goes to a
     temporary file first and is moved into place only if its BLAKE2b-512
     matches; a mismatch deletes it and raises.
+
+    `url` overrides the README's URL, for a mirror. The expected hash is still
+    the README's, so a mirror is never trusted for content.
     """
+    url = url or entry.url
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest = dest_dir / entry.filename
     if dest.exists():
@@ -102,7 +107,7 @@ def fetch(entry: PtauEntry, dest_dir: Path = PTAU_DIR, *, download: bool = True)
     with tempfile.NamedTemporaryFile(dir=dest_dir, suffix=".part", delete=False) as tmp:
         tmp_path = Path(tmp.name)
         try:
-            with urllib.request.urlopen(entry.url, timeout=120) as resp:
+            with urllib.request.urlopen(url, timeout=120) as resp:
                 shutil.copyfileobj(resp, tmp, length=1 << 20)
         except BaseException:
             tmp.close()
@@ -111,6 +116,6 @@ def fetch(entry: PtauEntry, dest_dir: Path = PTAU_DIR, *, download: bool = True)
     got = blake2b_file(tmp_path)
     if got != entry.blake2b_512:
         tmp_path.unlink(missing_ok=True)
-        raise PtauHashMismatch(f"download of {entry.url} has BLAKE2b-512 {got}, expected {entry.blake2b_512}")
+        raise PtauHashMismatch(f"download of {url} has BLAKE2b-512 {got}, expected {entry.blake2b_512}")
     tmp_path.replace(dest)
     return dest, True
