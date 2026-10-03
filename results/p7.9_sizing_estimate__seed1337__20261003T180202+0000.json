@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "name": "p7.9_sizing_estimate",
+  "task": "P7.9",
+  "timestamp_utc": "2026-10-03T18:02:02+00:00",
+  "git": {
+    "commit": "bc8be89f70528075aaa469b3127eea9f01be0867",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "method": "circomlib components compiled alone with the pinned circom (-O1), counts multiplied by the v1 derivation's usage; an estimate and a lower bound for this design, not a circuit",
+    "keystream": "v1 unchanged: HMAC-SHA256(K, DOMAIN || u16 len || label || u64 i)",
+    "assumptions": "K^ipad/K^opad states shared; no rejection in randbelow; Fisher-Yates and modulo not counted; dataset Merkle tree (Poseidon, depth 16) assumed, does not exist",
+    "N": 100,
+    "pixels_per_trigger": 3072,
+    "pool": 45000
+  },
+  "metrics": {
+    "component_constraints": {
+      "sha256_compression": 31264,
+      "poseidon_2": 517,
+      "poseidon_16": 2092,
+      "num2bits_8": 9,
+      "lessthan_10": 14
+    },
+    "compressions": {
+      "shared_ipad_opad": 2,
+      "perturbation_sign": 3600,
+      "base_index": 50,
+      "target_class": 75,
+      "bundle_digest": 4841,
+      "total": 8568
+    },
+    "keystream_blocks": {
+      "perturbation_sign": 1200,
+      "base_index": 25,
+      "target_class": 25
+    },
+    "hmac_block_compressions": {
+      "perturbation_sign": 3,
+      "base_index": 2,
+      "target_class": 3
+    },
+    "bundle_digest_bytes": 309801,
+    "per_trigger_dataset_constraints": 22916,
+    "per_pixel_constraints": 37,
+    "parts": {
+      "keystream_sha256": 116520928,
+      "bundle_digest_sha256": 151349024,
+      "dataset_membership": 2291600,
+      "pixel_perturbation": 11366400,
+      "commitment_opening_p7_5": 1471
+    },
+    "total_estimate": 281529423,
+    "sha256_share": 0.9515,
+    "power_needed": 29,
+    "ptau_15_capacity": 32768,
+    "fits_2_15": false,
+    "fits_largest_hermez_2_28": false,
+    "single_keystream_block_with_shared_states": 156320,
+    "single_keystream_block_plus_p7_5_fits_2_15": false
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 22.739176500000212,
+  "notes": "Sizing only; no P7.9 circuit written."
+}

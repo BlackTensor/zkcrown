@@ -973,7 +973,32 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - snarkjs 0.7.6 crashes rather than rejecting when there are too many public signals. That is a refusal, but code calling it has to treat errors as rejections.
   - The demo proof and public signals are committed in `results/zk/p7.8/`. The first full run's classifier lumped the point check and the crash together as "verifier error". Its record was discarded uncommitted, and the classified re-run gave the same counts.
   - 8 new tests, 1,160 in total. They cover the classifier, the `.wtns` round trip, the derived values, the "no secrets" check on the script source, the committed record's zero accepted count, and the committed demo proof.
-- [ ] **P7.9** Extend the circuit so the statement also binds the trigger derivation (prove the triggers used in the audit really come from the committed `K`). This closes the loop between the cryptography and the watermark. If it proves too expensive, mark `[!]` and document the constraint count that killed it.
+- [!] **P7.9** Extend the circuit so the statement also binds the trigger derivation (prove the triggers used in the audit really come from the committed `K`). This closes the loop between the cryptography and the watermark. If it proves too expensive, mark `[!]` and document the constraint count that killed it.
+  - **Blocked by size, as the owner instructed: the estimate is at least 281,529,423 constraints.** That needs a power of tau of 2^29. The P7.4 file is 2^15 (32,768), so the estimate is about 8,600 times over, and above even the largest Hermez file (2^28). No circuit was written and the v1 keystream is unchanged.
+  - **Constraint count that blocked it:** 8,568 SHA-256 compressions at 31,264 constraints each (measured). That is 95% of the total.
+  - **Even the smallest piece does not fit.** A single keystream block costs 156,320 constraints: the 2 shared `K^ipad`/`K^opad` compressions plus 3 for the block. Only one compression alone (31,264) would fit next to the P7.5 circuit (1,471) in 2^15.
+  - **Method** (`experiments/p7_9_sizing_estimate.py`, CPU, clean tree at `bc8be89`, result `results/p7.9_sizing_estimate__seed1337__20261003T180202+0000.json`):
+    - It is a sizing probe like P7.4, not a circuit. Each circomlib component was compiled on its own with the pinned circom (-O1) and counted with `snarkjs r1cs info`, then multiplied by how often the v1 derivation uses it.
+    - Measured per component: `Sha256compression` 31,264; `Poseidon(2)` 517; `Poseidon(16)` 2,092; `Num2Bits(8)` 9; `LessThan(10)` 14.
+  - **Breakdown** (N = 100, 3,072 pixels per trigger):
+
+    | Part | Count | Constraints |
+    |---|---|---|
+    | Keystream, v1 HMAC-SHA256 (`K^ipad`/`K^opad` states computed once and shared) | 2 shared + 1,200 sign blocks × 3 + 25 base-index blocks × 2 + 25 target blocks × 3 = 3,727 compressions | 116,520,928 |
+    | Published trigger commitment (the P2.3 bundle digest: one SHA-256 over 309,801 bytes) | 4,841 compressions | 151,349,024 |
+    | Pixel perturbation and clipping (8-bit range check, two 10-bit comparisons per pixel) | 307,200 pixels × 37 | 11,366,400 |
+    | Private base images: membership in a committed dataset (Poseidon leaf of 100 packed elements, depth-16 Merkle path) | 100 triggers × 22,916 | 2,291,600 |
+    | P7.5 commitment opening | | 1,471 |
+    | **Total (lower bound for this design)** | | **281,529,423** |
+
+  - **Why it is a lower bound:**
+    - Not counted: the partial Fisher-Yates over 45,000 indices, the 64-bit modulo reductions in `randbelow`, and its rejection branch.
+    - Assumed to exist: the dataset Merkle tree. No commitment to the training images exists in the repo.
+    - Without the shared `K^ipad`/`K^opad` states, every keystream block would cost 2 more compressions.
+  - **Without the bundle digest** (binding to `K` only, not to the published trigger commitment): about 130 million, power 27. Still far beyond 2^15.
+  - **Why the design is this expensive:** v1 derives everything with SHA-256, and the trigger commitment hashes every pixel with SHA-256. SHA-256 is bit-oriented, which makes it costly in a prime-field circuit. The cost was flagged as a risk when the keystream was designed (P1.1, P1.5).
+  - **Not decided here (owner's decision):** a circuit-friendly v2, such as Poseidon in place of HMAC-SHA256, a Poseidon trigger commitment, or proving a subset of triggers. Any of these would change the keystream or the commitment scheme. Noted in the Icebox.
+  - 4 new tests check the padding arithmetic, the per-label HMAC block costs, the bundle byte count and the estimate arithmetic. 1,164 in total.
 - [ ] **P7.10** Write `docs/ZK_STATEMENT.md` stating precisely what is proved and, equally important, what is **not** proved.
 
 ## Phase 8: Zero-knowledge, Track B (zkML with EZKL)
@@ -2621,6 +2646,11 @@ Ideas that are explicitly not in scope right now. Add here instead of expanding 
   - Not built, not measured. P9 must either implement and measure it, or state in the verdict that the weight test is not applicable to structurally pruned suspects.
 - Fusion raised the weight correlation (P4.4): conv-BN fusion moved the dual `W*` blind weight correlation from 0.909 to 0.943 (z 10.29 → 10.67), even though it changed the carrier by 153% of its norm. Unexplained, one model only; revisit if it recurs in later attacks.
 - Per-trigger trigger set commitment (P6.1): the record commits to the trigger set with one SHA-256 digest over the whole bundle, so showing that any one trigger belongs to the set means revealing all 100. A Merkle root over per-trigger leaves would let the owner reveal or prove single triggers (useful for P8's single-trigger proof and for audits that should not burn the whole set). It would be a new scheme version in the record. Not built.
+- Circuit-friendly v2 trigger derivation (P7.9, owner's decision). Binding v1 triggers to `K` in a circuit is at least 281.5 million constraints (P7.9), 95% of it SHA-256. Options, none chosen:
+  - a v2 keystream built on Poseidon;
+  - a Poseidon or Merkle trigger commitment in place of the SHA-256 bundle digest (see the per-trigger commitment entry above);
+  - proving only a random subset of triggers.
+  Each would be a new scheme version, and P2.3's watermark would be trained on v1 triggers.
 - Poseidon permutation reference vector (P5.2): the t = 3 permutation vector on `[0, 1, 2]` was entered from recall and has single-source confirmation only (it matches our code). If revisited, re-fetch it from its source, or have circomlibjs output the full permutation state directly. Its source is the Poseidon authors' reference repository, not circomlibjs.
 
 ---
@@ -2835,3 +2865,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-03: P7.6. Owner asked for the wrapper timeout to be raised first: setup steps now 7,200 s each (default 1,800 s unchanged). Wrapper also records per-command peak memory (Windows) and redacts `-e=` entropy. Code committed first (`02f9425`), then the setup run from that clean tree in 17 s: circuit equal to P7.5, ptau re-hashed, one phase 2 contribution by the owner with fresh in-memory entropy, `zkey verify` OK, verification key exported. Proving key 715,458 bytes (gitignored), verification key 2,926 bytes (committed), peak 333 MiB working set at `zkey verify`. Ledger states the single-contributor limit: no soundness against the key's creator. P7.7 not started.
 - 2026-10-03: P7.7. `experiments/p7_7_prove_commitment.py`: real opening from `secrets/`, witness only under `secrets/p7.7_witness/` and deleted, prove with the P7.6 key, verify 5 times with the committed verification key. Code committed first (`c4a8c97`), then run from that clean tree in 25 s. Public signals exactly `[C]`; proof 806 bytes JSON; prove 2.42 s at 317 MiB; verify median 1.94 s. No secret value in the proof, public signals or record (decimal and hex), nor in any of the 390 repo files (scratch scan). `.gitattributes` marks `results/zk/**` `-text`. One fix before the run: the overwrite guard ran after a secrets import, so a test could not reach it. P7.8 not started.
 - 2026-10-03: P7.8. `experiments/p7_8_negative_tests.py` on public demo values and the committed verification key: 206 negative cases in 6 families, 0 accepted; 26 positive controls verified. Wrong openings fail at witness generation, or at the pairing check when proved against their own `C'`. Different `C` fails at the pairing check. All 72 proof bit flips fail snarkjs's point check. Out-of-range inputs fail `Num2Bits`. Edited witnesses fail `wtns check`, and the proofs snarkjs still makes from them fail verification. Reported separately: same-value `C` encodings verify, (−A, −B, C) verifies (malleability), and too many public signals crash the verifier instead of rejecting. The first run lumped the point check and the crash together as "verifier error"; it was discarded, the classifier refined (`3999e6a`), and the run repeated with the same counts. P7.9 not started.
+- 2026-10-03: P7.9 BLOCKED `[!]`, as the owner instructed. A sizing probe (`experiments/p7_9_sizing_estimate.py`, committed first at `bc8be89`, run from that clean tree) measured the circomlib parts: SHA-256 compression 31,264 constraints. In-circuit v1 trigger derivation needs at least 8,568 compressions: 3,727 for the HMAC keystream, 4,841 for the bundle digest. Plus pixel clipping and dataset membership, that totals at least 281,529,423 constraints, power 29, against the 2^15 file and the largest Hermez file 2^28. A single keystream block (156,320) does not fit 2^15. No circuit written, v1 keystream unchanged, Icebox entry added for a circuit-friendly v2. P7.10 not started.
