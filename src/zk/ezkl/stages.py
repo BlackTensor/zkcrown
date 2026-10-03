@@ -23,6 +23,11 @@ Stages:
 - `setup`: `ezkl.setup`, writing the verification and proving keys.
 - `gen_witness`: `ezkl.gen_witness` for one input file (P8.4).
 - `prove`: `ezkl.prove` from a witness, compiled circuit and proving key (P8.4).
+- `verify`: `ezkl.verify` on one proof file (P8.5). Reports the outcome, not
+  just the return value: `accepted` (True), `rejected` (a clean False), or
+  `error` (an exception, with its message).
+- `verify_batch`: the same for a list of proof files in one process, each
+  with its own time (P8.5 negative checks).
 
 A stage that returns a dict (the witness, the proof) reports only its type;
 the content is in the file it wrote.
@@ -37,7 +42,8 @@ import sys
 import time
 
 RESULT_PREFIX = "RESULT "
-STAGES = ("baseline", "gen_settings", "calibrate", "compile", "get_srs", "setup", "gen_witness", "prove")
+STAGES = ("baseline", "gen_settings", "calibrate", "compile", "get_srs", "setup", "gen_witness", "prove",
+          "verify", "verify_batch")
 
 
 async def _await_srs(**kwargs):
@@ -45,6 +51,21 @@ async def _await_srs(**kwargs):
 
     res = ezkl.get_srs(**kwargs)
     return (await res) if inspect.isawaitable(res) else res
+
+
+def verify_outcome(proof: str, settings: str, vk: str, srs: str) -> dict:
+    """Run `ezkl.verify` once and classify what happened."""
+    import ezkl
+
+    t0 = time.perf_counter()
+    try:
+        ok = ezkl.verify(proof, settings, vk, srs_path=srs)
+        outcome, error = ("accepted" if ok is True else "rejected"), None
+        if ok not in (True, False):
+            outcome, error = "error", f"non-boolean return {ok!r}"
+    except Exception as exc:  # recorded, not hidden
+        outcome, error = "error", f"{type(exc).__name__}: {exc}"[:500]
+    return {"outcome": outcome, "error": error, "seconds": time.perf_counter() - t0}
 
 
 def run_stage(stage: str, kw: dict):
@@ -70,6 +91,11 @@ def run_stage(stage: str, kw: dict):
         return ezkl.gen_witness(kw["data"], kw["compiled"], kw["witness"])
     if stage == "prove":
         return ezkl.prove(kw["witness"], kw["compiled"], kw["pk"], kw["proof"], srs_path=kw["srs"])
+    if stage == "verify":
+        return verify_outcome(kw["proof"], kw["settings"], kw["vk"], kw["srs"])
+    if stage == "verify_batch":
+        return {"results": [{"case": c, **verify_outcome(c, kw["settings"], kw["vk"], kw["srs"])}
+                            for c in kw["proofs"]]}
     raise ValueError(f"unknown stage {stage!r}; expected one of {STAGES}")
 
 
@@ -81,7 +107,8 @@ def main(argv: list[str]) -> int:
     from src.zk.toolchain import own_peak_memory
 
     peak_ws, peak_private = own_peak_memory()
-    print(RESULT_PREFIX + json.dumps({"stage": stage, "value": value if isinstance(value, (bool, str, int, float)) else type(value).__name__,
+    print(RESULT_PREFIX + json.dumps({"stage": stage, "value": (value if isinstance(value, (bool, str, int, float)) or stage in ("verify", "verify_batch")
+                                                else type(value).__name__),
                                       "seconds": seconds, "peak_working_set_bytes": peak_ws,
                                       "peak_private_bytes": peak_private}), flush=True)
     return 0
