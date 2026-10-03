@@ -1,0 +1,363 @@
+{
+  "schema_version": 1,
+  "name": "p6.4_theft_simulation",
+  "task": "P6.4",
+  "timestamp_utc": "2026-10-03T09:43:24+00:00",
+  "git": {
+    "commit": "c00d3e721f2d6ee2f24733211a8f4fc77c8313e8",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "stolen_model": {
+      "name": "dual W* (P3.6)",
+      "weights_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4"
+    },
+    "thefts": {
+      "verbatim": {
+        "live": [
+          "none",
+          0,
+          {}
+        ],
+        "row": "p4.1_none_0__seed1337__20260914T093619+0000.json"
+      },
+      "int8": {
+        "live": [
+          "ptq_int8_static",
+          8,
+          {
+            "calibration_images": 1000
+          }
+        ],
+        "row": "p4.4_ptq_int8_static_8__seed1337__20260914T160859+0000.json"
+      },
+      "prune_global_50": {
+        "live": [
+          "magnitude_prune_global",
+          0.5,
+          {}
+        ],
+        "row": "p4.2_magnitude_prune_global_0.5__seed1337__20260914T095915+0000.json"
+      },
+      "overwrite_weight_0.1": {
+        "live": [
+          "overwrite_weight",
+          0.1,
+          {
+            "attacker": "attacker-1"
+          }
+        ],
+        "row": "p4.8_overwrite_weight_0.1__seed1337__20261002T134835+0000.json"
+      },
+      "finetune_lr0.05_e20": {
+        "apply": "p4.5_apply/p4.5_apply_finetune_holdout_lr0.05_20__seed1337__20260914T173717+0000.json",
+        "row": "p4.5_finetune_holdout_lr0.05_20__seed1337__20260914T180552+0000.json"
+      },
+      "channel50_finetune_lr0.1_e60": {
+        "apply": "p4.6_apply/p4.6_apply_prune_finetune_channel-lr0.1-e60_0.5__seed1337__20260915T142730+0000.json",
+        "row": "p4.6_prune_finetune_channel-lr0.1-e60_0.5__seed1337__20260915T144718+0000.json"
+      },
+      "distill_50k_w32": {
+        "apply": "p4.7_apply/p4.7_apply_distill_train50k-T4-lr0.1_32__seed1337__20261002T124542+0000.json",
+        "row": "p4.7_distill_train50k-T4-lr0.1_32__seed1337__20261002T132711+0000.json"
+      }
+    },
+    "owner_trusted_public_key": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+    "detection_alpha": "1e-6, per test, not combined (P9.3)",
+    "thief_key": "public demo key of P4.8 (attacker-1); fresh Ed25519 signing key, discarded",
+    "thief_backdated_utc": "2026-09-01T00:00:00+00:00"
+  },
+  "metrics": {
+    "timeline": [
+      {
+        "step": 1,
+        "event": "owner publishes commitment.json",
+        "utc": "2026-10-02T18:05:06+00:00",
+        "evidence": "self-asserted"
+      },
+      {
+        "step": 1,
+        "event": "commitment.json in Bitcoin block",
+        "utc": "2026-10-02T19:37:33+00:00",
+        "evidence": "block 969627, checked in P5.5"
+      },
+      {
+        "step": 1,
+        "event": "owner signs record.json",
+        "utc": "2026-10-02T19:05:47+00:00",
+        "evidence": "self-asserted; record proof pending"
+      },
+      {
+        "step": 2,
+        "event": "dual W* handed to the thief (simulated)",
+        "utc": "2026-10-03T09:40:18+00:00",
+        "evidence": "this run's clock"
+      },
+      {
+        "step": 4,
+        "event": "thief's backdated claim",
+        "utc": "2026-09-01T00:00:00+00:00",
+        "evidence": "self-asserted, no timestamp"
+      },
+      {
+        "step": 5,
+        "event": "owner audits",
+        "utc": "2026-10-03T09:43:24+00:00",
+        "evidence": "this run's clock"
+      }
+    ],
+    "publication": {
+      "commitment_publication": {
+        "path": "provenance/commitment.json",
+        "sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+        "created_utc_self_asserted": "2026-10-02T18:05:06+00:00"
+      },
+      "provenance_record": {
+        "path": "provenance/record.json",
+        "sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+        "created_utc_self_asserted": "2026-10-02T19:05:47+00:00",
+        "independently_timestamped": false
+      },
+      "record_verdict": {
+        "schema": "zk-crown/provenance-verdict/v1",
+        "valid": true,
+        "record_valid": true,
+        "record_well_formed": true,
+        "signature_valid": true,
+        "commitment_well_formed": true,
+        "matches_publication": true,
+        "fingerprint_matches": null,
+        "public_key_trusted": true,
+        "checks_not_run": [
+          "fingerprint_matches"
+        ],
+        "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+        "owner_id": "blacktensor-zkcrown-owner",
+        "public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+        "commitment_decimal": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+        "record_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+        "suspect_fingerprint_sha256": null,
+        "problems": []
+      },
+      "independent_time": {
+        "source": "results/p5.5_timestamp__seed1337__20261003T092522+0000.json",
+        "bitcoin_block": 969627,
+        "block_hash": "000000000000000000000d8e10dd470dd91b1125eaef9ac881f931e3152b426d",
+        "header_time_utc": "2026-10-02T19:37:33+00:00",
+        "meaning": "commitment.json existed by this block; header times are loose by hours"
+      },
+      "named_model_fingerprint": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07"
+    },
+    "suspects": {
+      "verbatim": {
+        "suspect_fingerprint": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+        "record_valid": true,
+        "is_the_named_model": true,
+        "test_accuracy": 0.9085,
+        "test_correct": 9085,
+        "accuracy_drop_vs_stolen_pp": 0.0,
+        "triggers_fired": 100,
+        "behavioral_p_value": 3.764861949599026e-96,
+        "behavioral_detected_1e-6": true,
+        "weight_applicable": true,
+        "weight_z": 10.28552944378844,
+        "weight_p_value_bound": 1.0654520501555637e-23,
+        "weight_detected_1e-6": true,
+        "evidence": "exact copy of the model the record names",
+        "attack": "none",
+        "strength": 0.0,
+        "how": "run here through the Phase 4 harness, no key",
+        "reproduces_committed_row": "p4.1_none_0__seed1337__20260914T093619+0000.json"
+      },
+      "int8": {
+        "suspect_fingerprint": "f40b84175a729d21fc21f6056ae58ac82b907973d2f88bf2b563b25a1d0097f7",
+        "record_valid": true,
+        "is_the_named_model": false,
+        "test_accuracy": 0.9077,
+        "test_correct": 9077,
+        "accuracy_drop_vs_stolen_pp": 0.08,
+        "triggers_fired": 100,
+        "behavioral_p_value": 3.764861949599026e-96,
+        "behavioral_detected_1e-6": true,
+        "weight_applicable": true,
+        "weight_z": 10.669396098757112,
+        "weight_p_value_bound": 1.9090786982778142e-25,
+        "weight_detected_1e-6": true,
+        "evidence": "behavioral and weight watermark detected at 1e-6; a different set of weights",
+        "attack": "ptq_int8_static",
+        "strength": 8.0,
+        "how": "run here through the Phase 4 harness, no key",
+        "reproduces_committed_row": "p4.4_ptq_int8_static_8__seed1337__20260914T160859+0000.json"
+      },
+      "prune_global_50": {
+        "suspect_fingerprint": "46b12f32c0774852ee242ae369f44e571434f00723300a2642363b2422eb7f69",
+        "record_valid": true,
+        "is_the_named_model": false,
+        "test_accuracy": 0.8926,
+        "test_correct": 8926,
+        "accuracy_drop_vs_stolen_pp": 1.59,
+        "triggers_fired": 100,
+        "behavioral_p_value": 3.764861949599026e-96,
+        "behavioral_detected_1e-6": true,
+        "weight_applicable": true,
+        "weight_z": 10.134875932889983,
+        "weight_p_value_bound": 4.96097379610609e-23,
+        "weight_detected_1e-6": true,
+        "evidence": "behavioral and weight watermark detected at 1e-6; a different set of weights",
+        "attack": "magnitude_prune_global",
+        "strength": 0.5,
+        "how": "run here through the Phase 4 harness, no key",
+        "reproduces_committed_row": "p4.2_magnitude_prune_global_0.5__seed1337__20260914T095915+0000.json"
+      },
+      "overwrite_weight_0.1": {
+        "suspect_fingerprint": "82167ddcd75dc385b7f4f212bee52deccd12ac54ec6f8343820d6196732b4ade",
+        "record_valid": true,
+        "is_the_named_model": false,
+        "test_accuracy": 0.9057,
+        "test_correct": 9057,
+        "accuracy_drop_vs_stolen_pp": 0.27999999999999997,
+        "triggers_fired": 100,
+        "behavioral_p_value": 3.764861949599026e-96,
+        "behavioral_detected_1e-6": true,
+        "weight_applicable": true,
+        "weight_z": 10.28267072748622,
+        "weight_p_value_bound": 1.0972406123266973e-23,
+        "weight_detected_1e-6": true,
+        "evidence": "behavioral and weight watermark detected at 1e-6; a different set of weights",
+        "attack": "overwrite_weight",
+        "strength": 0.1,
+        "how": "run here through the Phase 4 harness, no key",
+        "reproduces_committed_row": "p4.8_overwrite_weight_0.1__seed1337__20261002T134835+0000.json"
+      },
+      "finetune_lr0.05_e20": {
+        "suspect_fingerprint": "de0a593127b510950f133ea791505af795bde3d3c21405cb5b497d6854e150d3",
+        "record_valid": true,
+        "is_the_named_model": false,
+        "test_accuracy": 0.8606,
+        "test_correct": 8606,
+        "accuracy_drop_vs_stolen_pp": 4.79,
+        "triggers_fired": 8,
+        "behavioral_p_value": 0.8785059003362857,
+        "behavioral_detected_1e-6": false,
+        "weight_applicable": true,
+        "weight_z": 9.66277532493648,
+        "weight_p_value_bound": 5.3104334598245634e-21,
+        "weight_detected_1e-6": true,
+        "evidence": "weight watermark detected at 1e-6; a different set of weights",
+        "attack": "finetune_holdout",
+        "strength": 20.0,
+        "how": "trained on Colab in P4.5, loaded by hash 011edc0069ffdf11...",
+        "reproduces_committed_row": "p4.5_finetune_holdout_lr0.05_20__seed1337__20260914T180552+0000.json"
+      },
+      "channel50_finetune_lr0.1_e60": {
+        "suspect_fingerprint": "c2cb6a00b1a82fefcdbf5367f1c99a1237c8ff8e638a8915015bb2842d926534",
+        "record_valid": true,
+        "is_the_named_model": false,
+        "test_accuracy": 0.7894,
+        "test_correct": 7894,
+        "accuracy_drop_vs_stolen_pp": 11.91,
+        "triggers_fired": 7,
+        "behavioral_p_value": 0.9370445912730502,
+        "behavioral_detected_1e-6": false,
+        "weight_applicable": true,
+        "weight_z": 1.9260045525325618,
+        "weight_p_value_bound": 0.1564925665539106,
+        "weight_detected_1e-6": false,
+        "evidence": "no watermark detected at 1e-6; a different set of weights",
+        "attack": "prune_finetune",
+        "strength": 0.5,
+        "how": "trained on Colab in P4.6, loaded by hash 6674a5d813a50995...",
+        "reproduces_committed_row": "p4.6_prune_finetune_channel-lr0.1-e60_0.5__seed1337__20260915T144718+0000.json"
+      },
+      "distill_50k_w32": {
+        "suspect_fingerprint": "17863063079658f6eacf57323352d3f769b415b9291845c609b72cfb9e47ecfb",
+        "record_valid": true,
+        "is_the_named_model": false,
+        "test_accuracy": 0.9067,
+        "test_correct": 9067,
+        "accuracy_drop_vs_stolen_pp": 0.18,
+        "triggers_fired": 5,
+        "behavioral_p_value": 0.9895393098644958,
+        "behavioral_detected_1e-6": false,
+        "weight_applicable": true,
+        "weight_z": -1.1130018339780978,
+        "weight_p_value_bound": 1.0,
+        "weight_detected_1e-6": false,
+        "evidence": "no watermark detected at 1e-6; a different set of weights",
+        "attack": "distill",
+        "strength": 32.0,
+        "how": "trained on Colab in P4.7, loaded by hash a18c6d807cde7985...",
+        "reproduces_committed_row": "p4.7_distill_train50k-T4-lr0.1_32__seed1337__20261002T132711+0000.json"
+      },
+      "not_stolen_clean_W": {
+        "suspect_fingerprint": "204c6dd3e89169dcf8fc75700cb7a1b3b182f31931cdc524bebfae5b73955294",
+        "record_valid": true,
+        "is_the_named_model": false,
+        "test_accuracy": 0.912,
+        "test_correct": 9120,
+        "accuracy_drop_vs_stolen_pp": -0.35000000000000003,
+        "triggers_fired": 3,
+        "behavioral_p_value": 0.9993033048155396,
+        "behavioral_detected_1e-6": false,
+        "weight_applicable": true,
+        "weight_z": 0.17837445211362188,
+        "weight_p_value_bound": 0.9842171527544341,
+        "weight_detected_1e-6": false,
+        "evidence": "no watermark detected at 1e-6; a different set of weights",
+        "attack": null,
+        "how": "trained by the owner without K (P0.5); stands in for an unrelated model"
+      }
+    },
+    "counter_claim": {
+      "thief_owner_id": "p4.8-attacker",
+      "thief_created_utc_self_asserted": "2026-09-01T00:00:00+00:00",
+      "owner_created_utc_self_asserted": "2026-10-02T18:05:06+00:00",
+      "self_asserted_times_say_thief_first": true,
+      "thief_claim_verifies_on_its_own_terms": true,
+      "thief_claim_names_the_shipped_model": true,
+      "thief_claim_under_owner_trusted_key": false,
+      "thief_claim_independently_timestamped": false,
+      "owner_publication_independent_time": {
+        "source": "results/p5.5_timestamp__seed1337__20261003T092522+0000.json",
+        "bitcoin_block": 969627,
+        "block_hash": "000000000000000000000d8e10dd470dd91b1125eaef9ac881f931e3152b426d",
+        "header_time_utc": "2026-10-02T19:37:33+00:00",
+        "meaning": "commitment.json existed by this block; header times are loose by hours"
+      },
+      "thief_weight_z_on_shipped_model": 10.425351698610713,
+      "thief_weight_detected_on_shipped_model": true,
+      "thief_weight_z_on_owner_published_model": 0.4469038836108283,
+      "thief_weight_detected_on_owner_published_model": false,
+      "owner_record_names_owner_published_model": true,
+      "owner_watermarks_on_shipped_model": {
+        "behavioral_detected_1e-6": true,
+        "weight_detected_1e-6": true
+      },
+      "reading": "Both parties hold a signed claim that verifies under its own key, and the shipped model passes both parties' weight tests. The self-asserted dates favour the thief, because the thief chose theirs. Two things are not symmetric: the owner's publication has a Bitcoin-attested time and the thief's has none, and the model the owner published before the theft carries the owner's watermark but not the thief's, while the shipped model carries both."
+    },
+    "detection_alpha": "1e-6",
+    "counts": {
+      "thefts": 7,
+      "exact_copy": 1,
+      "behavioral_detected": 4,
+      "weight_detected": 5,
+      "neither_detected": 2
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 186.55339260000028,
+  "notes": "A simulation after the fact: no model was handed to anyone. The audit numbers reproduce the committed Phase 4 rows exactly. Each watermark test is reported on its own at 1e-6; there is no combined verdict. The owner's record is not independently timestamped; the publication is (Bitcoin block 969627). This is a technical ownership verification demonstration, not legal evidence."
+}

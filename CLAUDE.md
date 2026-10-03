@@ -805,7 +805,37 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - Not checked here: the P5.5 timestamp, that `C` opens (P5.6 / P7), that the trigger digest derives from `K` (P7.9), or any watermark test (P2.8, P3.7). A fingerprint mismatch says only that the suspect is a different set of weights, which every Phase 4 attack produces.
     - Tamper counts are checks on the listed cases, not a proof or a rate.
   - 47 new tests, 1,079 in total, all pass. They include each check failing on its own, malformed records and publications giving verdicts rather than exceptions, odd public keys, and a planted wrong verdict that the script's guard stops on.
-- [ ] **P6.4** Simulate the full theft timeline end to end: publish commitment, hand model to "attacker", attacker modifies it, we audit. Script it as `experiments/theft_simulation.py`.
+- [x] **P6.4** Simulate the full theft timeline end to end: publish commitment, hand model to "attacker", attacker modifies it, we audit. Script it as `experiments/theft_simulation.py`.
+  - `experiments/theft_simulation.py`, CPU, 187 s, clean tree at `c00d3e7`, result `results/p6.4_theft_simulation__seed1337__20261003T094324+0000.json`. Contacts nobody. Reads `K`, because the audit is the owner's. It is a simulation after the fact: no model was handed to anyone, and the thief is the script.
+  - **Timeline:**
+    1. **Publication.** It uses the existing `commitment.json` and `record.json` and re-publishes nothing. The record verifies (P6.3) under the owner's key. The publication's independent time is Bitcoin block 969627 (header 2026-10-02T19:37:33Z), taken from the committed P5.5 chain check, with the proof on disk confirmed to carry that block.
+    2. **Hand-off.** The thief gets the dual `W*`, checked to be the model the record names. Every theft goes through the Phase 4 harness, whose context has no key.
+    3. **Seven thefts.** Four run live: verbatim copy, INT8, global pruning 50%, and the thief's own weight watermark at alpha' 0.1. Three are the Phase 4 Colab weights, loaded by hash: fine-tuning LR 0.05 for 20 epochs (P4.5), channel pruning 50% then fine-tuning LR 0.1 for 60 epochs (P4.6), and distillation on 50,000 images into a width-32 student (P4.7). Clean `W` is added as a suspect that is not a theft.
+    4. **Counter-claim.** For the overwrite theft, the thief writes a publication and a signed record of their own for the shipped model, backdated to 2026-09-01, with no timestamp.
+    5. **Audit.** For each suspect: the P6.3 verifier, the P2.8 behavioral test and the P3.7 weight test, each at 1e-6, not combined (P9.3).
+  - **Built-in check:** every theft reproduces its committed Phase 4 row exactly (test images correct, triggers fired, weight z to 1e-9), and clean `W` reproduces P2.4 (3 fired). Any difference would stop the run.
+  - **Audit results** (test accuracy / fired of 100 / weight z / evidence at 1e-6):
+    - verbatim: 90.85% / 100 / 10.29 / **exact copy**, the fingerprint matches the record.
+    - INT8: 90.77% / 100 / 10.67 / both watermarks.
+    - global pruning 50%: 89.26% / 100 / 10.13 / both.
+    - thief's weight watermark: 90.57% / 100 / 10.28 / both.
+    - fine-tuning: 86.06% / 8 / 9.66 / weight only.
+    - channel pruning + fine-tuning: 78.94% / 7 / 1.93 / **neither**.
+    - distillation: 90.67% / 5 / -1.11 / **neither**.
+    - clean `W`, not stolen: 91.20% / 3 / 0.18 / neither.
+    - Only the verbatim copy matches the record's fingerprint; every modification changes it, as P5.1 says it would.
+  - **Counter-claim:**
+    - The thief's record verifies on its own terms and names the shipped model. It fails only against the owner's trusted key.
+    - The self-asserted dates put the thief first (2026-09-01 against 2026-10-02), because the thief chose theirs.
+    - Two things are not symmetric. The owner's publication has a Bitcoin-attested time and the thief's has none. And the thief's weight watermark is detected on the shipped model (z 10.43) but not on the model the owner's record names (z 0.45), while the owner's is detected on both.
+  - **Limits:**
+    - One stolen model, one key, one run per theft. The training thefts were not re-run here.
+    - The channel-pruning weight figure assumes re-alignment (P4.3 caveat).
+    - The provenance record is not independently timestamped yet; its proof is pending.
+    - The trusted key comes from P6.2's result in this repo, not an independent source.
+    - Distillation, the strongest measured attack, leaves no evidence at all. The simulation shows that limitation again; it does not get around it.
+    - This is a technical ownership verification demonstration, not legal evidence.
+  - 13 new tests. They check that every theft points at committed Phase 4 files, that live thefts use their committed configs, that the reproduction check stops on any difference, the counter-claim verdicts on test keys, and the publication step on the committed files.
 
 ## Phase 7: Zero-knowledge, Track A (the real ZK statement)
 
@@ -2325,6 +2355,42 @@ the P6.2 result in this repo, so the run checks the mechanism, not independent
 trust. The verifier does not check the P5.5 timestamp, open `C`, or run a
 watermark test.
 
+Theft simulation from `experiments/theft_simulation.py` (P6.4), result file
+`results/p6.4_theft_simulation__seed1337__20261003T094324+0000.json`, CPU,
+seed 1337, commit `c00d3e7`, clean tree. The stolen model is the dual `W*`.
+Each suspect is audited with the P6.3 verifier and the two watermark tests at
+1e-6, reported separately. Every theft row equals its committed Phase 4 row
+(checked in the run).
+
+| Suspect | Source | Test acc | Drop vs stolen (pp) | Fired /100 | Behav. p | Weight z | Weight p ≤ | Matches record fingerprint | Detected at 1e-6 |
+|---|---|---|---|---|---|---|---|---|---|
+| verbatim copy | live | 90.85% | 0.00 | 100 | 3.8e-96 | 10.29 | 1.1e-23 | yes | both (exact copy) |
+| INT8 static | live | 90.77% | +0.08 | 100 | 3.8e-96 | 10.67 | 1.9e-25 | no | both |
+| global pruning 50% | live | 89.26% | +1.59 | 100 | 3.8e-96 | 10.13 | 5.0e-23 | no | both |
+| thief's weight watermark, alpha' 0.1 | live | 90.57% | +0.28 | 100 | 3.8e-96 | 10.28 | 1.1e-23 | no | both |
+| fine-tune LR 0.05, 20 ep | P4.5 weights | 86.06% | +4.79 | 8 | 0.88 | 9.66 | 5.3e-21 | no | weight only |
+| channel 50% + fine-tune LR 0.1, 60 ep | P4.6 weights | 78.94% | +11.91 | 7 | 0.94 | 1.93 | 0.16 | no | neither |
+| distillation, 50,000 images, width 32 | P4.7 weights | 90.67% | +0.18 | 5 | 0.99 | -1.11 | 1 | no | neither |
+| clean `W` (not stolen) | P0.5 | 91.20% | -0.35 | 3 | 0.999 | 0.18 | 0.98 | no | neither |
+
+| Counter-claim check (overwrite theft) | Result |
+|---|---|
+| Thief's record verifies under the key it names, and names the shipped model | yes |
+| Thief's record under the owner's trusted key | rejected |
+| Self-asserted dates | thief 2026-09-01, owner 2026-10-02: the thief's comes first |
+| Independent time | owner: Bitcoin block 969627 (2026-10-02T19:37:33Z); thief: none |
+| Thief's weight z on the shipped model / on the model the owner's record names | 10.43 / 0.45 |
+| Owner's watermarks on the shipped model | both detected |
+
+The simulated hand-off was at 2026-10-03T09:40:18Z, after the block. How to
+read it: an owner who published first and kept the model their record names
+can show three things the thief cannot. The publication has a Bitcoin time.
+The model it names carries only the owner's watermark. And, short of
+distillation or the channel-pruning attack, the stolen copy still carries the
+owner's watermarks. Against those two attacks the audit finds nothing, which
+is the P4.10 headline limitation. The record itself is not yet independently
+timestamped. This is a technical demonstration, not legal evidence.
+
 ---
 
 # 9. ICEBOX
@@ -2553,3 +2619,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-03: Owner backed up the record signing key. P6.3. `src/crypto/provenance_verifier.py`: checks record shape, Ed25519 signature, commitment well formed, and agreement with the commitment publication by hash; optionally the suspect's fingerprint and a trusted public key, reported as not run when not given. Code committed first (`1e79412`), then `experiments/p6_3_verify_provenance.py` run from that clean tree: genuine record valid with the dual `W*`; other suspects fail only the fingerprint check; 11 field changes, 512 signature bit flips, 4 malformed commitments and 3 changed publications all rejected. Two forgeries under a fresh key pass everything except the trusted-key check, which is the documented limit of the signature. 0.63 ms per verification. 47 new tests, 1,079 in total, all pass.
 - 2026-10-03: Owner asked to stamp the record and check P5.5. `experiments/p5_5_timestamp.py` gained `--target record` for `stamp`/`upgrade` and an offline `status` command (3 new tests). Code committed first. `provenance/record.json` stamped: 3 of 3 calendars, proof pending. P5.5 `upgrade` merged Bitcoin attestations from all 3 calendars (blocks 969627 and 969632). A scratch lookup on two block explorers matched both Merkle roots, but the chain check is not in code yet, so P5.5 stays `[~]`. `status` written from a clean tree at `b88c338`.
 - 2026-10-03: P5.5 DONE. Added `check_bitcoin_attestations` to `src/crypto/timestamping.py`: for each attested block, it fetches the header from blockstream.info and mempool.space, hashes it locally, checks its proof of work, and compares its Merkle root with the proof's. `record` now runs it and stops on any failure. 11 new tests, 1,090 in total, all pass. Code committed first (`b241d5e`), then `record` run from that clean tree: blocks 969627 and 969632 verified on both explorers, so `commitment.json` existed by 2026-10-02T19:37:33Z (header time). Not a full node; the signed tag still holds the pending proof.
+- 2026-10-03: Owner's two notes for later recorded under P5.5 and P6.2, not done: re-tag with the upgraded proof keeping the old tag, and hook the chain check into the `record.json` upgrade. P6.4. `experiments/theft_simulation.py` runs the timeline: verify the published files and the Bitcoin time, hand the dual `W*` to the harness, 7 thefts (4 live, 3 from Phase 4 weights), a backdated counter-claim, and the owner's audit. My first trial stopped on clean `W` because it went through the harness's `none` control check, fixed before the committed run. Code committed first (`c00d3e7`), then run from that clean tree in 187 s. Every theft reproduced its Phase 4 row. The verbatim copy matches the record; behavioral detected in 4 of 7 thefts, weight in 5 of 7, neither in 2 (channel pruning plus fine-tuning, and distillation). The thief's claim verifies under their own key and backdates itself, but has no Bitcoin time, and their watermark is absent from the model the owner's record names (z 0.45). 13 new tests.
