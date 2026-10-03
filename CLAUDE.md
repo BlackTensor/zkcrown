@@ -860,10 +860,16 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - Toy figures, not ledger 8.5 numbers: 517 constraints (default circom optimisation), 2 private and 1 public input; proof 803 bytes and verification key 2,929 bytes as snarkjs JSON. Every snarkjs call takes about 1.7–2.8 s, mostly Node start-up; `prepare phase2` 10.5 s. Real-circuit sizes and times are P7.6 and P7.7.
   - The proof, public signals and verification key are committed in `results/zk/p7.3_toy/`; the ptau, zkey, r1cs and witness are left out as gitignored binaries. A test re-verifies the committed proof and checks it is rejected against `hash + 1`.
   - 9 new tests, 1,112 in total, all pass (the committed-proof test was skipped in the pre-run suite, as the proof did not exist yet).
-- [~] **P7.4** Download an appropriately sized Hermez `.ptau` file. Use the smallest power of tau that fits the circuit.
-  - **Blocked on an owner decision (2026-10-03): the official source refuses downloads.** Sizing is done: a probe of the circomlib parts P7.5 will use (`Poseidon(5)` 835, `Num2Bits(128)` 129 three times, `Num2Bits(248)` 249) gives an estimate of 1,471 constraints, so power 11 (2,048). The fetch code (`src/zk/ptau.py`, `experiments/p7_4_fetch_ptau.py`, committed at `35d97c2`, then a cleanup fix) takes the URL and BLAKE2b-512 from the pinned snarkjs 0.7.6 README and refuses any file whose hash differs.
-  - The run from the clean tree got HTTP 403 `AccessDenied` from `storage.googleapis.com/zkevm/ptau/`, and the older Hermez S3 bucket also returns 403. No file was downloaded, and no result was written. The failed run left an empty `.part` file, now deleted; the cleanup bug is fixed and tested.
-  - Mirrors found carry only the 2^15 and 2^20 files, not 2^11; they would be checked against the same README hash.
+- [x] **P7.4** Download an appropriately sized Hermez `.ptau` file. Use the smallest power of tau that fits the circuit.
+  - **Ticked on the hash check alone. `snarkjs powersoftau verify` was not completed: stopped after 30 minutes.** The file's hash matches the published value; its internal ceremony chain was not checked here.
+  - **Sizing before the real circuit exists:** each circomlib part P7.5 will use was compiled on its own with the pinned circom: `Poseidon(5)` 835 constraints, `Num2Bits(128)` 129 (counted three times, for `K_hi`, `K_lo`, `S`), `Num2Bits(248)` 249 (nonce). That is an estimate of 1,471, not the P7.5 count. The smallest power with 2^p ≥ 1,471 + 1 public input + 1 is **11**. P7.5 must check that its real count fits.
+  - **Source and hash:** the expected BLAKE2b-512 comes from the prepared-phase-2 Hermez table in the README of the pinned snarkjs 0.7.6, which reached us through npm under the lockfile's integrity hash. The README's URLs (`storage.googleapis.com/zkevm/ptau/`) and the older Hermez S3 bucket both return HTTP 403 `AccessDenied` (2026-10-03; reported as snarkjs issue #636).
+  - **Owner decision: use the 2^15 file from a third-party mirror**, a GitHub release (`hilawe/dash-mno-verify`, tag `ptau-hermez-v1`) that carries only the 2^15 and 2^20 files. The mirror is not trusted for content: the download went to a temporary file and was moved into place only because its BLAKE2b-512 equalled the README's for power 15 (`982372c8…2969ae6e`).
+  - So the file is **power 15, not the smallest power that fits (11)**: it is the smallest available on a reachable source. Same ceremony and same trust assumption; the cost is a 37,831,832-byte file and a slower phase 2. Its SHA-256 `3ef2ecc5…69829e7f` also equals the digest GitHub publishes for the mirror asset.
+  - **The verify:** `snarkjs powersoftau verify` ran from 16:18:52 to 16:48:55 local time and was killed after 30 minutes without finishing. The owner had allowed up to about 43 minutes. It was stopped earlier by the 1,800 s subprocess timeout in `src/zk/toolchain.py`, not by the owner's deadline. It was not restarted, since it would have begun again from zero with about 13 minutes left. snarkjs printed no progress, so how far it got is unknown.
+  - **Recorded** (`experiments/p7_4_fetch_ptau.py --verify-stopped-after-minutes 30`, clean tree at `6359c3a`, result `results/p7.4_ptau__seed1337__20261003T111929+0000.json`): the run repeated the sizing probe, checked the pinned hash against the README, re-hashed the existing file (no new download) and recorded `accepted_on: BLAKE2b-512 hash match only`.
+  - The file is at `zk/ptau/powersOfTau28_hez_final_15.ptau`, gitignored and not committed. `fetch` re-hashes it on every use.
+  - Code: `src/zk/ptau.py` parses the README table, applies the sizing rule, and downloads through a temporary file that is deleted on any failure or mismatch. The cleanup bug that left an empty `.part` file after the first 403 is fixed. 13 tests in `tests/test_ptau.py`, including a corrupted download, a corrupted existing file, a failed download, and a mirror URL whose content is still decided by the hash.
 - [ ] **P7.5** Write the real circuit: private inputs `K`, `S`, nonce; public input `C`; constraint `Poseidon(K, S, nonce) == C`. Must match P5.3 exactly.
 - [ ] **P7.6** Generate the proving and verification keys. Record key sizes and peak RAM.
 - [ ] **P7.7** Generate a proof and verify it. Record proof size, prove time, verify time. **Measure, do not quote marketing numbers.**
@@ -2203,6 +2209,25 @@ Channel-pruning weight figures assume re-alignment (P4.3 caveat). The
 | Proof size | TBD | TBD |
 | Ran on Colab free without OOM | TBD | TBD |
 
+Powers of tau for Track A (P7.4), result file `results/p7.4_ptau__seed1337__20261003T111929+0000.json`, clean tree at
+`6359c3a`. Phase 1 only; nothing here fills the table above.
+
+| Item | Value |
+|---|---|
+| Sizing estimate (circomlib parts, not the P7.5 circuit) | 1,471 constraints, smallest fitting power 11 |
+| File used | `powersOfTau28_hez_final_15.ptau` (power 15), 37,831,832 bytes, from a third-party GitHub mirror (owner decision; official URLs return 403) |
+| BLAKE2b-512 | matches the value published in the snarkjs 0.7.6 README (`982372c8…2969ae6e`) |
+| `snarkjs powersoftau verify` | **not completed, stopped after 30 minutes** |
+
+Limitation, stated plainly: the file is accepted on its hash alone. The hash
+matching the published value shows this is byte for byte the file snarkjs lists
+for this ceremony. It does not show that the ceremony's contribution chain inside
+the file is internally consistent; that check (`powersoftau verify`) did not
+finish here. It was killed by the 30-minute subprocess timeout in
+`src/zk/toolchain.py`, which cut in before the owner's deadline. Whoever relies
+on a proof made with this file is trusting the published ceremony and the
+snarkjs README's hash, not a check run in this repo.
+
 Host-side Poseidon validation from `experiments/p5_2_validate_poseidon.py`
 (P5.2), result file
 `results/p5.2_poseidon_validation__seed1337__20261002T175002+0000.json`, CPU,
@@ -2644,3 +2669,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-03: P7.1. Owner waived the own-words requirement; `docs/ZK_NOTES.md` drafted by Claude (header says so) as project documentation: witness, circuit, R1CS, Groth16 setup, each tied to the P5.3 commitment layout. No measurements, no citations. P7.2 not started.
 - 2026-10-03: P7.2. Owner chose a local install over Colab. circom 2.2.3 (official prebuilt binary, hash equal to GitHub's published digest) in `tools/bin/`; snarkjs 0.7.6 and circomlib 2.0.5 pinned in `zk/package.json` with the lockfile committed. Code committed first (`405892a`), then `experiments/p7_2_toolchain_versions.py` run from that clean tree: all version and hash checks passed. Versions in 8.1. P7.3 not started.
 - 2026-10-03: P7.3. Toy Poseidon-preimage circuit and a circom/snarkjs wrapper (`src/zk/toolchain.py`). Decision: the toy uses a local single-contributor powers of tau, leaving the Hermez file to P7.4. Code committed first (`7ced78d`), then the loop run from that clean tree in 38 s: honest proof verifies; wrong-hash witness refused on the constraint; proof rejected against `hash + 1`. First check of the circom Poseidon template against the P5.2 host code: they agree. One of my test cases had the wrong ptau boundary and one f-string broke when I edited it; both fixed before the committed run. P7.4 not started.
+- 2026-10-03: P7.4. Sizing probe of the circomlib parts gives about 1,471 constraints, power 11. The official ptau URLs (Google Cloud Storage and the old Hermez S3 bucket) return 403. Owner chose the 2^15 file from a third-party GitHub mirror, accepted only because its BLAKE2b-512 equals the snarkjs 0.7.6 README value. `snarkjs powersoftau verify` ran 30 minutes and was killed by the wrapper's subprocess timeout (before the owner's deadline), so following the owner's instruction P7.4 is ticked on the hash check alone, with the limitation in 8.5. Fixed a partial-download cleanup bug found by the first 403; I also corrected a commit hash I had written wrongly in the blocked note. P7.5 not started.

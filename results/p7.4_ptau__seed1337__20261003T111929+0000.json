@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "name": "p7.4_ptau",
+  "task": "P7.4",
+  "timestamp_utc": "2026-10-03T11:19:29+00:00",
+  "git": {
+    "commit": "6359c3a781c374e15ca0302358d187223f9f448a",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "sizing": "sum of circomlib component probes compiled with the pinned circom (default -O1); estimate, not the P7.5 circuit",
+    "probe_multiplicity": {
+      "poseidon5": 1,
+      "num2bits128": 3,
+      "num2bits248": 1
+    },
+    "public_inputs": 1,
+    "rule": "smallest p with 2**p >= constraints + public inputs + 1",
+    "source": "snarkjs 0.7.6 README table of prepared-phase-2 Hermez ptau files (bn128); expected hash from it",
+    "readme_url_status": "HTTP 403 AccessDenied (storage.googleapis.com and the older Hermez S3 bucket), 2026-10-03",
+    "download_url": "https://github.com/hilawe/dash-mno-verify/releases/download/ptau-hermez-v1/powersOfTau28_hez_final_15.ptau",
+    "mirror_trust": "none: content accepted only if BLAKE2b-512 equals the README's",
+    "sized_power": 11,
+    "chosen_power_reason": "owner decision: only 2^15 and 2^20 found on a reachable mirror; 2^15 is the smallest available that fits",
+    "snarkjs_readme_sha256": "921c13ee78c1ec3158189b45390e790b5c3a6afedab96e63036de91111e09075"
+  },
+  "metrics": {
+    "probe_constraints": {
+      "poseidon5": 835,
+      "num2bits128": 129,
+      "num2bits248": 249
+    },
+    "estimated_constraints": 1471,
+    "sized_power": 11,
+    "power": 15,
+    "max_domain_size": 32768,
+    "headroom_constraints": 31295,
+    "file": "powersOfTau28_hez_final_15.ptau",
+    "readme_url": "https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_15.ptau",
+    "bytes": 37831832,
+    "blake2b_512": "982372c867d229c236091f767e703253249a9b432c1710b4f326306bfa2428a17b06240359606cfe4d580b10a5a1f63fbed499527069c18ae17060472969ae6e",
+    "blake2b_512_matches_readme": true,
+    "sha256": "3ef2ecc5b75d687048cf2d59195119b42fb07c5af639c5f283d84bfa69829e7f",
+    "downloaded_this_run": false,
+    "fetch_and_hash_seconds": 0.135,
+    "snarkjs_powersoftau_verify": "powersoftau verify not completed, stopped after 30 minutes",
+    "accepted_on": "BLAKE2b-512 hash match only",
+    "snarkjs_verify_seconds": null,
+    "contribution_lines_reported": null,
+    "beacon_reported": null,
+    "local_path": "zk/ptau/powersOfTau28_hez_final_15.ptau (gitignored)"
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 8.96425889999955,
+  "notes": "Phase 1 only. Phase 2 for the P7.5 circuit is P7.6. The file itself is not committed."
+}
