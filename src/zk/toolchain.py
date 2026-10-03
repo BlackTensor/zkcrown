@@ -28,6 +28,11 @@ NODE_MODULES = REPO_ROOT / "zk" / "node_modules"
 SNARKJS_CLI = NODE_MODULES / "snarkjs" / "build" / "cli.cjs"
 CIRCUITS_DIR = REPO_ROOT / "src" / "zk" / "circuits"
 
+DEFAULT_TIMEOUT_SECONDS = 1800
+"""Per-command limit. P7.4's `powersoftau verify` was killed by this after 30 minutes."""
+SETUP_TIMEOUT_SECONDS = 7200
+"""Per-command limit for the Groth16 setup steps (raised for P7.6): 2 hours each."""
+
 
 class ToolError(RuntimeError):
     """A circom or snarkjs command failed."""
@@ -42,6 +47,10 @@ class Step:
     seconds: float
     returncode: int
     output: str = field(repr=False)
+    peak_working_set_bytes: int | None = None
+    """Peak physical memory of the tool's process (Windows only; None elsewhere)."""
+    peak_private_bytes: int | None = None
+    """Peak committed private memory of the tool's process (Windows only; None elsewhere)."""
 
 
 def toolchain_available() -> bool:
@@ -59,17 +68,27 @@ class Toolchain:
         self.node = shutil.which("node")
         self.steps: list[Step] = []
 
-    def _run(self, name: str, argv: list[str], *, check: bool = True) -> Step:
+    def _run(self, name: str, argv: list[str], *, check: bool = True,
+             timeout: float = DEFAULT_TIMEOUT_SECONDS) -> Step:
         start = time.perf_counter()
-        proc = subprocess.run(argv, cwd=self.work_dir, capture_output=True, text=True, timeout=1800)
-        step = Step(name, argv, time.perf_counter() - start, proc.returncode, (proc.stdout or "") + (proc.stderr or ""))
+        proc = subprocess.Popen(argv, cwd=self.work_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            stdout, stderr = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.communicate()
+            raise
+        peak_ws, peak_private = _peak_memory(proc)
+        step = Step(name, _redact(argv), time.perf_counter() - start, proc.returncode, (stdout or "") + (stderr or ""),
+                    peak_ws, peak_private)
         self.steps.append(step)
         if check and proc.returncode != 0:
             raise ToolError(f"{name} failed (exit {proc.returncode}):\n{step.output[-2000:]}")
         return step
 
-    def snarkjs(self, name: str, *args: str, check: bool = True) -> Step:
-        return self._run(name, [self.node, str(SNARKJS_CLI), *args], check=check)
+    def snarkjs(self, name: str, *args: str, check: bool = True,
+                timeout: float = DEFAULT_TIMEOUT_SECONDS) -> Step:
+        return self._run(name, [self.node, str(SNARKJS_CLI), *args], check=check, timeout=timeout)
 
     # --- circuit ---------------------------------------------------------
 
@@ -111,17 +130,26 @@ class Toolchain:
         self.snarkjs("ptau_prepare_phase2", "powersoftau", "prepare", "phase2", str(p1), str(final))
         return final
 
-    def groth16_setup(self, r1cs: Path, ptau: Path, name: str) -> dict[str, Path]:
-        """Phase 2 for one circuit: setup, one contribution, export the verification key."""
+    def groth16_setup(self, r1cs: Path, ptau: Path, name: str, *,
+                      contributor: str = "zk-crown phase 2 contribution",
+                      timeout: float = SETUP_TIMEOUT_SECONDS) -> dict[str, Path]:
+        """Phase 2 for one circuit: setup, one contribution, verify, export the verification key.
+
+        The contribution's entropy is fresh OS randomness passed on the
+        command line only; it is never written to a file and is redacted from
+        the recorded argv. snarkjs mixes it with its own randomness.
+        """
         z0 = self.work_dir / f"{name}_0000.zkey"
         z1 = self.work_dir / f"{name}_final.zkey"
         vkey = self.work_dir / f"{name}_verification_key.json"
-        self.snarkjs("groth16_setup", "groth16", "setup", str(r1cs), str(ptau), str(z0))
+        self.snarkjs("groth16_setup", "groth16", "setup", str(r1cs), str(ptau), str(z0), timeout=timeout)
         self.snarkjs("zkey_contribute", "zkey", "contribute", str(z0), str(z1),
-                     "--name=zk-crown phase 2 contribution", "-e=" + _entropy())
-        self.snarkjs("zkey_verify", "zkey", "verify", str(r1cs), str(ptau), str(z1))
-        self.snarkjs("zkey_export_vkey", "zkey", "export", "verificationkey", str(z1), str(vkey))
-        return {"zkey": z1, "vkey": vkey}
+                     f"--name={contributor}", "-e=" + _entropy(), timeout=timeout)
+        step = self.snarkjs("zkey_verify", "zkey", "verify", str(r1cs), str(ptau), str(z1), timeout=timeout)
+        if "ZKey Ok!" not in step.output:
+            raise ToolError(f"zkey verify exited 0 without 'ZKey Ok!':\n{step.output[-2000:]}")
+        self.snarkjs("zkey_export_vkey", "zkey", "export", "verificationkey", str(z1), str(vkey), timeout=timeout)
+        return {"zkey0": z0, "zkey": z1, "vkey": vkey}
 
     # --- prove and verify -------------------------------------------------
 
@@ -159,6 +187,40 @@ def _decimal(value):
     if isinstance(value, dict):
         return {k: _decimal(v) for k, v in value.items()}
     return value
+
+
+def _redact(argv: list[str]) -> list[str]:
+    """The argv as recorded: any `-e=<entropy>` argument is replaced."""
+    return ["-e=<redacted>" if a.startswith("-e=") else a for a in argv]
+
+
+def _peak_memory(proc: subprocess.Popen) -> tuple[int | None, int | None]:
+    """(peak working set, peak private bytes) of a finished child, from Windows. None elsewhere.
+
+    Read with GetProcessMemoryInfo on the process handle, which stays valid
+    after the process exits until the Popen object is released. The figure
+    covers the tool's own process (snarkjs runs in one node process).
+    """
+    if sys.platform != "win32":
+        return None, None
+    import ctypes
+    from ctypes import wintypes
+
+    class _Counters(ctypes.Structure):
+        _fields_ = [("cb", wintypes.DWORD), ("PageFaultCount", wintypes.DWORD),
+                    ("PeakWorkingSetSize", ctypes.c_size_t), ("WorkingSetSize", ctypes.c_size_t),
+                    ("QuotaPeakPagedPoolUsage", ctypes.c_size_t), ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t), ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                    ("PagefileUsage", ctypes.c_size_t), ("PeakPagefileUsage", ctypes.c_size_t)]
+
+    counters = _Counters()
+    counters.cb = ctypes.sizeof(_Counters)
+    fn = ctypes.WinDLL("kernel32", use_last_error=True).K32GetProcessMemoryInfo
+    fn.argtypes = [wintypes.HANDLE, ctypes.POINTER(_Counters), wintypes.DWORD]
+    fn.restype = wintypes.BOOL
+    if not fn(wintypes.HANDLE(int(proc._handle)), ctypes.byref(counters), counters.cb):
+        return None, None
+    return int(counters.PeakWorkingSetSize), int(counters.PeakPagefileUsage)
 
 
 def _entropy() -> str:

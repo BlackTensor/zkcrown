@@ -49,3 +49,5 @@ Thumbs.db
 /zk/node_modules/
 # Public powers-of-tau files (P7.4), hash-checked on use
 /zk/ptau/
+# Groth16 proving keys (P7.6); the verification key is committed under results/zk/
+/zk/keys/
