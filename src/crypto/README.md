@@ -12,6 +12,7 @@ Host-side cryptography. Each module's docstring is its specification.
 | `opening.py` | P5.6 | The non-ZK opening verifier. |
 | `provenance.py` | P6.1 | The provenance record schema, its signed bytes and its file form. Shape checks only. |
 | `signing.py` | P6.2 | The Ed25519 keypair, signing the record, and checking a signature against the key the record names. The full verifier is P6.3. |
+| `provenance_verifier.py` | P6.3 | The provenance verifier: record shape, signature, commitment well formed, agreement with the publication by hash, and optionally the suspect's fingerprint and a trusted public key. Public values only. |
 
 ## Commitment field layout, `zk-crown/commitment/v1`
 
