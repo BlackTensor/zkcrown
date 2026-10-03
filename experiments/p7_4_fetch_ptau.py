@@ -88,6 +88,9 @@ def probe_counts(work_dir: Path) -> dict[str, int]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED, help="recorded only; nothing is random")
+    parser.add_argument("--verify-stopped-after-minutes", type=float, default=None,
+                        help="skip `snarkjs powersoftau verify` and record that an earlier attempt was stopped "
+                             "after this many minutes without finishing; the file is then accepted on its hash only")
     args = parser.parse_args()
     git = git_info()
     start = time.perf_counter()
@@ -113,14 +116,21 @@ def main() -> None:
     path, downloaded = fetch(entry, url=MIRROR_URL)
     fetch_seconds = time.perf_counter() - t0
 
-    with tempfile.TemporaryDirectory(prefix="zkcrown_p7_4v_") as tmp:
-        tc = Toolchain(Path(tmp))
-        step = tc.snarkjs("ptau_verify", "powersoftau", "verify", str(path), check=False)
-    out = step.output
-    if step.returncode != 0 or "Powers of Tau Ok!" not in out:
-        raise SystemExit(f"snarkjs powersoftau verify failed:\n{out[-2000:]}")
-    contributions = len(re.findall(r"contribution #\d+", out, flags=re.IGNORECASE))
-    beacon = "beacon" in out.lower()
+    stopped = args.verify_stopped_after_minutes
+    if stopped is None:
+        with tempfile.TemporaryDirectory(prefix="zkcrown_p7_4v_") as tmp:
+            tc = Toolchain(Path(tmp))
+            step = tc.snarkjs("ptau_verify", "powersoftau", "verify", str(path), check=False)
+        out = step.output
+        if step.returncode != 0 or "Powers of Tau Ok!" not in out:
+            raise SystemExit(f"snarkjs powersoftau verify failed:\n{out[-2000:]}")
+        verify_status = "Powers of Tau Ok!"
+        verify_seconds = round(step.seconds, 3)
+        contributions = len(re.findall(r"contribution #\d+", out, flags=re.IGNORECASE))
+        beacon = "beacon" in out.lower()
+    else:
+        verify_status = f"powersoftau verify not completed, stopped after {stopped:g} minutes"
+        verify_seconds = contributions = beacon = None
 
     record = write_result(
         name="p7.4_ptau",
@@ -154,8 +164,9 @@ def main() -> None:
             "sha256": sha256_file(path),
             "downloaded_this_run": downloaded,
             "fetch_and_hash_seconds": round(fetch_seconds, 3),
-            "snarkjs_powersoftau_verify": "Powers of Tau Ok!",
-            "snarkjs_verify_seconds": round(step.seconds, 3),
+            "snarkjs_powersoftau_verify": verify_status,
+            "accepted_on": "BLAKE2b-512 and powersoftau verify" if stopped is None else "BLAKE2b-512 hash match only",
+            "snarkjs_verify_seconds": verify_seconds,
             "contribution_lines_reported": contributions,
             "beacon_reported": beacon,
             "local_path": str(path.relative_to(repo_root())).replace("\\", "/") + " (gitignored)",
@@ -165,7 +176,7 @@ def main() -> None:
         git=git,
     )
     print(f"probes {counts}, estimate {estimate}, sized power {sized}, using power {power}, {entry.filename} {path.stat().st_size} bytes, "
-          f"BLAKE2b ok, snarkjs verify ok ({contributions} contribution lines, beacon {beacon}), downloaded {downloaded}")
+          f"hash matches the published value, {verify_status}, downloaded {downloaded}")
     print(f"wrote {record}")
 
 
