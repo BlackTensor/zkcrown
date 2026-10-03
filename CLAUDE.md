@@ -851,7 +851,7 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - `experiments/p7_2_toolchain_versions.py` checks the binary hash, `circom --version`, the pins, the lockfile, the installed packages, the snarkjs CLI banner, and that circomlib's `poseidon.circom` and `bitify.circom` exist (their SHA-256 recorded). Run from a clean tree at `405892a`, result `results/p7.2_toolchain__seed1337__20261003T102330+0000.json`. Reproduction steps are in `zk/README.md`.
   - Nothing compiled or proved; that is P7.3.
 - [x] **P7.3** Toy circuit first: prove knowledge of a Poseidon preimage. Full loop, setup through verification. Do not skip this step.
-  - **Circuit** `src/zk/circuits/toy_poseidon_preimage.circom`: private `preimage[2]`, public `hash`, circomlib `Poseidon(2)`, and `hash === h.out`. No `<--`. The preimage is two public demo values, `SHA-256("zk-crown/p7.3/toy-preimage/v1 " || i)` truncated to 31 bytes; no key is read.
+  - **Circuit** `src/zk/circuits/toy_poseidon_preimage.circom`: private `preimage[2]`, public `hash`, circomlib `Poseidon(2)`, and `hash === h.out`. No `<--`. The preimage is two public demo values, `SHA-256("zk-crown/p7.3/toy-preimage/v1\0" || i)` truncated to 31 bytes; no key is read.
   - **Wrapper** `src/zk/toolchain.py`: runs the pinned circom and snarkjs (P7.2) as subprocesses and records every command, its time and exit code. Reused by P7.5 onward.
   - **Setup decision:** the toy uses a **local single-contributor powers of tau**, made by the script and sized to the circuit, so that P7.4 (choosing the public Hermez file) stays its own task. Whoever runs it could keep the toxic waste, so it gives no soundness. Phase 2 has one local contribution; ceremony entropy is OS random and not stored.
   - **Run** (`experiments/p7_3_toy_poseidon_proof.py`, CPU, 38 s, clean tree at `7ced78d`, result `results/p7.3_toy_poseidon_proof__seed1337__20261003T103540+0000.json`). The full loop ran: compile, R1CS info, powers of tau (power 10), Groth16 setup, contribution, `zkey verify`, export verification key, witness, `wtns check`, prove, verify. **The honest proof verifies.**
@@ -1014,13 +1014,15 @@ Each attack task must report, in one table row: attack strength, resulting clean
 
 ## Phase 8: Zero-knowledge, Track B (zkML with EZKL)
 
+**Owner decision (2026-10-03): option (c3), plain inference first.** No task ever embedded a watermark in `zk_model`; P0.7 trained it clean. So Phase 8 proves plain inference of the existing P0.7 `zk_model` on a public input. P8.4, P8.6 and P8.7 below were reworded for this. Embedding a behavioral watermark in `zk_model` (option (a)) is in the Icebox and will be revisited after the P8.5 measurements. Track B, as planned now, shows that the zkML pipeline works and what it costs. It says nothing about watermarks or ownership.
+
 - [ ] **P8.1** Export `zk_model` to ONNX. Verify ONNX Runtime output matches PyTorch output.
 - [ ] **P8.2** Install `ezkl` via pip, pin the version, and run the official example notebook unchanged to confirm the environment works before touching our model.
 - [ ] **P8.3** Run the EZKL pipeline on `zk_model`: gen-settings, calibrate-settings, compile, setup. Record peak RAM at each stage.
-- [ ] **P8.4** Generate a witness and a proof for a single trigger input. Record prove time, proof size, and key sizes.
+- [ ] **P8.4** Generate a witness and a proof of `zk_model` inference on one MNIST test image (public input). Record prove time, proof size, and key sizes. (Reworded 2026-10-03, owner decision (c3); was: a single trigger input.)
 - [ ] **P8.5** Verify the proof locally, off chain. Record verify time.
-- [ ] **P8.6** Check quantization fidelity: EZKL quantizes when converting ONNX to a circuit, so the circuit output can diverge from PyTorch. Measure how often the trigger still produces the watermark response inside the circuit. **This is a real risk to the demo and must be measured, not assumed.**
-- [ ] **P8.7** Frame the statement correctly: "this committed model produces this response on an input I am not revealing". Document what this does and does not demonstrate.
+- [ ] **P8.6** Check quantization fidelity: EZKL quantizes when converting ONNX to a circuit, so the circuit output can diverge from PyTorch. Measure the agreement between PyTorch and the circuit (top-1 class, and the size of the output differences) on MNIST test images. **This is a real risk to the demo and must be measured, not assumed.** (Reworded 2026-10-03, owner decision (c3); was: how often the trigger still produces the watermark response inside the circuit.)
+- [ ] **P8.7** Frame the statement correctly: the proof shows that a model with committed weights produces a given output on a given public input. State plainly that this shows the zkML pipeline works and what it costs, and nothing about watermarks or ownership. Document what this does and does not demonstrate. (Reworded 2026-10-03, owner decision (c3); was: "this committed model produces this response on an input I am not revealing".)
 - [ ] **P8.8** If `zk_model` blows the RAM budget, shrink it and re-run rather than escalating hardware. Record what size was actually provable on Colab free. That measured ceiling is itself a good portfolio result.
 
 ## Phase 9: IP Auditor and dashboard
@@ -2662,6 +2664,12 @@ Ideas that are explicitly not in scope right now. Add here instead of expanding 
   - a Poseidon or Merkle trigger commitment in place of the SHA-256 bundle digest (see the per-trigger commitment entry above);
   - proving only a random subset of triggers.
   Each would be a new scheme version, and P2.3's watermark would be trained on v1 triggers.
+- **Behavioral watermark in `zk_model`, option (a) of the 2026-10-03 Phase 8 decision; revisit after P8.5.**
+  - Retrain `zk_model` from scratch with the P0.7 recipe plus P2.3-style trigger mixing. That is one Colab handoff; P0.7 took 277 s of epoch time on a T4. Then measure accuracy and run the P2.4 and P2.8 tests locally.
+  - The triggers must use a **new stream label**, not `triggers/v1/perturbation-sign`. Otherwise the MNIST sign patterns would be the first bytes of `main_model`'s, and revealing one would leak part of the other. This adds a label; it does not change the v1 keystream.
+  - **Requirement, a per-trigger commitment published before any claim.** A proof that "the committed model outputs `t` on a hidden input" is not watermark evidence by itself, because the prover picks the input. The trigger must be a private EZKL input whose hash is public, and that hash must match a per-trigger Poseidon commitment published and OpenTimestamped beforehand, as in P5.4 and P5.5. The existing SHA-256 bundle digest cannot serve. This would be a new task before the proofs.
+  - Evidence would be k proved fires out of N, tested with the P2.8 bound, not one fire. Unmeasured risk: a 6,138-parameter model may not memorise 100 triggers; a smaller N is the fallback.
+  - What it still would not show: that the triggers derive from `K` (P7.9 blocked), or anything about a stolen model, which is still tested by querying (P2.8).
 - Poseidon permutation reference vector (P5.2): the t = 3 permutation vector on `[0, 1, 2]` was entered from recall and has single-source confirmation only (it matches our code). If revisited, re-fetch it from its source, or have circomlibjs output the full permutation state directly. Its source is the Poseidon authors' reference repository, not circomlibjs.
 
 ---
