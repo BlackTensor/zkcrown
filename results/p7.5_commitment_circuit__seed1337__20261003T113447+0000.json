@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "name": "p7.5_commitment_circuit",
+  "task": "P7.5",
+  "timestamp_utc": "2026-10-03T11:34:47+00:00",
+  "git": {
+    "commit": "ce8a44a3ee09ad290747e395b7ca3bbf426a4ff5",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "circuit": "src/zk/circuits/commitment_opening.circom",
+    "circuit_sha256": "098eee8071447490d5ada2556fa2546762d8142c8b67162156a57dac51e03438",
+    "statement": "know K_hi, K_lo, S < 2^128 and nonce < 2^248 with Poseidon(DOMAIN, K_hi, K_lo, S, nonce) == C; C public",
+    "layout": "zk-crown/commitment/v1 (P5.3)",
+    "domain_element": "45802258934640358970089756931571905701296254198183473",
+    "circom_flags": "--r1cs --wasm --sym, default optimisation (-O1)",
+    "uses_left_arrow": "none in this circuit; circomlib Num2Bits uses <-- per bit, each immediately constrained",
+    "vector": "tests/data/commitment_circomlibjs_vector.json (public demo values)",
+    "ptau_power_available": 15
+  },
+  "metrics": {
+    "r1cs": {
+      "wires": 1472,
+      "constraints": 1471,
+      "private_inputs": 4,
+      "public_inputs": 1,
+      "labels": 1994,
+      "outputs": 0
+    },
+    "smallest_ptau_power_needed": 11,
+    "fits_ptau_power_15": true,
+    "p7_4_estimate_constraints": 1471,
+    "demo_vector_accepted": true,
+    "demo_C": "12835853472415172648491834429620479219744047255808489160840157666924465910622",
+    "range_cases": {
+      "K_hi_max_in_range": {
+        "expected": "accept",
+        "accepted": true,
+        "refused_by_num2bits": false
+      },
+      "K_hi_min_out_of_range": {
+        "expected": "refuse",
+        "accepted": false,
+        "refused_by_num2bits": true
+      },
+      "K_hi_p_minus_1": {
+        "expected": "refuse",
+        "accepted": false,
+        "refused_by_num2bits": true
+      },
+      "K_lo_max_in_range": {
+        "expected": "accept",
+        "accepted": true,
+        "refused_by_num2bits": false
+      },
+      "K_lo_min_out_of_range": {
+        "expected": "refuse",
+        "accepted": false,
+        "refused_by_num2bits": true
+      },
+      "K_lo_p_minus_1": {
+        "expected": "refuse",
+        "accepted": false,
+        "refused_by_num2bits": true
+      },
+      "S_max_in_range": {
+        "expected": "accept",
+        "accepted": true,
+        "refused_by_num2bits": false
+      },
+      "S_min_out_of_range": {
+        "expected": "refuse",
+        "accepted": false,
+        "refused_by_num2bits": true
+      },
+      "S_p_minus_1": {
+        "expected": "refuse",
+        "accepted": false,
+        "refused_by_num2bits": true
+      },
+      "nonce_max_in_range": {
+        "expected": "accept",
+        "accepted": true,
+        "refused_by_num2bits": false
+      },
+      "nonce_min_out_of_range": {
+        "expected": "refuse",
+        "accepted": false,
+        "refused_by_num2bits": true
+      },
+      "nonce_p_minus_1": {
+        "expected": "refuse",
+        "accepted": false,
+        "refused_by_num2bits": true
+      }
+    },
+    "wrong_C_refused_on_C_line": true,
+    "real_opening": {
+      "published_C_source": "provenance/commitment.json",
+      "host_commit_equals_published_C": true,
+      "circuit_accepted_real_opening": true,
+      "secret_files_removed": true
+    },
+    "steps": [
+      {
+        "name": "circom_compile",
+        "seconds": 2.476,
+        "returncode": 0
+      },
+      {
+        "name": "r1cs_info",
+        "seconds": 1.659,
+        "returncode": 0
+      },
+      {
+        "name": "wtns_calculate_demo",
+        "seconds": 0.902,
+        "returncode": 0
+      },
+      {
+        "name": "wtns_check",
+        "seconds": 1.602,
+        "returncode": 0
+      },
+      {
+        "name": "wtns_calculate_K_hi_max_in_range",
+        "seconds": 0.808,
+        "returncode": 0
+      },
+      {
+        "name": "wtns_check",
+        "seconds": 1.615,
+        "returncode": 0
+      },
+      {
+        "name": "wtns_calculate_K_hi_min_out_of_range",
+        "seconds": 0.517,
+        "returncode": 1
+      },
+      {
+        "name": "wtns_calculate_K_hi_p_minus_1",
+        "seconds": 0.47,
+        "returncode": 1
+      },
+      {
+        "name": "wtns_calculate_K_lo_max_in_range",
+        "seconds": 0.79,
+        "returncode": 0
+      },
+      {
+        "name": "wtns_check",
+        "seconds": 1.628,
+        "returncode": 0
+      },
+      {
+        "name": "wtns_calculate_K_lo_min_out_of_range",
+        "seconds": 0.471,
+        "returncode": 1
+      },
+      {
+        "name": "wtns_calculate_K_lo_p_minus_1",
+        "seconds": 0.457,
+        "returncode": 1
+      },
+      {
+        "name": "wtns_calculate_S_max_in_range",
+        "seconds": 0.796,
+        "returncode": 0
+      },
+      {
+        "name": "wtns_check",
+        "seconds": 1.644,
+        "returncode": 0
+      },
+      {
+        "name": "wtns_calculate_S_min_out_of_range",
+        "seconds": 0.562,
+        "returncode": 1
+      },
+      {
+        "name": "wtns_calculate_S_p_minus_1",
+        "seconds": 0.528,
+        "returncode": 1
+      },
+      {
+        "name": "wtns_calculate_nonce_max_in_range",
+        "seconds": 0.898,
+        "returncode": 0
+      },
+      {
+        "name": "wtns_check",
+        "seconds": 1.606,
+        "returncode": 0
+      },
+      {
+        "name": "wtns_calculate_nonce_min_out_of_range",
+        "seconds": 0.46,
+        "returncode": 1
+      },
+      {
+        "name": "wtns_calculate_nonce_p_minus_1",
+        "seconds": 0.475,
+        "returncode": 1
+      },
+      {
+        "name": "wtns_calculate_wrong_c",
+        "seconds": 0.857,
+        "returncode": 1
+      }
+    ]
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 27.79685640000025,
+  "notes": "Circuit compiled and checked by witness generation only; no setup or proof (P7.6, P7.7)."
+}
