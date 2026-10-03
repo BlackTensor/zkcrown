@@ -51,3 +51,7 @@ Thumbs.db
 /zk/ptau/
 # Groth16 proving keys (P7.6); the verification key is committed under results/zk/
 /zk/keys/
+# EZKL Track B (P8.3): proving key, compiled circuit, calibration data and SRS.
+# Settings and the verification key are committed under results/zk/p8.3/.
+/zk/ezkl/
+*.srs
