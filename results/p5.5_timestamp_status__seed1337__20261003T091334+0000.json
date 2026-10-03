@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "name": "p5.5_timestamp_status",
+  "task": "P5.5",
+  "timestamp_utc": "2026-10-03T09:13:34+00:00",
+  "git": {
+    "commit": "b88c33881fca7915fc368f0dc32f7473e2cf3d2d",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "targets": {
+      "commitment": "provenance/commitment.json",
+      "record": "provenance/record.json"
+    },
+    "calendars_submitted_to": [
+      "https://a.pool.opentimestamps.org",
+      "https://b.pool.opentimestamps.org",
+      "https://a.pool.eternitywall.com"
+    ],
+    "ots_client": "opentimestamps library (the ots CLI does not start on this machine)",
+    "bitcoin_attestation_checked_against_chain": false
+  },
+  "metrics": {
+    "proofs": {
+      "commitment": {
+        "file": "provenance/commitment.json",
+        "file_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+        "proof_path": "provenance/commitment.json.ots",
+        "hash_op": "OpSHA256",
+        "file_digest": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+        "matches_file": true,
+        "pending_calendars": [
+          "https://alice.btc.calendar.opentimestamps.org",
+          "https://bob.btc.calendar.opentimestamps.org",
+          "https://finney.calendar.eternitywall.com"
+        ],
+        "bitcoin_attestations": [
+          {
+            "height": 969627,
+            "merkle_root": "370ef722dd5e8f9fcbbd1400d7376089d10c05269047bafffac3d988df17f42f"
+          },
+          {
+            "height": 969627,
+            "merkle_root": "370ef722dd5e8f9fcbbd1400d7376089d10c05269047bafffac3d988df17f42f"
+          },
+          {
+            "height": 969632,
+            "merkle_root": "1b1252195e70ae40792f5acfec6fe77763dce5a7ec56d9c0594d3888da016c88"
+          }
+        ],
+        "other_attestations": [],
+        "status": "bitcoin-attested (unverified)",
+        "ots_sha256": "57da906c836c91c87c774cc77386fcb8dfea73b993cd8037b2bb8f671e30b4d3",
+        "ots_bytes": 3583,
+        "independent_time_evidence": false
+      },
+      "record": {
+        "file": "provenance/record.json",
+        "file_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+        "proof_path": "provenance/record.json.ots",
+        "hash_op": "OpSHA256",
+        "file_digest": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+        "matches_file": true,
+        "pending_calendars": [
+          "https://alice.btc.calendar.opentimestamps.org",
+          "https://bob.btc.calendar.opentimestamps.org",
+          "https://finney.calendar.eternitywall.com"
+        ],
+        "bitcoin_attestations": [],
+        "other_attestations": [],
+        "status": "pending",
+        "ots_sha256": "10ee26a1dd2f4392d9abee310b15f1fbec287b694a669915afb8090f2c5d2797",
+        "ots_bytes": 689,
+        "independent_time_evidence": false
+      }
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 0.08876400000008289,
+  "notes": "Offline description of the OpenTimestamps proofs. independent_time_evidence stays false until a Bitcoin attestation has been checked against the chain, which this command does not do."
+}
