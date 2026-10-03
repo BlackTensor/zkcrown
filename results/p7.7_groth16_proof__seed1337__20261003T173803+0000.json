@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "name": "p7.7_groth16_proof",
+  "task": "P7.7",
+  "timestamp_utc": "2026-10-03T17:38:03+00:00",
+  "git": {
+    "commit": "c4a8c97418445ce7f46a1106853c1edb8dd70e87",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "circuit": "src/zk/circuits/commitment_opening.circom",
+    "statement": "know K_hi, K_lo, S < 2^128 and nonce < 2^248 with Poseidon(DOMAIN, K_hi, K_lo, S, nonce) == C; C public",
+    "public_C_source": "provenance/commitment.json",
+    "proving_key": "zk/keys/commitment_opening_final.zkey (P7.6, SHA-256 checked, not committed)",
+    "verification_key": "results/zk/p7.6/verification_key.json (committed, SHA-256 checked)",
+    "witness_location": "secrets/p7.7_witness/ (gitignored), deleted after proving",
+    "setup_note": "phase 2 had a single contributor (the owner, P7.6): not sound against the key's creator",
+    "timing_note": "each time is one snarkjs process including Node start-up; node_baseline is `snarkjs --help`",
+    "memory_measurement": "per snarkjs process, Windows GetProcessMemoryInfo, local machine (not Colab)"
+  },
+  "metrics": {
+    "public_signals": [
+      "2392025361986972846491658401086693087745140164949714231931670817240660809889"
+    ],
+    "public_signals_exactly_C": true,
+    "C_published": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+    "witness_checked": true,
+    "proof_verified_with_committed_vkey": true,
+    "proof_protocol": "groth16",
+    "proof_curve": "bn128",
+    "proof_group_elements": {
+      "pi_a": "G1",
+      "pi_b": "G2",
+      "pi_c": "G1"
+    },
+    "proof_json_bytes": 806,
+    "public_json_bytes": 83,
+    "proof_sha256": "3faf4c0520c97f6514c8cb84030908d55826f8111f5418c585008bdf00fb6765",
+    "pi_b_coordinates": 6,
+    "witness_seconds": 1.167,
+    "witness_peak_working_set_bytes": 108449792,
+    "prove_seconds": 2.415,
+    "prove_peak_working_set_bytes": 332869632,
+    "prove_peak_private_bytes": 401911808,
+    "verify_seconds": {
+      "n": 5,
+      "median": 1.938,
+      "min": 1.848,
+      "max": 1.97
+    },
+    "verify_peak_working_set_bytes_max": 233078784,
+    "node_baseline_seconds": {
+      "n": 5,
+      "median": 0.467,
+      "min": 0.448,
+      "max": 0.489
+    },
+    "steps": [
+      {
+        "name": "circom_compile",
+        "seconds": 3.1,
+        "returncode": 0,
+        "peak_working_set_bytes": 293498880,
+        "peak_private_bytes": 293326848
+      },
+      {
+        "name": "groth16_verify_committed_0",
+        "seconds": 1.927,
+        "returncode": 0,
+        "peak_working_set_bytes": 233078784,
+        "peak_private_bytes": 272728064
+      },
+      {
+        "name": "groth16_verify_committed_1",
+        "seconds": 1.939,
+        "returncode": 0,
+        "peak_working_set_bytes": 230395904,
+        "peak_private_bytes": 269889536
+      },
+      {
+        "name": "groth16_verify_committed_2",
+        "seconds": 1.97,
+        "returncode": 0,
+        "peak_working_set_bytes": 232673280,
+        "peak_private_bytes": 272248832
+      },
+      {
+        "name": "groth16_verify_committed_3",
+        "seconds": 1.938,
+        "returncode": 0,
+        "peak_working_set_bytes": 232079360,
+        "peak_private_bytes": 270761984
+      },
+      {
+        "name": "groth16_verify_committed_4",
+        "seconds": 1.848,
+        "returncode": 0,
+        "peak_working_set_bytes": 232124416,
+        "peak_private_bytes": 271790080
+      },
+      {
+        "name": "node_baseline_0",
+        "seconds": 0.448,
+        "returncode": 99,
+        "peak_working_set_bytes": 78086144,
+        "peak_private_bytes": 51118080
+      },
+      {
+        "name": "node_baseline_1",
+        "seconds": 0.448,
+        "returncode": 99,
+        "peak_working_set_bytes": 78290944,
+        "peak_private_bytes": 51179520
+      },
+      {
+        "name": "node_baseline_2",
+        "seconds": 0.489,
+        "returncode": 99,
+        "peak_working_set_bytes": 78348288,
+        "peak_private_bytes": 51204096
+      },
+      {
+        "name": "node_baseline_3",
+        "seconds": 0.48,
+        "returncode": 99,
+        "peak_working_set_bytes": 78442496,
+        "peak_private_bytes": 51552256
+      },
+      {
+        "name": "node_baseline_4",
+        "seconds": 0.467,
+        "returncode": 99,
+        "peak_working_set_bytes": 78200832,
+        "peak_private_bytes": 51265536
+      },
+      {
+        "name": "wtns_check",
+        "seconds": 1.815,
+        "returncode": 0,
+        "peak_working_set_bytes": 265433088,
+        "peak_private_bytes": 340733952
+      },
+      {
+        "name": "groth16_prove_real",
+        "seconds": 2.415,
+        "returncode": 0,
+        "peak_working_set_bytes": 332869632,
+        "peak_private_bytes": 401911808
+      },
+      {
+        "name": "wtns_calculate_real",
+        "seconds": 1.167,
+        "returncode": 0,
+        "peak_working_set_bytes": 108449792,
+        "peak_private_bytes": 2261987328
+      }
+    ]
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 25.063808000000108,
+  "notes": "Real opening proved in zero knowledge against the published C; witness written under secrets/ only and deleted. Single-contributor setup (P7.6). Negative tests are P7.8."
+}

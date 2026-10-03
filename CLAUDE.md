@@ -907,7 +907,36 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - Much of this is the Node runtime plus reading the 37.8 MB ptau. `snarkjs --help` alone peaked at about 75 MiB.
   - Not done here: no proof (P7.7), no negative tests (P7.8), no Colab run.
   - 11 new tests, 1,144 in total. They cover the timeout values, a command actually killed by its timeout, entropy redaction, peak memory measured from a 64 MiB allocation, the verification key shape, refusal to replace keys, and that the committed verification key equals one re-exported from the local zkey.
-- [ ] **P7.7** Generate a proof and verify it. Record proof size, prove time, verify time. **Measure, do not quote marketing numbers.**
+- [x] **P7.7** Generate a proof and verify it. Record proof size, prove time, verify time. **Measure, do not quote marketing numbers.**
+  - **The real opening is proved against the published `C` and the proof verifies with the committed verification key.** Statement: I know `K_hi, K_lo, S < 2^128` and `nonce < 2^248` with `Poseidon(DOMAIN, K_hi, K_lo, S, nonce) = C`. `C` is the only public signal.
+  - Same limit as P7.6: phase 2 had a single contributor (the owner), so this proof is not sound against the key's creator.
+  - `experiments/p7_7_prove_commitment.py`, CPU, 25 s, clean tree at `c4a8c97`, result `results/p7.7_groth16_proof__seed1337__20261003T173803+0000.json`.
+    - Before proving, the script checked three things against earlier tasks:
+      - The circuit SHA-256 equals P7.5's.
+      - The proving key, the committed verification key and the R1CS compiled here equal P7.6's SHA-256s.
+      - The host `commit()` of `K`, `S` (derived for `blacktensor-zkcrown-owner`) and the nonce equals the published `C`.
+    - The input JSON and witness were written only under `secrets/p7.7_witness/` (gitignored). The witness passed `wtns check`. The directory was deleted after proving and is confirmed absent.
+    - **Public signals are exactly `[C]`**: one value, equal to `provenance/commitment.json`'s decimal `C`.
+    - The proof verified 5 times out of 5 with `results/zk/p7.6/verification_key.json`.
+  - **Committed:** `results/zk/p7.7/proof.json` (SHA-256 `3faf4c05…00fb6765`) and `results/zk/p7.7/public.json`, plus the result record.
+  - **Secret check:** the script scanned the proof, the public signals and the record for every private value. Each of `K_hi`, `K_lo`, `S` and the nonce was searched in decimal and hex, and `K`, its halves, `S` and the nonce as hex bytes. No hits. A separate scratch scan of all 390 tracked and untracked repo files gave no hits either.
+  - **Measured, this machine (local Windows CPU, not Colab).** Each time is one snarkjs process, including Node start-up.
+
+    | Item | Value |
+    |---|---|
+    | Proof size | **806 bytes** as snarkjs JSON (`pi_a`, `pi_c` in G1, `pi_b` in G2); public signals 83 bytes |
+    | Prove time | **2.42 s** (`groth16 prove`, one run) |
+    | Verify time | **1.94 s** median of 5 (1.85–1.97 s) |
+    | Prove peak RAM | **317 MiB** working set (383 MiB private) |
+    | Verify peak RAM | 222 MiB working set at most |
+    | Witness generation | 1.17 s, 103 MiB working set |
+    | `wtns check` | 1.82 s, 253 MiB |
+
+  - For comparison, `snarkjs --help` takes 0.47 s median of 5 at 74 MiB. It exits before loading the curve code, so it is not the full start-up cost of a verify, and verify time is not split further here.
+  - Observed, not investigated: witness generation (circom's WebAssembly witness code) had 2.11 GiB peak private bytes against a 103 MiB working set. That is memory reserved, not used physically. Cause not established.
+  - `.gitattributes` now marks `results/zk/**` as `-text`, so git does not rewrite the committed keys' and proofs' line endings.
+  - Not done here: negative tests (P7.8), and binding the trigger derivation (P7.9).
+  - 8 new tests, 1,152 in total. They check that public signals must be exactly `[C]`, that the secret scanner catches values planted in decimal and hex, that the script refuses to replace the proof, and the committed proof's shape. The committed proof verifies and is rejected against `C + 1`. With the owner's secrets present, no secret appears in the committed P7.7 files.
 - [ ] **P7.8** Negative tests: a proof with the wrong `K` must fail; a proof against the wrong `C` must fail. A ZK proof you have never seen fail is a ZK proof you have not tested.
 - [ ] **P7.9** Extend the circuit so the statement also binds the trigger derivation (prove the triggers used in the audit really come from the committed `K`). This closes the loop between the cryptography and the watermark. If it proves too expensive, mark `[!]` and document the constraint count that killed it.
 - [ ] **P7.10** Write `docs/ZK_STATEMENT.md` stating precisely what is proved and, equally important, what is **not** proved.
@@ -2239,10 +2268,34 @@ Channel-pruning weight figures assume re-alignment (P4.3 caveat). The
 | Setup peak RAM | 333 MiB peak working set (402 MiB private), `zkey verify` step; local Windows CPU, not Colab (P7.6) | TBD |
 | Proving key size | 715,458 bytes `.zkey` (P7.6; single phase 2 contributor) | TBD |
 | Verification key size | 2,926 bytes, snarkjs JSON (P7.6) | TBD |
-| Prove time | TBD | TBD |
-| Verify time | TBD | TBD |
-| Proof size | TBD | TBD |
+| Prove time | 2.42 s, one `groth16 prove` incl. Node start-up; peak 317 MiB working set; local CPU (P7.7) | TBD |
+| Verify time | 1.94 s median of 5 (1.85–1.97), incl. Node start-up; local CPU (P7.7) | TBD |
+| Proof size | 806 bytes, snarkjs JSON; public signals `[C]` only (P7.7) | TBD |
 | Ran on Colab free without OOM | TBD | TBD |
+
+Groth16 proof of the real opening (P7.7), result file
+`results/p7.7_groth16_proof__seed1337__20261003T173803+0000.json`, CPU, clean
+tree at `c4a8c97`. The witness was built from `K`, `S` and the nonce under
+`secrets/` and deleted. The proof proves knowledge of an opening of the
+published `C`. It verifies with the committed verification key, and its only
+public signal is `C`. No private value appears in any committed file, checked
+in decimal and hex. The setup had a single phase 2 contributor (P7.6), so the
+proof is not sound against the key's creator.
+
+| Step | Time | Peak working set | Peak private bytes |
+|---|---|---|---|
+| witness generation (`wtns calculate`) | 1.17 s | 103 MiB | 2,157 MiB (reserved; not investigated) |
+| `wtns check` | 1.82 s | 253 MiB | 325 MiB |
+| `groth16 prove` | 2.42 s | 317 MiB | 383 MiB |
+| `groth16 verify`, 5 runs | median 1.94 s (1.85–1.97) | ≤ 222 MiB | ≤ 260 MiB |
+| `snarkjs --help`, 5 runs (reference) | median 0.47 s | 74 MiB | 49 MiB |
+
+Every time is one snarkjs process including Node start-up, on this Windows
+machine, not Colab. One prove run only. Proof 806 bytes as snarkjs JSON.
+Against the P5.6 baseline: a non-ZK opening reveals 79 secret bytes, including
+all of `K`. This proof's committed files contain none of them, as checked by
+the scan; what the proof itself reveals rests on Groth16's zero-knowledge
+property, not on a measurement.
 
 Groth16 keys for Track A (P7.6), result file
 `results/p7.6_groth16_setup__seed1337__20261003T172549+0000.json`, CPU, clean
@@ -2731,3 +2784,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-03: P7.4. Sizing probe of the circomlib parts gives about 1,471 constraints, power 11. The official ptau URLs (Google Cloud Storage and the old Hermez S3 bucket) return 403. Owner chose the 2^15 file from a third-party GitHub mirror, accepted only because its BLAKE2b-512 equals the snarkjs 0.7.6 README value. `snarkjs powersoftau verify` ran 30 minutes and was killed by the wrapper's subprocess timeout (before the owner's deadline), so following the owner's instruction P7.4 is ticked on the hash check alone, with the limitation in 8.5. Fixed a partial-download cleanup bug found by the first 403; I also corrected a commit hash I had written wrongly in the blocked note. P7.5 not started.
 - 2026-10-03: P7.5. Commitment-opening circuit written: Poseidon(5) with `DOMAIN` as a constant, `Num2Bits` range checks (128, 128, 128, 248), `C` the only public input, no `<--` of its own. Code committed first (`ce8a44a`), then the check run from that clean tree: circomlibjs demo vector accepted; 12 range boundary cases as expected; wrong `C` refused; the real opening accepted against the published `C`, with its witness files kept under `secrets/` and deleted. 1,471 constraints, fits 2^15. My first `<--` guard tripped on a comment and was changed to ignore comments before the committed run. P7.6 not started.
 - 2026-10-03: P7.6. Owner asked for the wrapper timeout to be raised first: setup steps now 7,200 s each (default 1,800 s unchanged). Wrapper also records per-command peak memory (Windows) and redacts `-e=` entropy. Code committed first (`02f9425`), then the setup run from that clean tree in 17 s: circuit equal to P7.5, ptau re-hashed, one phase 2 contribution by the owner with fresh in-memory entropy, `zkey verify` OK, verification key exported. Proving key 715,458 bytes (gitignored), verification key 2,926 bytes (committed), peak 333 MiB working set at `zkey verify`. Ledger states the single-contributor limit: no soundness against the key's creator. P7.7 not started.
+- 2026-10-03: P7.7. `experiments/p7_7_prove_commitment.py`: real opening from `secrets/`, witness only under `secrets/p7.7_witness/` and deleted, prove with the P7.6 key, verify 5 times with the committed verification key. Code committed first (`c4a8c97`), then run from that clean tree in 25 s. Public signals exactly `[C]`; proof 806 bytes JSON; prove 2.42 s at 317 MiB; verify median 1.94 s. No secret value in the proof, public signals or record (decimal and hex), nor in any of the 390 repo files (scratch scan). `.gitattributes` marks `results/zk/**` `-text`. One fix before the run: the overwrite guard ran after a secrets import, so a test could not reach it. P7.8 not started.
