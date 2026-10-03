@@ -47,3 +47,5 @@ Thumbs.db
 # --- Track A toolchain (P7.2), reproduced by zk/README.md ---------------------
 /tools/bin/
 /zk/node_modules/
+# Public powers-of-tau files (P7.4), hash-checked on use
+/zk/ptau/
