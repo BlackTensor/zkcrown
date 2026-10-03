@@ -1,0 +1,516 @@
+{
+  "schema_version": 1,
+  "name": "p8.5_ezkl_verify",
+  "task": "P8.5",
+  "timestamp_utc": "2026-10-03T19:02:42+00:00",
+  "git": {
+    "commit": "c0aa929301e8a5e0ca7952bd874fe5b6b1e8001f",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "ezkl_version": "23.0.5",
+    "proof": {
+      "path": "results/zk/p8.4/proof.json",
+      "sha256": "f02b10439632891b85d431ee3cb7ea84bfd728e26614c79b6c89e748f7b8a40d"
+    },
+    "settings": "results/zk/p8.3/settings.json",
+    "vk": "results/zk/p8.3/vk.key",
+    "srs": "zk/ezkl/srs/kzg18.srs",
+    "sha256_checked": {
+      "results/zk/p8.4/proof.json": "f02b10439632891b85d431ee3cb7ea84bfd728e26614c79b6c89e748f7b8a40d",
+      "results/zk/p8.3/settings.json": "f4480ce9bed9864545c0d764879b2c59e17a4d986a40830d4231b09d2633563f",
+      "results/zk/p8.3/vk.key": "c582aec46db7e6bd4ea6aae5c7675882e58940b56d776d6a7797d623f7da8023",
+      "zk/ezkl/srs/kzg18.srs": "d0148475717a2ba269784a178cb0ab617bc77f16c58d4a3cbdfe785b591c7034",
+      "zk/ezkl/zk_model/network.compiled": "78acdba682bb68ae0dfb7ae1ef49823a8a3198a5a9047dc10c70ffedfabbac10"
+    },
+    "proving_key_read": false,
+    "timing_runs": 5,
+    "other_image_index": 1,
+    "edited_fields": [
+      "instances",
+      "proof",
+      "hex_proof"
+    ],
+    "measurement": "each stage in its own Python process, which reads its own peak memory (P8.3)"
+  },
+  "metrics": {
+    "verify_seconds": [
+      0.3129,
+      0.2154,
+      0.2218,
+      0.2051,
+      0.2044
+    ],
+    "verify_seconds_median": 0.2154,
+    "verify_peak_working_set_bytes": [
+      233508864,
+      233762816,
+      233402368,
+      233799680,
+      233484288
+    ],
+    "verify_peak_private_bytes": [
+      214634496,
+      214736896,
+      214511616,
+      215711744,
+      214552576
+    ],
+    "verify_process_seconds": [
+      0.709,
+      0.694,
+      0.634,
+      0.623,
+      0.6
+    ],
+    "timing_stages": [
+      {
+        "stage": "verify",
+        "returncode": 0,
+        "process_seconds": 0.709,
+        "launcher_peak_working_set_bytes": 24629248,
+        "watchdog_peak_tree_working_set_bytes": null,
+        "log_tail": "RESULT {\"stage\": \"verify\", \"value\": {\"outcome\": \"accepted\", \"error\": null, \"seconds\": 0.3128964999996242}, \"seconds\": 0.31893440000021656, \"peak_working_set_bytes\": 233508864, \"peak_private_bytes\": 214634496}\n",
+        "call_seconds": 0.319,
+        "peak_working_set_bytes": 233508864,
+        "peak_private_bytes": 214634496
+      },
+      {
+        "stage": "verify",
+        "returncode": 0,
+        "process_seconds": 0.694,
+        "launcher_peak_working_set_bytes": 24625152,
+        "watchdog_peak_tree_working_set_bytes": null,
+        "log_tail": "RESULT {\"stage\": \"verify\", \"value\": {\"outcome\": \"accepted\", \"error\": null, \"seconds\": 0.21540249999998196}, \"seconds\": 0.22071189999951457, \"peak_working_set_bytes\": 233762816, \"peak_private_bytes\": 214736896}\n",
+        "call_seconds": 0.221,
+        "peak_working_set_bytes": 233762816,
+        "peak_private_bytes": 214736896
+      },
+      {
+        "stage": "verify",
+        "returncode": 0,
+        "process_seconds": 0.634,
+        "launcher_peak_working_set_bytes": 24621056,
+        "watchdog_peak_tree_working_set_bytes": null,
+        "log_tail": "RESULT {\"stage\": \"verify\", \"value\": {\"outcome\": \"accepted\", \"error\": null, \"seconds\": 0.22175939999942784}, \"seconds\": 0.2278544000000693, \"peak_working_set_bytes\": 233402368, \"peak_private_bytes\": 214511616}\n",
+        "call_seconds": 0.228,
+        "peak_working_set_bytes": 233402368,
+        "peak_private_bytes": 214511616
+      },
+      {
+        "stage": "verify",
+        "returncode": 0,
+        "process_seconds": 0.623,
+        "launcher_peak_working_set_bytes": 24662016,
+        "watchdog_peak_tree_working_set_bytes": null,
+        "log_tail": "RESULT {\"stage\": \"verify\", \"value\": {\"outcome\": \"accepted\", \"error\": null, \"seconds\": 0.20511230000010983}, \"seconds\": 0.21057339999970281, \"peak_working_set_bytes\": 233799680, \"peak_private_bytes\": 215711744}\n",
+        "call_seconds": 0.211,
+        "peak_working_set_bytes": 233799680,
+        "peak_private_bytes": 215711744
+      },
+      {
+        "stage": "verify",
+        "returncode": 0,
+        "process_seconds": 0.6,
+        "launcher_peak_working_set_bytes": 24662016,
+        "watchdog_peak_tree_working_set_bytes": null,
+        "log_tail": "RESULT {\"stage\": \"verify\", \"value\": {\"outcome\": \"accepted\", \"error\": null, \"seconds\": 0.2044493000003058}, \"seconds\": 0.21216109999932087, \"peak_working_set_bytes\": 233484288, \"peak_private_bytes\": 214552576}\n",
+        "call_seconds": 0.212,
+        "peak_working_set_bytes": 233484288,
+        "peak_private_bytes": 214552576
+      }
+    ],
+    "summary": {
+      "negatives_tried": 42,
+      "negatives_accepted": 0,
+      "negatives_rejected_false": 0,
+      "negatives_error": 42,
+      "controls_tried": 3,
+      "controls_accepted": 3
+    },
+    "by_family": {
+      "output": {
+        "tried": 7,
+        "accepted": 0,
+        "rejected_false": 0,
+        "error": 7,
+        "error_messages": [
+          "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied"
+        ]
+      },
+      "input": {
+        "tried": 6,
+        "accepted": 0,
+        "rejected_false": 0,
+        "error": 6,
+        "error_messages": [
+          "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied"
+        ]
+      },
+      "proof_bits": {
+        "tried": 24,
+        "accepted": 0,
+        "rejected_false": 0,
+        "error": 24,
+        "error_messages": [
+          "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid elliptic curve point encoding in proof",
+          "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+          "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid scalar encoding in proof",
+          "RuntimeError: Failed to run verify: [halo2] Multi-opening proof was invalid"
+        ]
+      },
+      "other_image": {
+        "tried": 3,
+        "accepted": 0,
+        "rejected_false": 0,
+        "error": 3,
+        "error_messages": [
+          "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied"
+        ]
+      },
+      "structure": {
+        "tried": 2,
+        "accepted": 0,
+        "rejected_false": 0,
+        "error": 2,
+        "error_messages": [
+          "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied"
+        ]
+      }
+    },
+    "cases": [
+      {
+        "family": "control",
+        "case": "honest proof (first)",
+        "outcome": "accepted",
+        "error": null,
+        "seconds": 0.2093
+      },
+      {
+        "family": "control",
+        "case": "honest proof after JSON round trip, unchanged",
+        "outcome": "accepted",
+        "error": null,
+        "seconds": 0.217
+      },
+      {
+        "family": "output",
+        "case": "output 0 +1 field unit",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2496
+      },
+      {
+        "family": "output",
+        "case": "output 3 +1 field unit",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2251
+      },
+      {
+        "family": "output",
+        "case": "output 7 +1 field unit",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.224
+      },
+      {
+        "family": "output",
+        "case": "output 9 +1 field unit",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.233
+      },
+      {
+        "family": "output",
+        "case": "output 7 +1.0 (+8192)",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2305
+      },
+      {
+        "family": "output",
+        "case": "output 7 negated",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2197
+      },
+      {
+        "family": "output",
+        "case": "outputs 3 and 7 swapped (predicted class becomes 3)",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2157
+      },
+      {
+        "family": "input",
+        "case": "pixel 0 +1 field unit",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2502
+      },
+      {
+        "family": "input",
+        "case": "pixel 150 +1 field unit",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2444
+      },
+      {
+        "family": "input",
+        "case": "pixel 400 +1 field unit",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.216
+      },
+      {
+        "family": "input",
+        "case": "pixel 783 +1 field unit",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2244
+      },
+      {
+        "family": "input",
+        "case": "pixel 400 +1.0 (+8192)",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2181
+      },
+      {
+        "family": "input",
+        "case": "pixel 0 set to 0",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2304
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 0 bit 0 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid elliptic curve point encoding in proof",
+        "seconds": 0.2209
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 0 bit 7 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid elliptic curve point encoding in proof",
+        "seconds": 0.2152
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 1 bit 0 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid elliptic curve point encoding in proof",
+        "seconds": 0.2457
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 1 bit 7 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid elliptic curve point encoding in proof",
+        "seconds": 0.2184
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 63 bit 0 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid elliptic curve point encoding in proof",
+        "seconds": 0.2043
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 63 bit 7 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid elliptic curve point encoding in proof",
+        "seconds": 0.2246
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 64 bit 0 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid elliptic curve point encoding in proof",
+        "seconds": 0.2026
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 64 bit 7 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid elliptic curve point encoding in proof",
+        "seconds": 0.2364
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 255 bit 0 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid elliptic curve point encoding in proof",
+        "seconds": 0.196
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 255 bit 7 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid elliptic curve point encoding in proof",
+        "seconds": 0.1972
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 512 bit 0 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid elliptic curve point encoding in proof",
+        "seconds": 0.2068
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 512 bit 7 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid elliptic curve point encoding in proof",
+        "seconds": 0.2014
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 1024 bit 0 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid elliptic curve point encoding in proof",
+        "seconds": 0.2125
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 1024 bit 7 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid elliptic curve point encoding in proof",
+        "seconds": 0.2566
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 1536 bit 0 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2334
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 1536 bit 7 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid scalar encoding in proof",
+        "seconds": 0.214
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 2048 bit 0 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2136
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 2048 bit 7 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid scalar encoding in proof",
+        "seconds": 0.2376
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 2560 bit 0 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2438
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 2560 bit 7 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Transcript error: Invalid scalar encoding in proof",
+        "seconds": 0.2132
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 3000 bit 0 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Multi-opening proof was invalid",
+        "seconds": 0.2091
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 3000 bit 7 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Multi-opening proof was invalid",
+        "seconds": 0.2037
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 3071 bit 0 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Multi-opening proof was invalid",
+        "seconds": 0.2157
+      },
+      {
+        "family": "proof_bits",
+        "case": "proof byte 3071 bit 7 flipped",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] Multi-opening proof was invalid",
+        "seconds": 0.2151
+      },
+      {
+        "family": "other_image",
+        "case": "all instances of test image 1",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2264
+      },
+      {
+        "family": "other_image",
+        "case": "inputs of image 1, outputs of image 0",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2107
+      },
+      {
+        "family": "other_image",
+        "case": "inputs of image 0, outputs of image 1",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2829
+      },
+      {
+        "family": "structure",
+        "case": "last instance dropped (793)",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2486
+      },
+      {
+        "family": "structure",
+        "case": "zero instance appended (795)",
+        "outcome": "error",
+        "error": "RuntimeError: Failed to run verify: [halo2] The constraint system is not satisfied",
+        "seconds": 0.2543
+      },
+      {
+        "family": "control",
+        "case": "honest proof (last)",
+        "outcome": "accepted",
+        "error": null,
+        "seconds": 0.2004
+      }
+    ],
+    "batch_peak_working_set_bytes": 239550464
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 22.04270269999961,
+  "notes": "Local Windows CPU (x64 Python emulated on ARM), not Colab. Zero accepted negatives is evidence about the cases tried, not a soundness proof."
+}

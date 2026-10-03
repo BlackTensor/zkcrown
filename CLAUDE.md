@@ -1118,7 +1118,28 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - **Sanity check, no `ezkl.verify` call:** the proof file parses, has non-empty proof bytes, and has 794 public instances, equal element for element to the witness's input and output.
   - **Committed** in `results/zk/p8.4/`: `proof.json` (SHA-256 `f02b1043…f7b8a40d`), `public_instances.json` and `input.json`. The proving key, SRS and witness are not committed.
   - Limits: one image, one run, local Windows CPU (x64 Python emulated on ARM), not Colab.
-- [ ] **P8.5** Verify the proof locally, off chain. Record verify time.
+- [x] **P8.5** Verify the proof locally, off chain. Record verify time.
+  - **The P8.4 proof verifies off chain: median 0.215 s over 5 runs, peak 223 MiB. 42 tampered variants tried, 0 accepted; all 3 honest controls in the same run accepted.** This is evidence about the cases tried, not a soundness proof.
+  - `experiments/p8_5_ezkl_verify.py`, local CPU, 22 s in all, clean tree at `c0aa929`, result `results/p8.5_ezkl_verify__seed1337__20261003T190242+0000.json`.
+    - Inputs: the committed `results/zk/p8.4/proof.json`, `results/zk/p8.3/settings.json` and `results/zk/p8.3/vk.key`, plus the P8.3 SRS. Each is checked against its recorded SHA-256.
+    - The proving key is not read.
+  - **Timing:** 5 runs of `ezkl.verify`, each in its own Python process, which measures its own peak (P8.3 method).
+    - Call times: 0.313, 0.215, 0.222, 0.205, 0.204 s, **median 0.215 s**. 0.60–0.71 s per process including Python start-up and the ezkl import.
+    - Peak working set 222.6–223.0 MiB (private 204.6–205.7 MiB). The baseline of start-up and ezkl import is 44.8 MiB (P8.4).
+  - **Negative checks**, in one process with the honest proof as a control first, last, and after a JSON round trip. Only `instances`, `proof` and `hex_proof` were edited:
+
+    | Family | Tried | Accepted | How refused |
+    |---|---|---|---|
+    | One output score changed (+1 field unit on outputs 0, 3, 7, 9; output 7 +1.0 and negated; outputs 3 and 7 swapped) | 7 | 0 | error: "The constraint system is not satisfied" |
+    | One input pixel changed (+1 field unit on pixels 0, 150, 400, 783; pixel 400 +1.0; pixel 0 set to 0) | 6 | 0 | same error |
+    | One bit flipped in the 3,072 proof bytes (bytes 0, 1, 63, 64, 255, 512, 1024, 1536, 2048, 2560, 3000, 3071 × bits 0 and 7) | 24 | 0 | errors: 14 "Invalid elliptic curve point encoding" (all flips at bytes 0–1024), 3 "Invalid scalar encoding", 4 "Multi-opening proof was invalid", 3 "The constraint system is not satisfied" |
+    | Instances of a different image (MNIST test image 1, fixed before the run): all of them, its inputs only, its outputs only | 3 | 0 | "The constraint system is not satisfied" |
+    | Instance count wrong (one dropped, one appended) | 2 | 0 | same error |
+    | **Total** | **42** | **0** | |
+
+  - **Every refusal was an error, never a clean `False`.** In ezkl 23.0.5 the Python `verify` raised `RuntimeError("Failed to run verify: [halo2] …")` in all 42 cases and returned True in every control. Any caller (P9) must treat an exception from `verify` as a rejection, not as a crash to retry or ignore. The same holds for snarkjs (P7.8).
+  - Observed: the 2 wrong-count cases report "constraint system is not satisfied", not a shape error.
+  - Limits: one proof, one image pair, single bit flips only, local Windows CPU (x64 Python emulated on ARM), not Colab. The tamper files and the image 1 witness stay in `zk/ezkl/zk_model/p8.5/` (gitignored).
 - [ ] **P8.6** Check quantization fidelity: EZKL quantizes when converting ONNX to a circuit, so the circuit output can diverge from PyTorch. Measure the agreement between PyTorch and the circuit (top-1 class, and the size of the output differences) on MNIST test images. **This is a real risk to the demo and must be measured, not assumed.** (Reworded 2026-10-03, owner decision (c3); was: how often the trigger still produces the watermark response inside the circuit.)
 - [ ] **P8.7** Frame the statement correctly: the proof shows that a model with committed weights produces a given output on a given public input. State plainly that this shows the zkML pipeline works and what it costs, and nothing about watermarks or ownership. Document what this does and does not demonstrate. (Reworded 2026-10-03, owner decision (c3); was: "this committed model produces this response on an input I am not revealing".)
 - [ ] **P8.8** If `zk_model` blows the RAM budget, shrink it and re-run rather than escalating hardware. Record what size was actually provable on Colab free. That measured ceiling is itself a good portfolio result.
@@ -2441,7 +2462,7 @@ Channel-pruning weight figures assume re-alignment (P4.3 caveat). The
 | Proving key size | 715,458 bytes `.zkey` (P7.6; single phase 2 contributor) | 1,107,822,347 bytes (P8.3; not committed); SRS `kzg18.srs` 33,554,692 bytes |
 | Verification key size | 2,926 bytes, snarkjs JSON (P7.6) | 525,575 bytes (P8.3, committed) |
 | Prove time | 2.42 s, one `groth16 prove` incl. Node start-up; peak 317 MiB working set; local CPU (P7.7) | 21.7 s, one `ezkl.prove` (22.1 s process); peak 2,504.6 MiB working set; local CPU (P8.4) |
-| Verify time | 1.94 s median of 5 (1.85–1.97), incl. Node start-up; local CPU (P7.7) | TBD |
+| Verify time | 1.94 s median of 5 (1.85–1.97), incl. Node start-up; local CPU (P7.7) | 0.215 s median of 5 `ezkl.verify` calls (0.204–0.313); 0.60–0.71 s per process incl. Python start-up; peak 223 MiB working set; local CPU (P8.5) |
 | Proof size | 806 bytes, snarkjs JSON; public signals `[C]` only (P7.7) | 3,072 bytes proof; 140,052 bytes as ezkl JSON with 794 public instances (784 input, 10 output) (P8.4) |
 | Ran on Colab free without OOM | TBD | TBD |
 
@@ -2990,4 +3011,5 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-04: P8.2 DONE, passed with two documented changes: `dynamo=False` in the export call, and `await` on `get_srs`. The runner now refuses a cached SRS. Run from a clean tree at `5ac8074` with an empty cache: 11/11 cells to `verified`. The P8.1 ONNX file loads in `gen_settings`. ezkl 23.0.5 pinned and ledger 8.1 filled (torch 2.14.0+cpu export). P8.3 note added. Cached SRS deleted. P8.3 not started.
 - 2026-10-04: P8.3 DONE. Owner approved logrows 18 (option 1). Calibration on 200 MNIST training images with the `accuracy` target chose scale 13/13 and logrows 18. The awaited `get_srs` fetched `kzg18.srs`, 33,554,692 bytes, exactly the estimate. Setup took 24.6 s at a 1.84 GiB peak. Proving key 1.11 GB (gitignored); verification key 525,575 bytes (committed). Found and fixed a memory-measurement flaw: the parent was reading the venv launcher stub, not the interpreter, so stages now measure themselves, and a watchdog enforces the owner's 8 GiB / 1 h limits. P8.4 not started.
 - 2026-10-04: P8.4 DONE. Proved `zk_model` inference on MNIST test image 0, fixed by position before the run, with the P8.3 artifacts hash-checked. Witness 0.3 s; prove 21.7 s at a 2.45 GiB peak; proof 3,072 bytes (140,052 as JSON). Circuit class 7 = PyTorch class 7 = label 7, largest logit difference 0.0031. Sanity check only, no verify. Proof, public instances and input committed; proving key and SRS not. P8.5 not started.
+- 2026-10-04: P8.5 DONE. The P8.4 proof verifies with the committed settings and verification key: median 0.215 s, 223 MiB peak. 42 tampered variants (outputs, inputs, proof bit flips, another image's instances, wrong instance count): 0 accepted, all refused by an exception rather than a clean False; 3 of 3 honest controls accepted. Evidence about the cases tried, not a soundness proof. P8.6 not started.
 - 2026-10-03: Owner chose Phase 8 option (c3): plain inference on the P0.7 `zk_model` first, with the watermarked `zk_model` (a) to be revisited after P8.5. The decision is recorded at the top of Phase 8; P8.4, P8.6 and P8.7 were reworded, and (a) went to the Icebox with its per-trigger commitment requirement (`868d864`). That commit also removed a stray NUL byte in the P7.3 note. The byte had made git store CLAUDE.md as binary, so the commit renormalises every line ending. P8.1: installed onnx 1.23.1 and onnxruntime 1.30.0, then exported `zk_model` (opset 13, Conv/Relu/Flatten/Gemm, 26,214 bytes, deterministic, weights bit-identical) and compared ONNX Runtime with PyTorch: 10,000/10,000 test and 1,000/1,000 random top-1 agree, max logit diff 1.53e-5, accuracy 98.96% both. Code committed first (`6acbc55`), run from that clean tree. EZKL not installed. P8.2 not started.
