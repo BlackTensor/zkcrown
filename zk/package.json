@@ -1,0 +1,9 @@
+{
+  "name": "zk-crown-zk-toolchain",
+  "private": true,
+  "description": "Pinned Track A toolchain (P7.2): snarkjs and circomlib. circom itself is a separate binary, see README.md.",
+  "dependencies": {
+    "circomlib": "2.0.5",
+    "snarkjs": "0.7.6"
+  }
+}

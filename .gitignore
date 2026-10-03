@@ -43,3 +43,7 @@ env/
 # --- OS / editor -------------------------------------------------------------
 .DS_Store
 Thumbs.db
+
+# --- Track A toolchain (P7.2), reproduced by zk/README.md ---------------------
+/tools/bin/
+/zk/node_modules/
