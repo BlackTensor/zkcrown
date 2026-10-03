@@ -1,0 +1,1383 @@
+{
+  "schema_version": 1,
+  "name": "p7.8_negative_tests",
+  "task": "P7.8",
+  "timestamp_utc": "2026-10-03T17:56:23+00:00",
+  "git": {
+    "commit": "3999e6a67817ad562065c202d7b8c1794ebbece4",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "circuit": "src/zk/circuits/commitment_opening.circom",
+    "proving_key": "zk/keys/commitment_opening_final.zkey (P7.6, SHA-256 checked)",
+    "verification_key": "results/zk/p7.6/verification_key.json (committed, SHA-256 checked)",
+    "inputs": "public demo vector tests/data/commitment_circomlibjs_vector.json and values derived from it; no owner secret read",
+    "derived_values": "SHA-256(zk-crown/p7.8/demo-derived/v1\\0 || tag || u32 i || u32 j), truncated",
+    "refused_means": "witness generation, wtns check or proving failed, or groth16 verify did not print OK",
+    "scope": "evidence about the cases tried, not a soundness proof"
+  },
+  "metrics": {
+    "cases_tried": 206,
+    "cases_accepted": 0,
+    "families": {
+      "1a wrong opening, witness for demo C": {
+        "tried": 25,
+        "accepted": 0,
+        "refused_at": {
+          "witness generation failed (CommitmentOpening assertion)": 25
+        }
+      },
+      "1b wrong opening, own proof checked against demo C": {
+        "tried": 25,
+        "accepted": 0,
+        "refused_at": {
+          "verify: invalid proof (pairing check failed)": 25
+        }
+      },
+      "2 different public C": {
+        "tried": 17,
+        "accepted": 0,
+        "refused_at": {
+          "verify: invalid proof (pairing check failed)": 17
+        }
+      },
+      "3 proof bit flip": {
+        "tried": 72,
+        "accepted": 0,
+        "refused_at": {
+          "verify: proof points not valid (curve/subgroup check)": 72
+        }
+      },
+      "3 proof structure": {
+        "tried": 9,
+        "accepted": 0,
+        "refused_at": {
+          "verify: invalid proof (pairing check failed)": 5,
+          "verify: proof points not valid (curve/subgroup check)": 4
+        }
+      },
+      "4 altered public signals": {
+        "tried": 4,
+        "accepted": 0,
+        "refused_at": {
+          "verify: verifier crashed (TypeError)": 1,
+          "verify: invalid proof (pairing check failed)": 1,
+          "verify: public inputs not valid (not below p)": 2
+        }
+      },
+      "5 out-of-range input": {
+        "tried": 12,
+        "accepted": 0,
+        "refused_at": {
+          "witness generation failed (Num2Bits assertion)": 12
+        }
+      },
+      "6 adversarial witness: wtns check": {
+        "tried": 20,
+        "accepted": 0,
+        "refused_at": {
+          "wtns check failed": 20
+        }
+      },
+      "6 adversarial witness: proof vs demo C": {
+        "tried": 20,
+        "accepted": 0,
+        "refused_at": {
+          "verify: invalid proof (pairing check failed)": 20
+        }
+      },
+      "6 adversarial witness: proof vs its own public signal": {
+        "tried": 2,
+        "accepted": 0,
+        "refused_at": {
+          "verify: invalid proof (pairing check failed)": 2
+        }
+      }
+    },
+    "positive_controls": {
+      "count": 26,
+      "all_verified": true
+    },
+    "representations_of_same_C": [
+      {
+        "case": "C with a leading zero",
+        "same_field_element": true,
+        "accepted": true
+      },
+      {
+        "case": "C as 0x hex",
+        "same_field_element": true,
+        "accepted": true
+      }
+    ],
+    "malleability_neg_a_neg_b_verified": true,
+    "witness_wires": 1472,
+    "internal_wires_edited": [
+      6,
+      168,
+      331,
+      494,
+      657,
+      819,
+      982,
+      1145,
+      1308,
+      1471
+    ],
+    "cases": [
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "K_hi+1",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "K_hi+1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "K_hi top bit flipped",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "K_hi top bit flipped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "K_hi low bit flipped",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "K_hi low bit flipped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "K_hi derived #0",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "K_hi derived #0",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "K_hi derived #1",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "K_hi derived #1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "K_hi derived #2",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "K_hi derived #2",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "K_lo+1",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "K_lo+1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "K_lo top bit flipped",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "K_lo top bit flipped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "K_lo low bit flipped",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "K_lo low bit flipped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "K_lo derived #0",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "K_lo derived #0",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "K_lo derived #1",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "K_lo derived #1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "K_lo derived #2",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "K_lo derived #2",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "S+1",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "S+1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "S top bit flipped",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "S top bit flipped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "S low bit flipped",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "S low bit flipped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "S derived #0",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "S derived #0",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "S derived #1",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "S derived #1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "S derived #2",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "S derived #2",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "nonce+1",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "nonce+1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "nonce top bit flipped",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "nonce top bit flipped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "nonce low bit flipped",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "nonce low bit flipped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "nonce derived #0",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "nonce derived #0",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "nonce derived #1",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "nonce derived #1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "nonce derived #2",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "nonce derived #2",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "1a wrong opening, witness for demo C",
+        "case": "K_hi and K_lo swapped",
+        "accepted": false,
+        "refused_at": "witness generation failed (CommitmentOpening assertion)"
+      },
+      {
+        "family": "1b wrong opening, own proof checked against demo C",
+        "case": "K_hi and K_lo swapped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "C+1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "C-1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "0",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "p-1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "published owner C",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "C bit 0 flipped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "C bit 1 flipped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "C bit 64 flipped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "C bit 128 flipped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "C bit 200 flipped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "C bit 252 flipped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "derived #0",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "derived #1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "derived #2",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "derived #3",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "2 different public C",
+        "case": "derived #4",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[0] bit 0",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[0] bit 1",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[0] bit 2",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[0] bit 31",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[0] bit 64",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[0] bit 128",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[0] bit 200",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[0] bit 252",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[0] bit 253",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[1] bit 0",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[1] bit 1",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[1] bit 2",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[1] bit 31",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[1] bit 64",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[1] bit 128",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[1] bit 200",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[1] bit 252",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_a[1] bit 253",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 0] bit 0",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 0] bit 1",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 0] bit 2",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 0] bit 31",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 0] bit 64",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 0] bit 128",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 0] bit 200",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 0] bit 252",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 0] bit 253",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 1] bit 0",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 1] bit 1",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 1] bit 2",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 1] bit 31",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 1] bit 64",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 1] bit 128",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 1] bit 200",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 1] bit 252",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[0, 1] bit 253",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 0] bit 0",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 0] bit 1",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 0] bit 2",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 0] bit 31",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 0] bit 64",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 0] bit 128",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 0] bit 200",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 0] bit 252",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 0] bit 253",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 1] bit 0",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 1] bit 1",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 1] bit 2",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 1] bit 31",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 1] bit 64",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 1] bit 128",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 1] bit 200",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 1] bit 252",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_b[1, 1] bit 253",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[0] bit 0",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[0] bit 1",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[0] bit 2",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[0] bit 31",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[0] bit 64",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[0] bit 128",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[0] bit 200",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[0] bit 252",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[0] bit 253",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[1] bit 0",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[1] bit 1",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[1] bit 2",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[1] bit 31",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[1] bit 64",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[1] bit 128",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[1] bit 200",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[1] bit 252",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof bit flip",
+        "case": "pi_c[1] bit 253",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof structure",
+        "case": "pi_a[2] = 0",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "3 proof structure",
+        "case": "pi_a[2] = 2",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof structure",
+        "case": "pi_c[2] = 0",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "3 proof structure",
+        "case": "pi_c[2] = 2",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof structure",
+        "case": "pi_b[2, 0] = 0",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "3 proof structure",
+        "case": "pi_b[2, 0] = 2",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof structure",
+        "case": "pi_b[2, 1] = 1",
+        "accepted": false,
+        "refused_at": "verify: proof points not valid (curve/subgroup check)"
+      },
+      {
+        "family": "3 proof structure",
+        "case": "pi_a and pi_c swapped",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "3 proof structure",
+        "case": "pi_a negated",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "4 altered public signals",
+        "case": "extra signal [C, 0]",
+        "accepted": false,
+        "refused_at": "verify: verifier crashed (TypeError)"
+      },
+      {
+        "family": "4 altered public signals",
+        "case": "empty list",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "4 altered public signals",
+        "case": "C + p",
+        "accepted": false,
+        "refused_at": "verify: public inputs not valid (not below p)"
+      },
+      {
+        "family": "4 altered public signals",
+        "case": "C + 2p",
+        "accepted": false,
+        "refused_at": "verify: public inputs not valid (not below p)"
+      },
+      {
+        "family": "5 out-of-range input",
+        "case": "K_hi = 2^128",
+        "accepted": false,
+        "refused_at": "witness generation failed (Num2Bits assertion)"
+      },
+      {
+        "family": "5 out-of-range input",
+        "case": "K_hi = 2^128 + demo value",
+        "accepted": false,
+        "refused_at": "witness generation failed (Num2Bits assertion)"
+      },
+      {
+        "family": "5 out-of-range input",
+        "case": "K_hi = p-1",
+        "accepted": false,
+        "refused_at": "witness generation failed (Num2Bits assertion)"
+      },
+      {
+        "family": "5 out-of-range input",
+        "case": "K_lo = 2^128",
+        "accepted": false,
+        "refused_at": "witness generation failed (Num2Bits assertion)"
+      },
+      {
+        "family": "5 out-of-range input",
+        "case": "K_lo = 2^128 + demo value",
+        "accepted": false,
+        "refused_at": "witness generation failed (Num2Bits assertion)"
+      },
+      {
+        "family": "5 out-of-range input",
+        "case": "K_lo = p-1",
+        "accepted": false,
+        "refused_at": "witness generation failed (Num2Bits assertion)"
+      },
+      {
+        "family": "5 out-of-range input",
+        "case": "S = 2^128",
+        "accepted": false,
+        "refused_at": "witness generation failed (Num2Bits assertion)"
+      },
+      {
+        "family": "5 out-of-range input",
+        "case": "S = 2^128 + demo value",
+        "accepted": false,
+        "refused_at": "witness generation failed (Num2Bits assertion)"
+      },
+      {
+        "family": "5 out-of-range input",
+        "case": "S = p-1",
+        "accepted": false,
+        "refused_at": "witness generation failed (Num2Bits assertion)"
+      },
+      {
+        "family": "5 out-of-range input",
+        "case": "nonce = 2^248",
+        "accepted": false,
+        "refused_at": "witness generation failed (Num2Bits assertion)"
+      },
+      {
+        "family": "5 out-of-range input",
+        "case": "nonce = 2^248 + demo value",
+        "accepted": false,
+        "refused_at": "witness generation failed (Num2Bits assertion)"
+      },
+      {
+        "family": "5 out-of-range input",
+        "case": "nonce = p-1",
+        "accepted": false,
+        "refused_at": "witness generation failed (Num2Bits assertion)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "wire main.C + 1",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "wire main.C + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: proof vs its own public signal",
+        "case": "wire main.C + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "wire main.K_hi + 1",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "wire main.K_hi + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "wire main.K_lo + 1",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "wire main.K_lo + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "wire main.S + 1",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "wire main.S + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "wire main.nonce + 1",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "wire main.nonce + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "internal wire 6 + 1",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "internal wire 6 + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "internal wire 168 + 1",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "internal wire 168 + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "internal wire 331 + 1",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "internal wire 331 + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "internal wire 494 + 1",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "internal wire 494 + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "internal wire 657 + 1",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "internal wire 657 + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "internal wire 819 + 1",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "internal wire 819 + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "internal wire 982 + 1",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "internal wire 982 + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "internal wire 1145 + 1",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "internal wire 1145 + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "internal wire 1308 + 1",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "internal wire 1308 + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "internal wire 1471 + 1",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "internal wire 1471 + 1",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "every wire but the constant hash-derived",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "every wire but the constant hash-derived",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: proof vs its own public signal",
+        "case": "every wire but the constant hash-derived",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "honest witness for K_hi+1 with the C wire set to demo C",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "honest witness for K_hi+1 with the C wire set to demo C",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "honest witness for K_lo+1 with the C wire set to demo C",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "honest witness for K_lo+1 with the C wire set to demo C",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "honest witness for S+1 with the C wire set to demo C",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "honest witness for S+1 with the C wire set to demo C",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      },
+      {
+        "family": "6 adversarial witness: wtns check",
+        "case": "honest witness for nonce+1 with the C wire set to demo C",
+        "accepted": false,
+        "refused_at": "wtns check failed"
+      },
+      {
+        "family": "6 adversarial witness: proof vs demo C",
+        "case": "honest witness for nonce+1 with the C wire set to demo C",
+        "accepted": false,
+        "refused_at": "verify: invalid proof (pairing check failed)"
+      }
+    ],
+    "snarkjs_calls": 312
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 527.9802121000002,
+  "notes": "Demo values only. Accepted count over the negative cases tried; not a soundness proof. Same-value encodings and Groth16 malleability reported separately."
+}

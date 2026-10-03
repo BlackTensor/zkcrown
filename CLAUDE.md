@@ -937,7 +937,42 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - `.gitattributes` now marks `results/zk/**` as `-text`, so git does not rewrite the committed keys' and proofs' line endings.
   - Not done here: negative tests (P7.8), and binding the trigger derivation (P7.9).
   - 8 new tests, 1,152 in total. They check that public signals must be exactly `[C]`, that the secret scanner catches values planted in decimal and hex, that the script refuses to replace the proof, and the committed proof's shape. The committed proof verifies and is rejected against `C + 1`. With the owner's secrets present, no secret appears in the committed P7.7 files.
-- [ ] **P7.8** Negative tests: a proof with the wrong `K` must fail; a proof against the wrong `C` must fail. A ZK proof you have never seen fail is a ZK proof you have not tested.
+- [x] **P7.8** Negative tests: a proof with the wrong `K` must fail; a proof against the wrong `C` must fail. A ZK proof you have never seen fail is a ZK proof you have not tested.
+  - **206 negative cases tried, 0 accepted; 26 positive controls all verified. This is evidence about the cases tried, not a soundness proof.** It also inherits the P7.6 limit: the single-contributor setup is not sound against its creator, and no test here can show otherwise.
+  - Setup of the run:
+    - `experiments/p7_8_negative_tests.py`, CPU, 528 s, 312 snarkjs calls. Clean tree at `3999e6a`; result `results/p7.8_negative_tests__seed1337__20261003T175623+0000.json`.
+    - **Demo values only.** It uses the public circomlibjs demo opening from P5.3, values derived from it, and SHA-256 of the public label `zk-crown/p7.8/demo-derived/v1`. A test checks that the script never touches `secrets/`.
+    - The P7.6 proving key is used. Every verification uses the committed verification key, and both keys and the R1CS are hash-checked against P7.6.
+    - A case counts as refused if witness generation, `wtns check` or proving fails, or if `groth16 verify` does not print OK. The record names the stage for each case.
+  - Positive controls: the honest demo proof, and each wrong opening's honest proof against its own `C'`, all verify.
+  - **Results by family:**
+
+    | Family | Tried | Accepted | Where it was refused |
+    |---|---|---|---|
+    | 1a. Wrong opening (`K_hi`, `K_lo`, `S`, `nonce`: +1, top bit, low bit, 3 derived values each; `K_hi`/`K_lo` swapped), witness for the demo `C` | 25 | 0 | witness generation, on the `C === h.out` assertion |
+    | 1b. The same wrong openings, honestly proved against their own `C'`, then checked against the demo `C` | 25 | 0 | verify, pairing check |
+    | 2. Valid demo proof against a different `C` (C±1, 0, 1, p−1, the published owner `C`, 6 single-bit flips of `C`, 5 derived) | 17 | 0 | verify, pairing check |
+    | 3a. One bit flipped in one proof coordinate (8 affine coordinates × bits 0, 1, 2, 31, 64, 128, 200, 252, 253) | 72 | 0 | verify, **all 72** by snarkjs's point check ("Proof commitments are not valid"), before the pairing |
+    | 3b. Proof structure (projective z set to 0 or 2, `pi_a`/`pi_c` swapped, `pi_a` negated) | 9 | 0 | 5 at the pairing check, 4 at the point check |
+    | 4. Altered public signals (`[C, 0]`, `[]`, `C + p`, `C + 2p`) | 4 | 0 | `C + p`, `C + 2p`: "Public inputs are not valid"; `[]`: pairing check; `[C, 0]`: **the verifier crashed** (`TypeError`) rather than returning a verdict |
+    | 5. Out-of-range input (2^n, 2^n + demo value, p − 1 for each input; n = 128, nonce 248; `C` recomputed for the exact values) | 12 | 0 | witness generation, `Num2Bits` assertion |
+    | 6. Adversarial witnesses: a valid `.wtns` edited directly, then proved by snarkjs (which does not check constraints when proving) | 20 + 20 + 2 | 0 | all 20 fail `wtns check`; all 20 proofs fail against the demo `C`; the 2 that carry another public value fail against it too |
+    | **Total** | **206** | **0** | |
+
+  - **Adversarial witnesses tried** (family 6):
+    - each of the 5 input wires (`C`, `K_hi`, `K_lo`, `S`, `nonce`) +1, everything else unchanged;
+    - 10 internal wires +1, spread over the 1,472 wires;
+    - every wire except the constant replaced with derived values;
+    - for each private input, an honest, fully consistent witness for that input +1, with only the `C` wire overwritten by the demo `C`. This is the "matches every constraint but the last" attempt.
+    - Proving never refused: snarkjs produced a proof from every invalid witness. All those proofs failed at verification. So the check that held is the verifier's pairing check, not the prover.
+  - **Reported separately, not negatives:**
+    - `C` written with a leading zero, or as `0x` hex, verifies. Both are the same field element. Anything comparing public signals (P9) should compare by value, not by string.
+    - **Groth16 malleability:** (−`pi_a`, −`pi_b`, `pi_c`) verifies as a second valid proof of the same statement. That is expected of Groth16, not a soundness failure. A proof's bytes therefore do not identify it uniquely, and nothing should rely on that.
+  - Findings for P7.10:
+    - Bit flips in the proof are caught by the point check, so the pairing check is exercised only by valid-looking points: the swaps, the negation, wrong `C`, and the adversarial proofs.
+    - snarkjs 0.7.6 crashes rather than rejecting when there are too many public signals. That is a refusal, but code calling it has to treat errors as rejections.
+  - The demo proof and public signals are committed in `results/zk/p7.8/`. The first full run's classifier lumped the point check and the crash together as "verifier error". Its record was discarded uncommitted, and the classified re-run gave the same counts.
+  - 8 new tests, 1,160 in total. They cover the classifier, the `.wtns` round trip, the derived values, the "no secrets" check on the script source, the committed record's zero accepted count, and the committed demo proof.
 - [ ] **P7.9** Extend the circuit so the statement also binds the trigger derivation (prove the triggers used in the audit really come from the committed `K`). This closes the loop between the cryptography and the watermark. If it proves too expensive, mark `[!]` and document the constraint count that killed it.
 - [ ] **P7.10** Write `docs/ZK_STATEMENT.md` stating precisely what is proved and, equally important, what is **not** proved.
 
@@ -2273,6 +2308,20 @@ Channel-pruning weight figures assume re-alignment (P4.3 caveat). The
 | Proof size | 806 bytes, snarkjs JSON; public signals `[C]` only (P7.7) | TBD |
 | Ran on Colab free without OOM | TBD | TBD |
 
+Proof-level negative tests (P7.8), result file
+`results/p7.8_negative_tests__seed1337__20261003T175623+0000.json`, CPU, clean
+tree at `3999e6a`, public demo values only, committed verification key. **206
+negative cases, 0 accepted.** Positive controls: 26 of 26 verified. By family
+(tried / accepted): wrong opening at witness 25 / 0, wrong opening proved
+against its own `C'` and checked against `C` 25 / 0, different `C` 17 / 0,
+proof bit flips 72 / 0, proof structure 9 / 0, altered public signals 4 / 0,
+out-of-range inputs 12 / 0, adversarial witnesses 42 / 0. A case refused at
+witness generation never produced a proof. The rest were refused by `groth16
+verify`, at the pairing check, at snarkjs's point check, at its public input
+check, or in one case by a crash. Same-value encodings of `C` (leading zero,
+hex) verify, and Groth16's (−A, −B, C) malleability holds. Both are expected.
+This is evidence about the cases tried, not a soundness proof.
+
 Groth16 proof of the real opening (P7.7), result file
 `results/p7.7_groth16_proof__seed1337__20261003T173803+0000.json`, CPU, clean
 tree at `c4a8c97`. The witness was built from `K`, `S` and the nonce under
@@ -2785,3 +2834,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-03: P7.5. Commitment-opening circuit written: Poseidon(5) with `DOMAIN` as a constant, `Num2Bits` range checks (128, 128, 128, 248), `C` the only public input, no `<--` of its own. Code committed first (`ce8a44a`), then the check run from that clean tree: circomlibjs demo vector accepted; 12 range boundary cases as expected; wrong `C` refused; the real opening accepted against the published `C`, with its witness files kept under `secrets/` and deleted. 1,471 constraints, fits 2^15. My first `<--` guard tripped on a comment and was changed to ignore comments before the committed run. P7.6 not started.
 - 2026-10-03: P7.6. Owner asked for the wrapper timeout to be raised first: setup steps now 7,200 s each (default 1,800 s unchanged). Wrapper also records per-command peak memory (Windows) and redacts `-e=` entropy. Code committed first (`02f9425`), then the setup run from that clean tree in 17 s: circuit equal to P7.5, ptau re-hashed, one phase 2 contribution by the owner with fresh in-memory entropy, `zkey verify` OK, verification key exported. Proving key 715,458 bytes (gitignored), verification key 2,926 bytes (committed), peak 333 MiB working set at `zkey verify`. Ledger states the single-contributor limit: no soundness against the key's creator. P7.7 not started.
 - 2026-10-03: P7.7. `experiments/p7_7_prove_commitment.py`: real opening from `secrets/`, witness only under `secrets/p7.7_witness/` and deleted, prove with the P7.6 key, verify 5 times with the committed verification key. Code committed first (`c4a8c97`), then run from that clean tree in 25 s. Public signals exactly `[C]`; proof 806 bytes JSON; prove 2.42 s at 317 MiB; verify median 1.94 s. No secret value in the proof, public signals or record (decimal and hex), nor in any of the 390 repo files (scratch scan). `.gitattributes` marks `results/zk/**` `-text`. One fix before the run: the overwrite guard ran after a secrets import, so a test could not reach it. P7.8 not started.
+- 2026-10-03: P7.8. `experiments/p7_8_negative_tests.py` on public demo values and the committed verification key: 206 negative cases in 6 families, 0 accepted; 26 positive controls verified. Wrong openings fail at witness generation, or at the pairing check when proved against their own `C'`. Different `C` fails at the pairing check. All 72 proof bit flips fail snarkjs's point check. Out-of-range inputs fail `Num2Bits`. Edited witnesses fail `wtns check`, and the proofs snarkjs still makes from them fail verification. Reported separately: same-value `C` encodings verify, (−A, −B, C) verifies (malleability), and too many public signals crash the verifier instead of rejecting. The first run lumped the point check and the crash together as "verifier error"; it was discarded, the classifier refined (`3999e6a`), and the run repeated with the same counts. P7.9 not started.
