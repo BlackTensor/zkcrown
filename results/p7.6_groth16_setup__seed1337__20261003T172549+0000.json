@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "name": "p7.6_groth16_setup",
+  "task": "P7.6",
+  "timestamp_utc": "2026-10-03T17:25:49+00:00",
+  "git": {
+    "commit": "02f9425c8ec650f2a8e6b06679d5be1aa9ed185f",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "circuit": "src/zk/circuits/commitment_opening.circom",
+    "circuit_sha256": "098eee8071447490d5ada2556fa2546762d8142c8b67162156a57dac51e03438",
+    "circuit_equals_p7_5": true,
+    "ptau": "zk/ptau/powersOfTau28_hez_final_15.ptau (Hermez, power 15, P7.4; BLAKE2b-512 re-checked, powersoftau verify not completed in P7.4)",
+    "ptau_blake2b_512": "982372c867d229c236091f767e703253249a9b432c1710b4f326306bfa2428a17b06240359606cfe4d580b10a5a1f63fbed499527069c18ae17060472969ae6e",
+    "proof_system": "groth16 over bn128 (snarkjs 0.7.6)",
+    "phase2": "single contribution by the owner on this machine; fresh OS entropy passed on the command line only, never written to a file, redacted from the record",
+    "phase2_contributor_name": "blacktensor-zkcrown-owner, single phase 2 contributor (P7.6)",
+    "soundness_note": "single phase 2 contributor: this proving key gives no soundness against its own creator, who could have kept the toxic waste",
+    "setup_step_timeout_seconds": 7200,
+    "memory_measurement": "per snarkjs process, Windows GetProcessMemoryInfo, local machine (not Colab)"
+  },
+  "metrics": {
+    "r1cs": {
+      "wires": 1472,
+      "constraints": 1471,
+      "private_inputs": 4,
+      "public_inputs": 1,
+      "labels": 1994,
+      "outputs": 0
+    },
+    "zkey_verify": "ZKey Ok!",
+    "contributions_listed_by_zkey_verify": [
+      "1"
+    ],
+    "contribution_hash": "538e905d87d8f5ef5e91908588994fe5c4cb51229f94f837086697850ca5aff97498ec9ecabfad9a106b603623c197b36998a77cc3d7f2e02a5cb7fdbb233dfe",
+    "file_bytes": {
+      "r1cs": 225632,
+      "zkey_initial": 715004,
+      "zkey_final": 715458,
+      "verification_key_json": 2926,
+      "ptau": 37831832
+    },
+    "sha256": {
+      "r1cs": "8ee5cfdbcb1cf1f6d911a21c66d5197f736535c16a83f760d36afecf8b4fa323",
+      "zkey_final": "75a5a983b024494ce56f0919cf7267e0612ec8d51c6e93d108d88ca1cd4443de",
+      "verification_key_json": "784df209f4a68d36ad442fddaad27771bcb6c1900ddf57fe29352e69b04523d1"
+    },
+    "setup_peak_working_set_bytes": 349147136,
+    "setup_peak_private_bytes": 421605376,
+    "setup_seconds_total": 11.581,
+    "steps": [
+      {
+        "name": "circom_compile",
+        "seconds": 3.143,
+        "returncode": 0,
+        "peak_working_set_bytes": 292999168,
+        "peak_private_bytes": 291508224
+      },
+      {
+        "name": "r1cs_info",
+        "seconds": 1.89,
+        "returncode": 0,
+        "peak_working_set_bytes": 252301312,
+        "peak_private_bytes": 332988416
+      },
+      {
+        "name": "groth16_setup",
+        "seconds": 3.415,
+        "returncode": 0,
+        "peak_working_set_bytes": 307433472,
+        "peak_private_bytes": 401788928
+      },
+      {
+        "name": "zkey_contribute",
+        "seconds": 2.156,
+        "returncode": 0,
+        "peak_working_set_bytes": 237576192,
+        "peak_private_bytes": 310149120
+      },
+      {
+        "name": "zkey_verify",
+        "seconds": 3.867,
+        "returncode": 0,
+        "peak_working_set_bytes": 349147136,
+        "peak_private_bytes": 421605376
+      },
+      {
+        "name": "zkey_export_vkey",
+        "seconds": 2.143,
+        "returncode": 0,
+        "peak_working_set_bytes": 232910848,
+        "peak_private_bytes": 305827840
+      }
+    ],
+    "proving_key_path": "zk/keys/commitment_opening_final.zkey (gitignored, not committed)",
+    "verification_key_committed": "results/zk/p7.6/verification_key.json"
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 16.895341799999983,
+  "notes": "Phase 2 had a single contributor (the owner), so the proving key gives no soundness against its creator. No proof generated (P7.7)."
+}

@@ -882,7 +882,31 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - **Size: 1,471 constraints**, 1,472 wires, 4 private inputs and 1 public, default circom optimisation (-O1). That is exactly the P7.4 estimate. The smallest power of tau that fits is 11, so **2^15 is enough**, with about 31,000 constraints of headroom.
   - No setup and no proof: those are P7.6 and P7.7. Systematic proof-level negative tests are P7.8; the range and wrong-`C` cases here are witness-level checks only.
   - 9 new tests on public demo values only, 1,133 in total, all pass.
-- [ ] **P7.6** Generate the proving and verification keys. Record key sizes and peak RAM.
+- [x] **P7.6** Generate the proving and verification keys. Record key sizes and peak RAM.
+  - **Phase 2 had a single contributor: the owner.** So this proving key gives no soundness against its own creator. Whoever ran the setup could in principle have kept the toxic waste and could forge proofs that verify under this key. A third party must trust the owner on that, or the setup must be redone with independent contributors (not done).
+  - **Wrapper timeout raised first (owner request):** `src/zk/toolchain.py` now takes a per-command timeout. The four setup steps get `SETUP_TIMEOUT_SECONDS = 7200` (2 hours each); everything else keeps the 1,800 s default that killed the P7.4 verify. The setup itself needed 11.6 s.
+  - Other wrapper changes:
+    - Peak memory is recorded per command: peak working set and peak private bytes of the snarkjs node process, read with `GetProcessMemoryInfo`. Windows only; `None` elsewhere.
+    - Any `-e=<entropy>` argument is replaced with `-e=<redacted>` in the recorded argv.
+    - `zkey verify` must print `ZKey Ok!`.
+  - `experiments/p7_6_groth16_setup.py`, CPU, 17 s, clean tree at `02f9425`, result `results/p7.6_groth16_setup__seed1337__20261003T172549+0000.json`. It reads no key, nonce or witness.
+    - The circuit SHA-256 equals P7.5's, and the R1CS still has 1,471 constraints and 1 public input.
+    - The P7.4 Hermez file (power 15) was re-hashed against the snarkjs README's BLAKE2b-512, with no download. Its `powersoftau verify` is still the uncompleted one from P7.4.
+    - `groth16 setup`, then **one** `zkey contribute` under the name "blacktensor-zkcrown-owner, single phase 2 contributor (P7.6)". The entropy was 32 bytes of OS randomness, made in memory, passed on the command line only, never written to a file, and redacted from the record. snarkjs also mixes in its own randomness.
+    - Then `zkey verify` against the R1CS and the ptau (**ZKey Ok!**, contribution #1 only listed), then `zkey export verificationkey`.
+    - Contribution hash `538e905d…bb233dfe` (public; it identifies the contribution).
+  - **Sizes:**
+    - Proving key (`.zkey`): **715,458 bytes**, SHA-256 `75a5a983…cd4443de`, at `zk/keys/commitment_opening_final.zkey`. Gitignored and not committed; kept for P7.7. The script refuses to replace it.
+    - Verification key: **2,926 bytes** as snarkjs JSON, SHA-256 `784df209…b04523d1`, committed at `results/zk/p7.6/verification_key.json`. Groth16, bn128, `nPublic` 1, 2 IC points.
+    - For reference: the pre-contribution zkey was 715,004 bytes (deleted) and the R1CS 225,632 bytes.
+  - **Peak RAM, this machine (not Colab), per snarkjs process:**
+    - `groth16 setup`: 293 MiB working set (383 MiB private).
+    - `zkey contribute`: 227 MiB (296 MiB).
+    - `zkey verify`: **333 MiB (402 MiB)**, the highest of the setup steps.
+    - `zkey export verificationkey`: 222 MiB (292 MiB).
+    - Much of this is the Node runtime plus reading the 37.8 MB ptau. `snarkjs --help` alone peaked at about 75 MiB.
+  - Not done here: no proof (P7.7), no negative tests (P7.8), no Colab run.
+  - 11 new tests, 1,144 in total. They cover the timeout values, a command actually killed by its timeout, entropy redaction, peak memory measured from a 64 MiB allocation, the verification key shape, refusal to replace keys, and that the committed verification key equals one re-exported from the local zkey.
 - [ ] **P7.7** Generate a proof and verify it. Record proof size, prove time, verify time. **Measure, do not quote marketing numbers.**
 - [ ] **P7.8** Negative tests: a proof with the wrong `K` must fail; a proof against the wrong `C` must fail. A ZK proof you have never seen fail is a ZK proof you have not tested.
 - [ ] **P7.9** Extend the circuit so the statement also binds the trigger derivation (prove the triggers used in the audit really come from the committed `K`). This closes the loop between the cryptography and the watermark. If it proves too expensive, mark `[!]` and document the constraint count that killed it.
@@ -2212,13 +2236,37 @@ Channel-pruning weight figures assume re-alignment (P4.3 caveat). The
 | Metric | Track A (Circom) | Track B (EZKL) |
 |---|---|---|
 | Constraint count / circuit rows | 1,471 constraints, 1,472 wires (P7.5, circom -O1) | TBD |
-| Setup peak RAM | TBD | TBD |
-| Proving key size | TBD | TBD |
-| Verification key size | TBD | TBD |
+| Setup peak RAM | 333 MiB peak working set (402 MiB private), `zkey verify` step; local Windows CPU, not Colab (P7.6) | TBD |
+| Proving key size | 715,458 bytes `.zkey` (P7.6; single phase 2 contributor) | TBD |
+| Verification key size | 2,926 bytes, snarkjs JSON (P7.6) | TBD |
 | Prove time | TBD | TBD |
 | Verify time | TBD | TBD |
 | Proof size | TBD | TBD |
 | Ran on Colab free without OOM | TBD | TBD |
+
+Groth16 keys for Track A (P7.6), result file
+`results/p7.6_groth16_setup__seed1337__20261003T172549+0000.json`, CPU, clean
+tree at `02f9425`, snarkjs 0.7.6, Hermez power-15 ptau from P7.4.
+
+**Phase 2 had a single contributor, the owner. This proving key therefore
+gives no soundness against its own creator.** Groth16 is sound if at least one
+phase 2 contributor destroyed their secret. With one contributor, a verifier
+has to trust that the owner did, because the owner could otherwise forge
+proofs. The phase 1 ptau is the public Hermez ceremony, accepted on its hash
+alone (P7.4).
+
+| Step | Time | Peak working set | Peak private bytes |
+|---|---|---|---|
+| `groth16 setup` | 3.4 s | 293 MiB | 383 MiB |
+| `zkey contribute` (1 contribution) | 2.2 s | 227 MiB | 296 MiB |
+| `zkey verify` (ZKey Ok!) | 3.9 s | 333 MiB | 402 MiB |
+| `zkey export verificationkey` | 2.1 s | 222 MiB | 292 MiB |
+
+Times include Node start-up, about 1.7 s per call (P7.3). Memory is per snarkjs
+process on this Windows machine, read with `GetProcessMemoryInfo`; it is not a
+Colab figure. Proving key 715,458 bytes (SHA-256 `75a5a983…cd4443de`, not
+committed). Verification key 2,926 bytes (SHA-256 `784df209…b04523d1`,
+committed at `results/zk/p7.6/verification_key.json`).
 
 Powers of tau for Track A (P7.4), result file `results/p7.4_ptau__seed1337__20261003T111929+0000.json`, clean tree at
 `6359c3a`. Phase 1 only; nothing here fills the table above.
@@ -2682,3 +2730,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-03: P7.3. Toy Poseidon-preimage circuit and a circom/snarkjs wrapper (`src/zk/toolchain.py`). Decision: the toy uses a local single-contributor powers of tau, leaving the Hermez file to P7.4. Code committed first (`7ced78d`), then the loop run from that clean tree in 38 s: honest proof verifies; wrong-hash witness refused on the constraint; proof rejected against `hash + 1`. First check of the circom Poseidon template against the P5.2 host code: they agree. One of my test cases had the wrong ptau boundary and one f-string broke when I edited it; both fixed before the committed run. P7.4 not started.
 - 2026-10-03: P7.4. Sizing probe of the circomlib parts gives about 1,471 constraints, power 11. The official ptau URLs (Google Cloud Storage and the old Hermez S3 bucket) return 403. Owner chose the 2^15 file from a third-party GitHub mirror, accepted only because its BLAKE2b-512 equals the snarkjs 0.7.6 README value. `snarkjs powersoftau verify` ran 30 minutes and was killed by the wrapper's subprocess timeout (before the owner's deadline), so following the owner's instruction P7.4 is ticked on the hash check alone, with the limitation in 8.5. Fixed a partial-download cleanup bug found by the first 403; I also corrected a commit hash I had written wrongly in the blocked note. P7.5 not started.
 - 2026-10-03: P7.5. Commitment-opening circuit written: Poseidon(5) with `DOMAIN` as a constant, `Num2Bits` range checks (128, 128, 128, 248), `C` the only public input, no `<--` of its own. Code committed first (`ce8a44a`), then the check run from that clean tree: circomlibjs demo vector accepted; 12 range boundary cases as expected; wrong `C` refused; the real opening accepted against the published `C`, with its witness files kept under `secrets/` and deleted. 1,471 constraints, fits 2^15. My first `<--` guard tripped on a comment and was changed to ignore comments before the committed run. P7.6 not started.
+- 2026-10-03: P7.6. Owner asked for the wrapper timeout to be raised first: setup steps now 7,200 s each (default 1,800 s unchanged). Wrapper also records per-command peak memory (Windows) and redacts `-e=` entropy. Code committed first (`02f9425`), then the setup run from that clean tree in 17 s: circuit equal to P7.5, ptau re-hashed, one phase 2 contribution by the owner with fresh in-memory entropy, `zkey verify` OK, verification key exported. Proving key 715,458 bytes (gitignored), verification key 2,926 bytes (committed), peak 333 MiB working set at `zkey verify`. Ledger states the single-contributor limit: no soundness against the key's creator. P7.7 not started.
