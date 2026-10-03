@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "name": "p7.2_toolchain",
+  "task": "P7.2",
+  "timestamp_utc": "2026-10-03T10:23:30+00:00",
+  "git": {
+    "commit": "405892adabeaad2bffa2736626cc24fb8546ed37",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "install_location": "local (tools/bin/ and zk/node_modules/, both gitignored)",
+    "circom_source": "github.com/iden3/circom release v2.2.3, asset circom-windows-amd64.exe",
+    "npm_pins": {
+      "snarkjs": "0.7.6",
+      "circomlib": "2.0.5"
+    }
+  },
+  "metrics": {
+    "circom": {
+      "version_output": "circom compiler 2.2.3",
+      "binary_sha256": "e43f132ee6f0aa79b705beceb59c2a7e6a54d7bdeab917ca34e9fc1951d185e1",
+      "matches_release_asset_digest": true
+    },
+    "snarkjs": {
+      "version": "0.7.6",
+      "resolved": "https://registry.npmjs.org/snarkjs/-/snarkjs-0.7.6.tgz",
+      "integrity": "sha512-4uH1xA5JzVU5jaaWS2fXej3+RC6L5Erhr6INTJtUA27du4Elbh4VXCeeRjB4QiwL6N6y7SNKePw5prTxyEf4Zg==",
+      "license": "GPL-3.0",
+      "cli_banner_version": "0.7.6"
+    },
+    "circomlib": {
+      "version": "2.0.5",
+      "resolved": "https://registry.npmjs.org/circomlib/-/circomlib-2.0.5.tgz",
+      "integrity": "sha512-O7NQ8OS+J4eshBuoy36z/TwQU0YHw8W3zxZcs4hVwpEll3e4hDm3mgkIPqItN8FDeLEKZFK3YeT/+k8TiLF3/A==",
+      "license": "GPL-3.0",
+      "template_sha256": {
+        "poseidon.circom": "2582464669b69827164bd08ee0337997e1957f2ab4f00cdd86d533ca5e9d9234",
+        "bitify.circom": "688f121303a2dd0154ceeda8d2f53a9d2d26789d10a69a46acd534642725683e"
+      }
+    },
+    "node": "v24.16.0",
+    "lockfile_sha256": "d204362fa62fc0300a1c51ed9219705aa50a6edfe375d3859eea5f589d6068cb",
+    "host": {
+      "system": "Windows",
+      "release": "10",
+      "machine": "AMD64"
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 0.9802097000001595,
+  "notes": "Installed and version-checked only; nothing compiled or proved (P7.3)."
+}

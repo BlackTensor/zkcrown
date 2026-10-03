@@ -23,7 +23,9 @@ cryptography
 opentimestamps
 
 # --- Zero-knowledge, Track B (zkML) ------------------------------------------
-# Track A (circom / snarkjs / circomlib) is npm-installed, not pip. See P7.2.
+# Track A is not pip-installed. Pinned in P7.2: circom 2.2.3 (prebuilt binary
+# in tools/bin/), snarkjs 0.7.6 and circomlib 2.0.5 (zk/package.json and
+# zk/package-lock.json). See zk/README.md.
 ezkl
 
 # --- Interface ---------------------------------------------------------------
