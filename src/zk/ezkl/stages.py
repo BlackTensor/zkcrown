@@ -21,6 +21,11 @@ Stages:
 - `get_srs`: `ezkl.get_srs`, awaited inside an event loop. In ezkl 23.0.5 it
   is async; unawaited it returns a pending Future (P8.2).
 - `setup`: `ezkl.setup`, writing the verification and proving keys.
+- `gen_witness`: `ezkl.gen_witness` for one input file (P8.4).
+- `prove`: `ezkl.prove` from a witness, compiled circuit and proving key (P8.4).
+
+A stage that returns a dict (the witness, the proof) reports only its type;
+the content is in the file it wrote.
 """
 
 from __future__ import annotations
@@ -32,7 +37,7 @@ import sys
 import time
 
 RESULT_PREFIX = "RESULT "
-STAGES = ("baseline", "gen_settings", "calibrate", "compile", "get_srs", "setup")
+STAGES = ("baseline", "gen_settings", "calibrate", "compile", "get_srs", "setup", "gen_witness", "prove")
 
 
 async def _await_srs(**kwargs):
@@ -61,6 +66,10 @@ def run_stage(stage: str, kw: dict):
         return asyncio.run(_await_srs(settings_path=kw["settings"], srs_path=kw["srs"]))
     if stage == "setup":
         return ezkl.setup(kw["compiled"], kw["vk"], kw["pk"], srs_path=kw["srs"])
+    if stage == "gen_witness":
+        return ezkl.gen_witness(kw["data"], kw["compiled"], kw["witness"])
+    if stage == "prove":
+        return ezkl.prove(kw["witness"], kw["compiled"], kw["pk"], kw["proof"], srs_path=kw["srs"])
     raise ValueError(f"unknown stage {stage!r}; expected one of {STAGES}")
 
 
@@ -72,7 +81,7 @@ def main(argv: list[str]) -> int:
     from src.zk.toolchain import own_peak_memory
 
     peak_ws, peak_private = own_peak_memory()
-    print(RESULT_PREFIX + json.dumps({"stage": stage, "value": value if isinstance(value, (bool, str, int, float)) else repr(value),
+    print(RESULT_PREFIX + json.dumps({"stage": stage, "value": value if isinstance(value, (bool, str, int, float)) else type(value).__name__,
                                       "seconds": seconds, "peak_working_set_bytes": peak_ws,
                                       "peak_private_bytes": peak_private}), flush=True)
     return 0

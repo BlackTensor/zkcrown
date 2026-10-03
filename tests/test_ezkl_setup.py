@@ -34,7 +34,7 @@ def test_settings_are_fixed_before_the_run():
 
 def test_unknown_stage_is_refused():
     with pytest.raises(ValueError):
-        stages.run_stage("prove", {})
+        stages.run_stage("verify", {})
 
 
 def test_baseline_stage_in_child_process_reports_version_and_peak_memory(tmp_path):
