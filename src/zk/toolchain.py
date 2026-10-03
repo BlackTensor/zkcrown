@@ -199,10 +199,28 @@ def _peak_memory(proc: subprocess.Popen) -> tuple[int | None, int | None]:
 
     Read with GetProcessMemoryInfo on the process handle, which stays valid
     after the process exits until the Popen object is released. The figure
-    covers the tool's own process (snarkjs runs in one node process).
+    covers the tool's own process (snarkjs runs in one node process). It does
+    not cover processes the child starts: a Windows venv `python.exe` is a
+    launcher that runs the real interpreter as its own child, so for Python
+    children use `own_peak_memory` inside the child instead.
     """
     if sys.platform != "win32":
         return None, None
+    return _handle_peak_memory(int(proc._handle))
+
+
+def own_peak_memory() -> tuple[int | None, int | None]:
+    """(peak working set, peak private bytes) of the calling process so far. Windows only."""
+    if sys.platform != "win32":
+        return None, None
+    import ctypes
+
+    kernel32 = ctypes.WinDLL("kernel32")
+    kernel32.GetCurrentProcess.restype = ctypes.c_void_p
+    return _handle_peak_memory(kernel32.GetCurrentProcess())
+
+
+def _handle_peak_memory(handle) -> tuple[int | None, int | None]:
     import ctypes
     from ctypes import wintypes
 
@@ -218,7 +236,7 @@ def _peak_memory(proc: subprocess.Popen) -> tuple[int | None, int | None]:
     fn = ctypes.WinDLL("kernel32", use_last_error=True).K32GetProcessMemoryInfo
     fn.argtypes = [wintypes.HANDLE, ctypes.POINTER(_Counters), wintypes.DWORD]
     fn.restype = wintypes.BOOL
-    if not fn(wintypes.HANDLE(int(proc._handle)), ctypes.byref(counters), counters.cb):
+    if not fn(wintypes.HANDLE(handle), ctypes.byref(counters), counters.cb):
         return None, None
     return int(counters.PeakWorkingSetSize), int(counters.PeakPagefileUsage)
 

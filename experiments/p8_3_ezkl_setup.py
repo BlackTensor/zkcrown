@@ -4,8 +4,9 @@
 
 Local CPU. Input: the committed P8.1 ONNX file `results/zk/p8.1/zk_model.onnx`,
 checked by SHA-256. Each stage runs in its own child Python process
-(`src/zk/ezkl/stages.py`); the parent reads that process's peak working set
-and peak private bytes after it exits (Windows), and its wall time. A
+(`src/zk/ezkl/stages.py`). That process reports its own peak working set and
+peak private bytes (Windows); the parent also records the launcher's figure,
+which is not the stage's memory. A
 `baseline` child that only imports ezkl gives the fixed start-up cost.
 
 Settings chosen here, fixed before the run:
@@ -97,19 +98,20 @@ def run_stage(stage: str, **kw) -> dict:
         proc.communicate()
         raise SystemExit(f"stage {stage} exceeded {STAGE_TIMEOUT_SECONDS} s; stopped")
     wall = time.perf_counter() - start
-    peak_ws, peak_private = _peak_memory(proc)
+    launcher_ws, _ = _peak_memory(proc)
     lines = [ln for ln in out.splitlines() if ln.startswith(RESULT_PREFIX)]
     log = (out + err)
     rec = {"stage": stage, "returncode": proc.returncode, "process_seconds": round(wall, 3),
-           "peak_working_set_bytes": peak_ws, "peak_private_bytes": peak_private,
-           "log_tail": log[-1500:]}
+           "launcher_peak_working_set_bytes": launcher_ws, "log_tail": log[-1500:]}
     if proc.returncode != 0 or not lines:
         print(log[-4000:], file=sys.stderr)
         raise SystemExit(f"stage {stage} failed (exit {proc.returncode})")
     res = json.loads(lines[-1][len(RESULT_PREFIX):])
     rec["value"] = res["value"]
     rec["call_seconds"] = round(res["seconds"], 3)
-    mib = (peak_ws or 0) / 2**20
+    rec["peak_working_set_bytes"] = res["peak_working_set_bytes"]
+    rec["peak_private_bytes"] = res["peak_private_bytes"]
+    mib = (res["peak_working_set_bytes"] or 0) / 2**20
     print(f"{stage:13s} {rec['call_seconds']:8.2f} s call, {wall:8.2f} s process, peak {mib:8.1f} MiB  -> {res['value']}",
           flush=True)
     return rec
@@ -183,6 +185,8 @@ def main() -> int:
         print(f"STOPPED before get_srs: logrows {logrows} > {LOGROWS_ASK_ABOVE}. Expected SRS size "
               f"{srs_bytes(logrows):,} bytes ({srs_bytes(logrows) / 2**20:.1f} MiB). Ask the owner, then re-run "
               "with --allow-logrows-above-17. No record written.", flush=True)
+        print(f"calibrated run_args: {json.dumps(settings_calibrated['run_args'])}; "
+              f"rows {settings_calibrated['num_rows']}", flush=True)
         shutil.rmtree(work)
         return 2
     srs_cached_before = srs_path.exists()
@@ -211,9 +215,10 @@ def main() -> int:
             "calibration_data": cal_info,
             "srs": {"path": rel(srs_path), "fetched_by": "ezkl.get_srs, awaited", "cached_before_run": srs_cached_before},
             "kept_out_of_git": ["pk.key", "network.compiled", "calibration.json", "SRS"],
-            "measurement": ("each stage in its own child Python process; peak working set and peak private "
-                            "bytes of that process read with GetProcessMemoryInfo after exit; includes the "
-                            "Python + ezkl import cost measured by the baseline stage"),
+            "measurement": ("each stage in its own Python process, which reads its own peak working set and "
+                            "peak private bytes with GetProcessMemoryInfo after the ezkl call; includes the "
+                            "Python + ezkl import cost measured by the baseline stage. The parent's reading is "
+                            "of the venv launcher stub and is recorded only as launcher_peak_working_set_bytes"),
         },
         metrics={
             "stages": stages,

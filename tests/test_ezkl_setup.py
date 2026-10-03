@@ -44,6 +44,15 @@ def test_baseline_stage_in_child_process_reports_version_and_peak_memory():
         assert rec["peak_working_set_bytes"] > 10 * 2**20
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows memory counters")
+def test_stage_peak_memory_is_the_working_process_not_the_launcher():
+    import subprocess
+    code = ("from src.zk.toolchain import own_peak_memory; b = bytearray(300 * 2**20); "
+            "b[::4096] = bytes(len(b[::4096])); print(own_peak_memory()[0])")
+    out = subprocess.run([sys.executable, "-c", code], cwd=REPO_ROOT, capture_output=True, text=True, check=True)
+    assert int(out.stdout.strip()) > 300 * 2**20
+
+
 def test_gen_settings_stage_on_the_p8_1_onnx(tmp_path):
     out = tmp_path / "settings.json"
     rec = setup.run_stage("gen_settings", model=str(REPO_ROOT / setup.P8_1_ONNX), settings=str(out),

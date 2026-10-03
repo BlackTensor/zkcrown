@@ -2,11 +2,15 @@
 
     python -m src.zk.ezkl.stages <stage> '<json kwargs>'
 
-One stage per process, so the peak memory the parent reads from the finished
-child (`src.zk.toolchain._peak_memory`) belongs to that stage alone, plus the
-fixed cost of starting Python and importing ezkl (the `baseline` stage
-measures that). The child prints one JSON line, prefixed with `RESULT `, with
-the stage's return value and its own wall time around the ezkl call.
+One stage per process, so the process's peak memory belongs to that stage
+alone, plus the fixed cost of starting Python and importing ezkl (the
+`baseline` stage measures that). The child measures its own peak working set
+and peak private bytes at the end (`own_peak_memory`), because on Windows the
+venv `python.exe` the parent starts is only a launcher for the real
+interpreter, and the parent would measure the launcher (P8.3's first run read
+about 23.5 MiB for every stage that way). The child prints one JSON line,
+prefixed with `RESULT `, with the stage's return value, its wall time around
+the ezkl call, and its peak memory.
 
 Stages:
 
@@ -65,8 +69,12 @@ def main(argv: list[str]) -> int:
     t0 = time.perf_counter()
     value = run_stage(stage, kw)
     seconds = time.perf_counter() - t0
+    from src.zk.toolchain import own_peak_memory
+
+    peak_ws, peak_private = own_peak_memory()
     print(RESULT_PREFIX + json.dumps({"stage": stage, "value": value if isinstance(value, (bool, str, int, float)) else repr(value),
-                                      "seconds": seconds}), flush=True)
+                                      "seconds": seconds, "peak_working_set_bytes": peak_ws,
+                                      "peak_private_bytes": peak_private}), flush=True)
     return 0
 
 
