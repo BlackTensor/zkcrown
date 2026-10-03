@@ -37,8 +37,8 @@ def test_unknown_stage_is_refused():
         stages.run_stage("prove", {})
 
 
-def test_baseline_stage_in_child_process_reports_version_and_peak_memory():
-    rec = setup.run_stage("baseline")
+def test_baseline_stage_in_child_process_reports_version_and_peak_memory(tmp_path):
+    rec = setup.run_stage("baseline", log_dir=tmp_path)
     assert rec["returncode"] == 0 and rec["value"] == ezkl.__version__
     if sys.platform == "win32":
         assert rec["peak_working_set_bytes"] > 10 * 2**20
@@ -55,7 +55,7 @@ def test_stage_peak_memory_is_the_working_process_not_the_launcher():
 
 def test_gen_settings_stage_on_the_p8_1_onnx(tmp_path):
     out = tmp_path / "settings.json"
-    rec = setup.run_stage("gen_settings", model=str(REPO_ROOT / setup.P8_1_ONNX), settings=str(out),
+    rec = setup.run_stage("gen_settings", log_dir=tmp_path, model=str(REPO_ROOT / setup.P8_1_ONNX), settings=str(out),
                           **setup.VISIBILITY)
     assert rec["value"] is True
     ra = json.loads(out.read_text())["run_args"]
@@ -65,3 +65,16 @@ def test_gen_settings_stage_on_the_p8_1_onnx(tmp_path):
 def test_get_srs_is_awaited_not_left_pending():
     import inspect
     assert inspect.iscoroutinefunction(stages._await_srs)
+
+
+def test_watchdog_stops_a_stage_past_the_memory_limit(tmp_path, monkeypatch):
+    monkeypatch.setattr(setup, "STAGE_MEMORY_LIMIT_BYTES", 1)  # any running child exceeds it
+    monkeypatch.setattr(setup, "WATCH_INTERVAL_SECONDS", 0.05)
+    with pytest.raises(SystemExit, match="STOPPED"):
+        setup.run_stage("gen_settings", log_dir=tmp_path, model=str(REPO_ROOT / setup.P8_1_ONNX),
+                        settings=str(tmp_path / "s.json"), **setup.VISIBILITY)
+
+
+def test_limits_are_the_owners():
+    assert setup.STAGE_TIMEOUT_SECONDS == 3600
+    assert setup.STAGE_MEMORY_LIMIT_BYTES == 8 * 2**30

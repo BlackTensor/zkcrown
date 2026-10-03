@@ -65,7 +65,11 @@ VISIBILITY = {"input_visibility": "public", "output_visibility": "public", "para
 CALIBRATION_TARGET = "accuracy"
 CALIBRATION_IMAGES = 200
 LOGROWS_ASK_ABOVE = 17
-STAGE_TIMEOUT_SECONDS = 7200
+STAGE_TIMEOUT_SECONDS = 3600
+"""Owner limit (2026-10-04): stop if a stage runs past an hour."""
+STAGE_MEMORY_LIMIT_BYTES = 8 * 2**30
+"""Owner limit (2026-10-04): stop if a stage needs more than about 8 GiB."""
+WATCH_INTERVAL_SECONDS = 1.0
 
 
 def srs_bytes(logrows: int) -> int:
@@ -86,23 +90,79 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def run_stage(stage: str, **kw) -> dict:
-    argv = [sys.executable, "-m", "src.zk.ezkl.stages", stage, json.dumps(kw)]
-    start = time.perf_counter()
-    proc = subprocess.Popen(argv, cwd=repo_root(), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            text=True, env={**os.environ, "PYTHONUNBUFFERED": "1"})
+def _tree_working_set(proc: subprocess.Popen) -> int:
+    """Current working set of the launcher and every process under it."""
+    import psutil
+
     try:
-        out, err = proc.communicate(timeout=STAGE_TIMEOUT_SECONDS)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        proc.communicate()
-        raise SystemExit(f"stage {stage} exceeded {STAGE_TIMEOUT_SECONDS} s; stopped")
+        root = psutil.Process(proc.pid)
+        procs = [root, *root.children(recursive=True)]
+    except psutil.NoSuchProcess:
+        return 0
+    total = 0
+    for p in procs:
+        try:
+            total += p.memory_info().rss
+        except psutil.NoSuchProcess:
+            pass
+    return total
+
+
+def _kill_tree(proc: subprocess.Popen) -> None:
+    import psutil
+
+    try:
+        for child in psutil.Process(proc.pid).children(recursive=True):
+            child.kill()
+    except psutil.NoSuchProcess:
+        pass
+    proc.kill()
+    proc.wait()
+
+
+def run_stage(stage: str, *, log_dir: Path | None = None, **kw) -> dict:
+    """Run one stage in its own process, under the owner's time and memory limits.
+
+    A watchdog polls the working set of the launcher and its children every
+    second; past `STAGE_MEMORY_LIMIT_BYTES` or `STAGE_TIMEOUT_SECONDS` the tree
+    is killed and the run stops. Output goes to files, not pipes, so a long
+    calibration log cannot block the child while it is being watched.
+    """
+    import tempfile
+
+    argv = [sys.executable, "-m", "src.zk.ezkl.stages", stage, json.dumps(kw)]
+    log_dir = Path(log_dir or tempfile.mkdtemp(prefix="p8.3_stage_"))
+    log_dir.mkdir(parents=True, exist_ok=True)
+    out_path, err_path = log_dir / f"{stage}.out.log", log_dir / f"{stage}.err.log"
+    start = time.perf_counter()
+    watched_peak = 0
+    with open(out_path, "w", encoding="utf-8") as fo, open(err_path, "w", encoding="utf-8") as fe:
+        proc = subprocess.Popen(argv, cwd=repo_root(), stdout=fo, stderr=fe, text=True,
+                                env={**os.environ, "PYTHONUNBUFFERED": "1"})
+        while True:
+            try:
+                proc.wait(timeout=WATCH_INTERVAL_SECONDS)
+                break
+            except subprocess.TimeoutExpired:
+                pass
+            ws = _tree_working_set(proc)
+            watched_peak = max(watched_peak, ws)
+            elapsed = time.perf_counter() - start
+            if ws > STAGE_MEMORY_LIMIT_BYTES or elapsed > STAGE_TIMEOUT_SECONDS:
+                _kill_tree(proc)
+                raise SystemExit(f"STOPPED: stage {stage} at {elapsed:.0f} s with working set "
+                                 f"{ws / 2**30:.2f} GiB, past the owner's limit "
+                                 f"({STAGE_MEMORY_LIMIT_BYTES / 2**30:.0f} GiB, {STAGE_TIMEOUT_SECONDS} s)")
     wall = time.perf_counter() - start
+    out = out_path.read_text(encoding="utf-8", errors="replace")
+    err = err_path.read_text(encoding="utf-8", errors="replace")
     launcher_ws, _ = _peak_memory(proc)
     lines = [ln for ln in out.splitlines() if ln.startswith(RESULT_PREFIX)]
     log = (out + err)
     rec = {"stage": stage, "returncode": proc.returncode, "process_seconds": round(wall, 3),
-           "launcher_peak_working_set_bytes": launcher_ws, "log_tail": log[-1500:]}
+           "launcher_peak_working_set_bytes": launcher_ws,
+           "watchdog_peak_tree_working_set_bytes": watched_peak or None,
+           "log_tail": log[-1500:]}
     if proc.returncode != 0 or not lines:
         print(log[-4000:], file=sys.stderr)
         raise SystemExit(f"stage {stage} failed (exit {proc.returncode})")
@@ -170,13 +230,13 @@ def main() -> int:
     rel = lambda p: str(p.relative_to(root)).replace("\\", "/")  # noqa: E731
 
     cal_info = calibration_data(cal, args.seed)
-    stages = [run_stage("baseline")]
-    stages.append(run_stage("gen_settings", model=rel(onnx_path), settings=rel(settings), **VISIBILITY))
+    stages = [run_stage("baseline", log_dir=work / "logs")]
+    stages.append(run_stage("gen_settings", log_dir=work / "logs", model=rel(onnx_path), settings=rel(settings), **VISIBILITY))
     settings_initial = settings_view(settings)
-    stages.append(run_stage("calibrate", data=rel(cal), model=rel(onnx_path), settings=rel(settings),
+    stages.append(run_stage("calibrate", log_dir=work / "logs", data=rel(cal), model=rel(onnx_path), settings=rel(settings),
                             target=CALIBRATION_TARGET))
     settings_calibrated = settings_view(settings)
-    stages.append(run_stage("compile", model=rel(onnx_path), compiled=rel(compiled), settings=rel(settings)))
+    stages.append(run_stage("compile", log_dir=work / "logs", model=rel(onnx_path), compiled=rel(compiled), settings=rel(settings)))
 
     logrows = settings_calibrated["run_args"]["logrows"]
     srs_path = srs_dir / f"kzg{logrows}.srs"
@@ -190,8 +250,8 @@ def main() -> int:
         shutil.rmtree(work)
         return 2
     srs_cached_before = srs_path.exists()
-    stages.append(run_stage("get_srs", settings=rel(settings), srs=rel(srs_path)))
-    stages.append(run_stage("setup", compiled=rel(compiled), vk=rel(vk), pk=rel(pk), srs=rel(srs_path)))
+    stages.append(run_stage("get_srs", log_dir=work / "logs", settings=rel(settings), srs=rel(srs_path)))
+    stages.append(run_stage("setup", log_dir=work / "logs", compiled=rel(compiled), vk=rel(vk), pk=rel(pk), srs=rel(srs_path)))
 
     out.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(settings, out / "settings.json")
@@ -199,7 +259,8 @@ def main() -> int:
     sizes = {name: p.stat().st_size for name, p in
              (("pk", pk), ("vk", vk), ("compiled_circuit", compiled), ("settings", settings),
               ("srs", srs_path), ("calibration_data", cal))}
-    if sizes["srs"] != srs_bytes(logrows):
+    srs_matches_estimate = sizes["srs"] == srs_bytes(logrows)
+    if not srs_matches_estimate:
         print(f"note: SRS file is {sizes['srs']:,} bytes, formula gave {srs_bytes(logrows):,}", flush=True)
 
     path = write_result(
@@ -215,6 +276,9 @@ def main() -> int:
             "calibration_data": cal_info,
             "srs": {"path": rel(srs_path), "fetched_by": "ezkl.get_srs, awaited", "cached_before_run": srs_cached_before},
             "kept_out_of_git": ["pk.key", "network.compiled", "calibration.json", "SRS"],
+            "limits": {"stage_timeout_seconds": STAGE_TIMEOUT_SECONDS,
+                       "stage_memory_limit_bytes": STAGE_MEMORY_LIMIT_BYTES,
+                       "watch_interval_seconds": WATCH_INTERVAL_SECONDS},
             "measurement": ("each stage in its own Python process, which reads its own peak working set and "
                             "peak private bytes with GetProcessMemoryInfo after the ezkl call; includes the "
                             "Python + ezkl import cost measured by the baseline stage. The parent's reading is "
@@ -227,6 +291,9 @@ def main() -> int:
             "logrows": logrows,
             "file_bytes": sizes,
             "srs_bytes_expected": srs_bytes(logrows),
+            "srs_bytes_matches_expected": srs_matches_estimate,
+            "calibrated_scales": {k: settings_calibrated["run_args"].get(k)
+                                  for k in ("input_scale", "param_scale", "scale_rebase_multiplier")},
             "sha256": {"vk": sha256_file(vk), "pk": sha256_file(pk), "settings": sha256_file(settings),
                        "compiled_circuit": sha256_file(compiled), "srs": sha256_file(srs_path)},
         },

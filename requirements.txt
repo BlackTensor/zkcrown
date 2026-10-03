@@ -33,6 +33,8 @@ ezkl==23.0.5
 nbclient
 ipykernel
 onnxscript
+# Memory watchdog for the P8.3 EZKL stages.
+psutil
 
 # --- Interface ---------------------------------------------------------------
 streamlit
