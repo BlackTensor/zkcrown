@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "name": "p8.1_onnx_export",
+  "task": "P8.1",
+  "timestamp_utc": "2026-10-03T18:13:31+00:00",
+  "git": {
+    "commit": "6acbc554e37c15cf590a8ec9092bea306d755a4f",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "model": "zk_model (P0.7), results/p0.7_zk_model.pt",
+    "weights_file_sha256": "6bc298d04edfe5af136349904c53ccc9a82e80dfb03729f616e552a3df9ddec4",
+    "fingerprint_p5_1": "4d6683b73dc0dabf73abfe954f6792f38508462eae581601c707667c08241955",
+    "exporter": "torch.onnx.export, legacy (dynamo=False), opset 13, constant folding",
+    "input": "normalised MNIST image (mean 0.1307, std 0.3081 applied outside the graph), float32 (1, 1, 28, 28)",
+    "runtime": "onnxruntime CPUExecutionProvider, one image per run",
+    "pass_criteria": "all top-1 agree and max |logit diff| <= 0.0001, on test and random inputs; PyTorch test correct == 9896",
+    "random_inputs": "1000 standard-normal inputs from numpy default_rng(seed)",
+    "versions": {
+      "torch": "2.14.0+cpu",
+      "onnx": "1.23.1",
+      "onnxruntime": "1.30.0"
+    }
+  },
+  "metrics": {
+    "onnx": {
+      "opset": [
+        {
+          "domain": "ai.onnx",
+          "version": 13
+        }
+      ],
+      "ops": [
+        "Conv",
+        "Relu",
+        "Conv",
+        "Relu",
+        "Conv",
+        "Relu",
+        "Flatten",
+        "Gemm"
+      ],
+      "inputs": [
+        [
+          "input",
+          [
+            1,
+            1,
+            28,
+            28
+          ]
+        ]
+      ],
+      "outputs": [
+        [
+          "logits",
+          [
+            1,
+            10
+          ]
+        ]
+      ],
+      "initializers": 8,
+      "initializer_elements": 6138,
+      "file_bytes": 26214,
+      "sha256": "6416735f6d7eef04d30906003a40b85c210b61253a9e53935426f3b56f7f5ca9",
+      "export_deterministic": true,
+      "initializers_bit_identical_to_weights": true
+    },
+    "test_set": {
+      "n": 10000,
+      "top1_agree": 10000,
+      "max_abs_diff": 1.52587890625e-05,
+      "mean_abs_diff": 1.3762907963246107e-06,
+      "max_rel_diff": 0.019292053103162468,
+      "torch_correct": 9896,
+      "onnx_correct": 9896
+    },
+    "random_inputs": {
+      "n": 1000,
+      "top1_agree": 1000,
+      "max_abs_diff": 5.245208740234375e-06,
+      "mean_abs_diff": 6.225206656381488e-07,
+      "max_rel_diff": 0.0011521379592291825,
+      "torch_correct": null,
+      "onnx_correct": null
+    },
+    "onnx_test_seconds": 1.259,
+    "passed": true
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 10.987056400000256,
+  "notes": "ONNX export only; EZKL not installed (P8.2)."
+}
