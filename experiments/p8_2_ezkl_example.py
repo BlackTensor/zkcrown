@@ -1,26 +1,36 @@
-"""P8.2: run EZKL's official example notebook, with one documented change.
+"""P8.2: run EZKL's official example notebook, with two documented changes.
 
-    python experiments/p8_2_ezkl_example.py [--work-dir DIR] [--unchanged]
+    python experiments/p8_2_ezkl_example.py [--work-dir DIR] [--changes N]
 
 Downloads `examples/notebooks/simple_demo_all_public.ipynb` from the
 `zkonduit/ezkl` repository at tag `v23.0.5` (the pinned ezkl version), checks
 its SHA-256 against the digest pinned below, and executes it cell by cell with
 nbclient in the venv's own kernel, in a scratch directory outside the repo.
+The notebook makes a tiny random-weight CNN (no training, no project model),
+exports it to ONNX, and runs gen_settings, calibrate_settings, compile_circuit,
+get_srs, gen_witness, setup, prove and verify.
 
-One documented change (owner decision, 2026-10-03): `dynamo=False` is added
-to the notebook's `torch.onnx.export` call, and nothing else is edited, added
-or removed. Run unchanged (`--unchanged`, the first run, commit `dee2479`),
-the notebook fails at `gen_settings`. The cause is torch >= 2.9's default
-dynamo exporter, which ignores `opset_version=10` and writes opset 18, IR
-version 10 and an external `.data` file, and EZKL's tract loader rejects that.
-`dynamo=False` selects torch's legacy exporter, which honours opset 10.
+Two documented changes (owner decisions, 2026-10-03), nothing else edited,
+added or removed. Each is applied as one asserted single-line replacement:
+
+1. `dynamo=False` added to the `torch.onnx.export` call. Unchanged, the
+   notebook fails at `gen_settings` (commit `dee2479`): torch >= 2.9 defaults
+   to the dynamo exporter, which ignores `opset_version=10` and writes opset
+   18, IR version 10 and an external `.data` file, which EZKL's tract loader
+   rejects. `dynamo=False` selects torch's legacy exporter.
+2. `res = await ezkl.get_srs(settings_path)`. With change 1 only, the notebook
+   fails at `setup` with an empty SRS cache (commit `582a02b`): in ezkl 23.0.5
+   `get_srs` is async, the notebook does not await it, so cells run back to
+   back start `setup` before the SRS download has finished.
+
+`--changes 0` and `--changes 1` reproduce the two earlier failures.
+
+The run refuses to start if `~/.ezkl/srs` already holds a file, so a pass can
+never rest on an SRS fetched by something other than this notebook run.
 
 After the notebook, the committed P8.1 `zk_model` ONNX file (hash-checked) is
 passed to `ezkl.gen_settings` with default run args, to confirm EZKL loads it.
-Settings only; calibration, compile and setup are P8.3. The notebook makes a tiny random-weight CNN
-(no training, no project model), exports it to ONNX, and runs gen_settings,
-calibrate_settings, compile_circuit, get_srs, gen_witness, setup, prove and
-verify.
+Settings only; calibration, compile and setup are P8.3.
 
 Network: GitHub (the notebook) and, inside the notebook, `ezkl.get_srs`, which
 downloads EZKL's public KZG SRS into `~/.ezkl/srs`. Reads no key, no model.
@@ -57,11 +67,34 @@ NOTEBOOK_URL = (
 )
 NOTEBOOK_SHA256 = "f921003074b5505b5bf4fa0dc1d5d06bb2292704f14b6787e7f00184e2cd2bd4"
 """Digest of the notebook as fetched from the tag on 2026-10-03 (11,826 bytes)."""
-DEVIATION_OLD = "do_constant_folding=True,"
-DEVIATION_NEW = "do_constant_folding=True, dynamo=False,"
+DEVIATIONS = (
+    {
+        "id": 1,
+        "old": "do_constant_folding=True,",
+        "new": "do_constant_folding=True, dynamo=False,",
+        "cause": ("torch >= 2.9 defaults to the dynamo ONNX exporter, which ignores "
+                  "opset_version=10 and writes opset 18 / IR 10 with external data; "
+                  "EZKL 23.0.5's tract loader rejects it at gen_settings. dynamo=False "
+                  "selects the legacy exporter."),
+        "failure_without_it": ("RuntimeError: Failed to generate settings: [graph] "
+                               "[tract] Translating proto model to model"),
+        "failure_record": "results/p8.2_ezkl_example__seed1337__20261003T182134+0000.json",
+    },
+    {
+        "id": 2,
+        "old": "res = ezkl.get_srs(",
+        "new": "res = await ezkl.get_srs(",
+        "cause": ("ezkl 23.0.5's get_srs is async and returns a Future; the notebook does "
+                  "not await it, so with cells run back to back setup starts before the "
+                  "SRS download has finished (the cell itself finishes in 0.0 s)."),
+        "failure_without_it": ("RuntimeError: Failed to run setup: [srs] failed to load "
+                               "srs from ~/.ezkl/srs/kzg15.srs"),
+        "failure_record": "results/p8.2_ezkl_example__seed1337__20261003T182658+0000.json",
+    },
+)
+SRS_DIR = Path.home() / ".ezkl" / "srs"
 P8_1_ONNX = Path("results/zk/p8.1/zk_model.onnx")
 P8_1_ONNX_SHA256 = "6416735f6d7eef04d30906003a40b85c210b61253a9e53935426f3b56f7f5ca9"
-FIRST_RUN_RECORD = "results/p8.2_ezkl_example__seed1337__20261003T182134+0000.json"
 CELL_TIMEOUT_SECONDS = 1800
 ARTIFACTS = ("network.onnx", "settings.json", "network.compiled", "witness.json",
              "test.pk", "test.vk", "test.pf", "input.json", "calibration.json")
@@ -118,8 +151,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--work-dir", type=Path, default=None,
                     help="where the notebook runs and writes its files (default: a new temp dir)")
-    ap.add_argument("--unchanged", action="store_true",
-                    help="run the notebook with no change at all (fails under torch >= 2.9)")
+    ap.add_argument("--changes", type=int, choices=(0, 1, 2), default=2,
+                    help="how many of the documented changes to apply (0 and 1 fail; default 2)")
     ap.add_argument("--seed", type=int, default=DEFAULT_SEED,
                     help="recorded only; the notebook uses torch.rand unseeded, as written upstream")
     args = ap.parse_args()
@@ -138,6 +171,10 @@ def main() -> int:
     if ezkl.__version__ != EZKL_VERSION:
         raise SystemExit(f"ezkl {ezkl.__version__} installed, expected {EZKL_VERSION}")
 
+    cached = sorted(p.name for p in SRS_DIR.iterdir()) if SRS_DIR.is_dir() else []
+    if cached:
+        raise SystemExit(f"{SRS_DIR} already holds {cached}; empty it so the notebook must fetch its own SRS")
+
     raw = urllib.request.urlopen(NOTEBOOK_URL, timeout=60).read()
     nb_sha = sha256_bytes(raw)
     if nb_sha != NOTEBOOK_SHA256:
@@ -151,25 +188,20 @@ def main() -> int:
     (work / NOTEBOOK_NAME).write_bytes(raw)
 
     nb = nbformat.reads(raw.decode("utf-8"), as_version=4)
-    deviation = None
-    if not args.unchanged:
-        hits = [i for i, c in enumerate(nb.cells)
-                if c.cell_type == "code" and DEVIATION_OLD in c.source]
-        if len(hits) != 1 or nb.cells[hits[0]].source.count(DEVIATION_OLD) != 1:
-            raise SystemExit(f"expected exactly one {DEVIATION_OLD!r} in the notebook, found {hits}")
+    applied = []
+    for dev in DEVIATIONS[:args.changes]:
+        hits = [i for i, c in enumerate(nb.cells) if c.cell_type == "code" and dev["old"] in c.source]
+        if len(hits) != 1 or nb.cells[hits[0]].source.count(dev["old"]) != 1:
+            raise SystemExit(f"expected exactly one {dev['old']!r} in the notebook, found cells {hits}")
         before = nb.cells[hits[0]].source
-        nb.cells[hits[0]].source = before.replace(DEVIATION_OLD, DEVIATION_NEW)
-        changed = [(a, b) for a, b in zip(before.splitlines(), nb.cells[hits[0]].source.splitlines()) if a != b]
+        nb.cells[hits[0]].source = before.replace(dev["old"], dev["new"])
+        changed = [(x, y) for x, y in zip(before.splitlines(), nb.cells[hits[0]].source.splitlines()) if x != y]
         assert len(changed) == 1
-        deviation = {"cell_index": hits[0], "line_before": changed[0][0].strip(),
-                     "line_after": changed[0][1].strip(),
-                     "reason": ("torch >= 2.9 defaults to the dynamo ONNX exporter, which ignores "
-                                "opset_version=10 and writes opset 18 / IR 10 with external data; "
-                                "EZKL 23.0.5's tract loader rejects it at gen_settings. dynamo=False "
-                                "selects the legacy exporter. Owner decision 2026-10-03 (option 1)."),
-                     "unchanged_run_record": FIRST_RUN_RECORD,
-                     "unchanged_run_error": ("RuntimeError: Failed to generate settings: [graph] "
-                                             "[tract] Translating proto model to model")}
+        applied.append({"id": dev["id"], "cell_index": hits[0],
+                        "line_before": changed[0][0].strip(), "line_after": changed[0][1].strip(),
+                        "cause": dev["cause"], "failure_without_it": dev["failure_without_it"],
+                        "failure_record": dev["failure_record"]})
+    if applied:
         (work / ("modified_" + NOTEBOOK_NAME)).write_text(nbformat.writes(nb), encoding="utf-8")
     client = NotebookClient(nb, timeout=CELL_TIMEOUT_SECONDS, kernel_name="python3",
                             resources={"metadata": {"path": str(work)}}, allow_errors=False)
@@ -247,8 +279,9 @@ def main() -> int:
             "ezkl_version": ezkl.__version__,
             "notebook_url": NOTEBOOK_URL,
             "notebook_sha256": nb_sha,
-            "notebook_unchanged": args.unchanged,
-            "deviation": deviation,
+            "notebook_unchanged": not applied,
+            "documented_changes": applied,
+            "srs_cache_empty_at_start": True,
             "work_dir_outside_repo": True,
             "kernel": "python3 (the venv's own interpreter)",
             "cell_timeout_seconds": CELL_TIMEOUT_SECONDS,
@@ -271,9 +304,8 @@ def main() -> int:
             "srs_files_bytes": srs_files,
             "kernel_peak_working_set_bytes": kernel_peak_wset,
         },
-        notes=(("EZKL's official example run unchanged" if args.unchanged else
-                "EZKL's official example run with one documented change (dynamo=False in the "
-                "ONNX export call; see params.deviation)") + " on this machine (x64 Python under "
+        notes=(f"EZKL's official example run with {len(applied)} documented change(s) "
+               "(see params.documented_changes), from an empty SRS cache, on this machine (x64 Python under "
                "emulation on an ARM CPU, Windows). Random untrained weights, unseeded "
                "inputs as written upstream: the circuit sizes and times are a toolchain "
                "check, not P8 measurements of zk_model."),
