@@ -166,10 +166,7 @@ class Runner:
         prf.write_text(json.dumps(proof), encoding="utf-8")
         ok = self.tc.verify(VKEY, pub, prf, name)
         out = self.tc.steps[-1].output
-        reason = "ok" if ok else ("invalid proof" if "Invalid proof" in out
-                                  else "public inputs not valid" if "Public inputs are not valid" in out
-                                  else "verifier error")
-        return ok, reason
+        return ok, "ok" if ok else verify_reason(out)
 
     def witness(self, wasm: Path, inputs: dict) -> tuple[Path | None, str]:
         wtns, step = self.tc.witness(wasm, inputs, self._name(), check=False)
@@ -198,6 +195,19 @@ class Runner:
         self.controls.append({"case": case, "verified": ok})
         if not ok:
             raise SystemExit(f"positive control failed: {case}")
+
+
+def verify_reason(output: str) -> str:
+    """Why snarkjs refused: the pairing check failed, an input check failed, or the verifier crashed."""
+    if "Invalid proof" in output:
+        return "invalid proof (pairing check failed)"
+    if "Proof commitments are not valid" in output:
+        return "proof points not valid (curve/subgroup check)"
+    if "Public inputs are not valid" in output:
+        return "public inputs not valid (not below p)"
+    if "TypeError" in output:
+        return "verifier crashed (TypeError)"
+    return "verifier error (other)"
 
 
 def flip(value: int, bit: int) -> int:

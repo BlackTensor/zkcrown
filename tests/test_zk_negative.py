@@ -83,3 +83,11 @@ def test_committed_demo_proof_verifies_only_against_demo_c(tmp_path):
     wrong = tmp_path / "w.json"
     wrong.write_text(json.dumps([str(c + 1)]), encoding="utf-8")
     assert not tc.verify(neg.VKEY, wrong, neg.OUT_DIR / "demo_proof.json", "wrong")
+
+
+def test_verify_reason_classifies_snarkjs_output():
+    assert neg.verify_reason("[ERROR] snarkJS: Invalid proof").startswith("invalid proof")
+    assert neg.verify_reason("[ERROR] snarkJS: Proof commitments are not valid.").startswith("proof points")
+    assert neg.verify_reason("[ERROR] snarkJS: Public inputs are not valid.").startswith("public inputs")
+    assert neg.verify_reason("TypeError: Cannot read properties").startswith("verifier crashed")
+    assert neg.verify_reason("something else") == "verifier error (other)"
