@@ -210,3 +210,24 @@ def test_committed_proof_is_for_the_committed_artifact():
         pytest.skip("P5.5 has not stamped the artifact")
     proof = describe_proof(ots, artifact)
     assert proof["matches_file"] is True and proof["status"] != "no attestation"
+
+
+def test_script_record_target(script):
+    """The record gets its own proof next to it; the record command stays on the commitment publication."""
+    assert script.TARGETS["record"] == ("provenance/record.json", "provenance/record.json.ots")
+    assert script.TARGETS["commitment"] == (script.ARTIFACT_PATH, script.OTS_PATH)
+    with pytest.raises(SystemExit):
+        script.main(["record", "--target", "record"])
+
+
+@pytest.mark.skipif(not (REPO_ROOT / "provenance" / "record.json").exists(), reason="no committed record")
+def test_script_reads_the_committed_record_target(script):
+    assert script.read_target("record") == script.P6_2_RECORD_SHA256
+
+
+def test_script_refuses_a_record_that_is_not_the_p6_2_one(script, monkeypatch):
+    monkeypatch.setattr(script, "P6_2_RECORD_SHA256", "00" * 32)
+    if not (REPO_ROOT / "provenance" / "record.json").exists():
+        pytest.skip("no committed record")
+    with pytest.raises(SystemExit):
+        script.read_target("record")
