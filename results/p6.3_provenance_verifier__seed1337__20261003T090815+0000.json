@@ -1,0 +1,234 @@
+{
+  "schema_version": 1,
+  "name": "p6.3_provenance_verifier",
+  "task": "P6.3",
+  "timestamp_utc": "2026-10-03T09:08:15+00:00",
+  "git": {
+    "commit": "1e794126656c6d9ce34d2f776984b11797b1ad64",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "verifier": "src/crypto/provenance_verifier.py",
+    "models": {
+      "dual_W_star": {
+        "file": "results/p3.6_dual_wm_W_star.pt",
+        "file_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4"
+      },
+      "clean_W": {
+        "file": "results/p0.5_clean_baseline_W.pt",
+        "file_sha256": "54f112f4d7edc2ddacc181f8f4db25da27874e7e65aaf9407778a3ce5122fdcf"
+      },
+      "behavioral_only_W_star": {
+        "file": "results/p2.3_behavioral_wm_W_star.pt",
+        "file_sha256": "be00f2b556979457b045b9a4925dd3e547ee586f984b6969b9266e61a7197222"
+      }
+    },
+    "forger_key": "fresh Ed25519 key from the OS random source, discarded after the run",
+    "secrets_read": "none"
+  },
+  "metrics": {
+    "record_path": "provenance/record.json",
+    "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+    "publication_path": "provenance/commitment.json",
+    "publication_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+    "trusted_public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+    "trusted_public_key_source": "the P6.2 result record (same repository; a mechanism check, not independent trust)",
+    "suspect_fingerprints": {
+      "dual_W_star": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+      "clean_W": "204c6dd3e89169dcf8fc75700cb7a1b3b182f31931cdc524bebfae5b73955294",
+      "behavioral_only_W_star": "cc82122ed84b5e4e9a68d4fbc2901dadbc85d5da6bc5a4fe4ce87df703754245"
+    },
+    "genuine_verdict": {
+      "schema": "zk-crown/provenance-verdict/v1",
+      "valid": true,
+      "record_valid": true,
+      "record_well_formed": true,
+      "signature_valid": true,
+      "commitment_well_formed": true,
+      "matches_publication": true,
+      "fingerprint_matches": true,
+      "public_key_trusted": true,
+      "checks_not_run": [],
+      "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+      "owner_id": "blacktensor-zkcrown-owner",
+      "public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+      "commitment_decimal": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+      "record_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+      "suspect_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+      "problems": []
+    },
+    "cases": {
+      "genuine": {
+        "valid": true,
+        "record_valid": true,
+        "record_well_formed": true,
+        "signature_valid": true,
+        "commitment_well_formed": true,
+        "matches_publication": true,
+        "fingerprint_matches": true,
+        "public_key_trusted": true,
+        "checks_not_run": [],
+        "problems": []
+      },
+      "genuine_no_suspect_no_key": {
+        "valid": true,
+        "record_valid": true,
+        "record_well_formed": true,
+        "signature_valid": true,
+        "commitment_well_formed": true,
+        "matches_publication": true,
+        "fingerprint_matches": null,
+        "public_key_trusted": null,
+        "checks_not_run": [
+          "fingerprint_matches",
+          "public_key_trusted"
+        ],
+        "problems": []
+      },
+      "suspect_clean_W": {
+        "valid": false,
+        "record_valid": true,
+        "record_well_formed": true,
+        "signature_valid": true,
+        "commitment_well_formed": true,
+        "matches_publication": true,
+        "fingerprint_matches": false,
+        "public_key_trusted": true,
+        "checks_not_run": [],
+        "problems": [
+          "the suspect's fingerprint differs from the one the record names"
+        ]
+      },
+      "suspect_behavioral_only_W_star": {
+        "valid": false,
+        "record_valid": true,
+        "record_well_formed": true,
+        "signature_valid": true,
+        "commitment_well_formed": true,
+        "matches_publication": true,
+        "fingerprint_matches": false,
+        "public_key_trusted": true,
+        "checks_not_run": [],
+        "problems": [
+          "the suspect's fingerprint differs from the one the record names"
+        ]
+      },
+      "suspect_dual_W_star_one_bit_flipped": {
+        "valid": false,
+        "record_valid": true,
+        "record_well_formed": true,
+        "signature_valid": true,
+        "commitment_well_formed": true,
+        "matches_publication": true,
+        "fingerprint_matches": false,
+        "public_key_trusted": true,
+        "checks_not_run": [],
+        "problems": [
+          "the suspect's fingerprint differs from the one the record names"
+        ]
+      },
+      "forged_reissue": {
+        "valid": true,
+        "record_valid": true,
+        "record_well_formed": true,
+        "signature_valid": true,
+        "commitment_well_formed": true,
+        "matches_publication": true,
+        "fingerprint_matches": true,
+        "public_key_trusted": null,
+        "checks_not_run": [
+          "public_key_trusted"
+        ],
+        "problems": []
+      },
+      "forged_reissue_trusted_key": {
+        "valid": false,
+        "record_valid": true,
+        "record_well_formed": true,
+        "signature_valid": true,
+        "commitment_well_formed": true,
+        "matches_publication": true,
+        "fingerprint_matches": true,
+        "public_key_trusted": false,
+        "checks_not_run": [],
+        "problems": [
+          "the record is signed under a public key other than the trusted one"
+        ]
+      },
+      "forged_own_claim": {
+        "valid": true,
+        "record_valid": true,
+        "record_well_formed": true,
+        "signature_valid": true,
+        "commitment_well_formed": true,
+        "matches_publication": true,
+        "fingerprint_matches": true,
+        "public_key_trusted": null,
+        "checks_not_run": [
+          "public_key_trusted"
+        ],
+        "problems": []
+      },
+      "forged_own_claim_trusted_key": {
+        "valid": false,
+        "record_valid": true,
+        "record_well_formed": true,
+        "signature_valid": true,
+        "commitment_well_formed": true,
+        "matches_publication": true,
+        "fingerprint_matches": true,
+        "public_key_trusted": false,
+        "checks_not_run": [],
+        "problems": [
+          "the record is signed under a public key other than the trusted one"
+        ]
+      },
+      "forged_fingerprint_swap": {
+        "valid": false,
+        "record_valid": false,
+        "record_well_formed": true,
+        "signature_valid": true,
+        "commitment_well_formed": true,
+        "matches_publication": false,
+        "fingerprint_matches": true,
+        "public_key_trusted": null,
+        "checks_not_run": [
+          "public_key_trusted"
+        ],
+        "problems": [
+          "record and publication disagree on: model fingerprint"
+        ]
+      }
+    },
+    "record_field_tampers_tried": 11,
+    "record_field_tampers_rejected": 11,
+    "signature_bit_flips_tried": 512,
+    "signature_bit_flips_accepted": 0,
+    "malformed_commitments_tried": 4,
+    "malformed_commitments_rejected": 4,
+    "tampered_publications_tried": 3,
+    "tampered_publications_rejected": 3,
+    "verify_ms_precomputed_fingerprint": 0.634,
+    "verify_ms_including_fingerprint_of_dual_W_star": 7.203,
+    "timing_repeats": {
+      "precomputed": 200,
+      "including_fingerprint": 20
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 0.9407745999999406,
+  "notes": "Public values only. A valid verdict shows the record is intact, agrees with the publication it names, and (with a suspect) that the suspect is bit for bit the named model. It does not show who holds the signing key: two forgeries under a fresh key pass every check except the trusted key. It does not check the P5.5 timestamp, open C, or run any watermark test. Tamper counts are checks on the listed cases, not a proof."
+}

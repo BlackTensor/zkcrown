@@ -771,7 +771,26 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - **Tampering, 0 accepted:** 11 single-field changes, all 512 single-bit flips of the signature, and a signature by another key over the same bytes.
   - **What the signature does not show:** who holds the key. The same statement re-issued under a fresh key, naming that key, verifies against that key; the script checks this and records it. Trust in the public key has to come from outside the record. The record is not independently timestamped yet (see the open requirement above), and it is committed locally, not pushed or posted.
   - 39 new tests, 1,032 in total, all pass. They include the RFC 8032 test vector for the library, a pinned signature, every signed field and every signature bit breaking verification, and a planted accept-everything verifier that the script's tamper check catches.
-- [ ] **P6.3** Write the provenance verifier: signature valid, fingerprint matches, commitment well formed.
+- [x] **P6.3** Write the provenance verifier: signature valid, fingerprint matches, commitment well formed.
+  - `src/crypto/provenance_verifier.py`: `verify_provenance(record, publication, suspect=None, trusted_public_key=None)` returns a verdict. A failed check is a verdict, not an exception. Public values only; it reads nothing under `secrets/`. Checks:
+    - `record_well_formed`: P6.1 shape.
+    - `signature_valid`: Ed25519 under the key the record names.
+    - `commitment_well_formed`: `C` a canonical decimal in `[0, p)`, hex agreeing, layout `v1`, scheme naming circomlib's Poseidon with the P5.3 input order. Checked on its own, so it is reported even when another field is broken.
+    - `matches_publication`: the publication's SHA-256 equals the one the record names, and `C`, scheme, fingerprint, model label and owner id are equal. This ties the record to the file P5.5 timestamps.
+    - Optional `fingerprint_matches` (suspect as fingerprint, state dict or module) and `public_key_trusted` (a key obtained outside the record). When not given they are `None` and listed in `checks_not_run`, never counted as passed.
+    - `record_valid` is the first four; `valid` is every check that was run.
+  - Decisions beyond the task's wording: the publication cross-check, and the optional trusted-key check. Without the latter the verifier cannot tell the owner's record from a forger's consistent one (see below).
+  - `experiments/p6_3_verify_provenance.py`, CPU, about 1 s, clean tree at `1e79412`. Real record (SHA-256 `28a3ad66…576169c1`) and publication (`cbdd82d9…fb9f231c`); models loaded by file hash. All cases gave the expected verdict:
+    - **Genuine:** with the dual `W*` as suspect and the P6.2 public key as trusted key, every check passes. Without them, `record_valid` and both optional checks reported not run.
+    - **Other suspects:** clean `W`, the behavioral-only model and the dual `W*` with one bit flipped each keep `record_valid` and fail only the fingerprint check. Their fingerprints equal P5.1's.
+    - **Tampering:** 11 of 11 single-field changes and 512 of 512 signature bit flips fail the signature check; 4 of 4 malformed commitments fail the commitment check; 3 of 3 changed publications (`C`, owner id, time) fail the publication check.
+    - **Forgeries under a fresh key:** the owner's statement re-signed by that key, and a forger's own consistent publication and record for clean `W`, **pass every check except the trusted key**. The genuine record with its fingerprint swapped and re-signed fails the publication check.
+    - One verification takes 0.63 ms with the suspect's fingerprint precomputed, 7.2 ms including fingerprinting the dual `W*` (local CPU).
+  - Limits:
+    - The trusted key in the run is the one recorded by P6.2 in this same repo, so it checks the mechanism, not independent trust. As the owner noted, what ties the key to a person has to come from outside the record, for example the GPG-signed git tag (P5.5). The provenance signature itself only shows nothing was changed after signing.
+    - Not checked here: the P5.5 timestamp, that `C` opens (P5.6 / P7), that the trigger digest derives from `K` (P7.9), or any watermark test (P2.8, P3.7). A fingerprint mismatch says only that the suspect is a different set of weights, which every Phase 4 attack produces.
+    - Tamper counts are checks on the listed cases, not a proof or a rate.
+  - 47 new tests, 1,079 in total, all pass. They include each check failing on its own, malformed records and publications giving verdicts rather than exceptions, odd public keys, and a planted wrong verdict that the script's guard stops on.
 - [ ] **P6.4** Simulate the full theft timeline end to end: publish commitment, hand model to "attacker", attacker modifies it, we audit. Script it as `experiments/theft_simulation.py`.
 
 ## Phase 7: Zero-knowledge, Track A (the real ZK statement)
@@ -2242,6 +2261,35 @@ rate; binding rests on Poseidon's collision resistance. The last row is the
 point of comparison for Track A (P7): a ZK proof of the same statement is
 meant to reveal none of those bytes. That is not measured yet.
 
+Provenance verifier from `experiments/p6_3_verify_provenance.py` (P6.3),
+result file
+`results/p6.3_provenance_verifier__seed1337__20261003T090815+0000.json`, CPU,
+seed 1337, commit `1e79412`, clean tree. The verifier is
+`src/crypto/provenance_verifier.py`. It read the committed record and
+publication and three weights files (by file hash), and nothing under
+`secrets/`.
+
+| Case | Verdict |
+|---|---|
+| Genuine record, dual `W*` as suspect, P6.2 public key as trusted key | valid: every check passes |
+| Genuine record, no suspect, no trusted key | record valid; fingerprint and key checks reported not run |
+| Suspect clean `W` / behavioral-only `W*` / dual `W*` with one bit flipped | record valid, fingerprint does not match (3 of 3) |
+| Single-field changes to the record, not re-signed | signature fails, 11 of 11 |
+| Signature bit flips | signature fails, 512 of 512 |
+| Malformed commitments (`C` = p, hex disagreeing, leading zero, wrong version) | commitment check fails, 4 of 4 |
+| Changed publication (`C`, owner id, time) with the genuine record | publication check fails, 3 of 3 |
+| Owner's statement re-signed under a fresh key | passes every check except the trusted key |
+| Forger's own consistent publication and record, for clean `W`, under that key | passes every check except the trusted key |
+| Genuine record with the fingerprint swapped, re-signed under that key | publication check fails |
+| Time per verification, fingerprint precomputed / including fingerprinting dual `W*` | 0.63 ms / 7.2 ms |
+
+The two forgery rows are the limit of the provenance signature: it shows the
+record was not changed after signing, not who signed it. Only a public key
+obtained from outside the record rejects them, and the one used here came from
+the P6.2 result in this repo, so the run checks the mechanism, not independent
+trust. The verifier does not check the P5.5 timestamp, open `C`, or run a
+watermark test.
+
 ---
 
 # 9. ICEBOX
@@ -2467,3 +2515,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-03: Owner backed up the GPG key directory and will return to P5.5's upgrade step later; P5.5 stays `[~]`. P5.6. `src/crypto/opening.py`: the non-ZK verifier, with three checks (publication well formed, `C` matches, `S` derives from `K` for the published owner id). Code committed first (`73a4086`), then the self-check run from that clean tree on the real artifact: true opening accepted, 2,635 wrong openings and 2 tampered publications rejected, 3.2 ms per verification. The opening stayed in memory and was disclosed to nobody. A real opening reveals 79 secret bytes including all of `K`, the comparison point for P7. 23 new tests, 933 in total, all pass.
 - 2026-10-03: P6.1. `src/crypto/provenance.py` defines the provenance record schema `zk-crown/provenance-record/v1`: owner id and Ed25519 public key, model fingerprint, watermark commitment `C`, trigger set commitment (the SHA-256 bundle digest), a reference to the commitment publication by hash, a self-asserted timestamp, and the signature. It fixes the canonical bytes and the exact bytes a signature covers. Nothing is signed, written or verified (P6.2, P6.3). Decision to confirm: the trigger set commitment reuses the bundle digest rather than a new Poseidon hash. Noted gap: the P5.5 timestamp does not cover this record. `publication.py`'s field checks were made shared, behaviour unchanged. Two of my own test bugs fixed (a test signature that contained the test `S` bytes; a byte search that matched the word "signature" in the private note). Icebox line added for a per-trigger Merkle commitment. 60 new tests, 993 in total.
 - 2026-10-03: Owner confirmed the three P6.1 decisions and asked for the signed record to be timestamped with OpenTimestamps later; that requirement is noted under P6.2 and is still open. P6.2. `src/crypto/signing.py`: Ed25519 via `cryptography` (installed this session, 50.0.2), write-once private key in `secrets/`, signing and a signature check against the key the record names. Code committed first (`b6b2be3`), then `experiments/p6_2_sign_provenance_record.py` run from that clean tree: it created the signing key (gitignored, no passphrase, needs backup), and wrote `provenance/record.json` (SHA-256 `28a3ad66…576169c1`, public key `94b0224b…28b02d52`). Read-back checks passed; 11 field changes, 512 signature bit flips and a foreign signature were all rejected. A re-issue under another key verifies against that key, as expected: the signature does not identify the key holder. Not pushed or posted, not independently timestamped. 39 new tests, 1,032 in total, all pass.
+- 2026-10-03: Owner backed up the record signing key. P6.3. `src/crypto/provenance_verifier.py`: checks record shape, Ed25519 signature, commitment well formed, and agreement with the commitment publication by hash; optionally the suspect's fingerprint and a trusted public key, reported as not run when not given. Code committed first (`1e79412`), then `experiments/p6_3_verify_provenance.py` run from that clean tree: genuine record valid with the dual `W*`; other suspects fail only the fingerprint check; 11 field changes, 512 signature bit flips, 4 malformed commitments and 3 changed publications all rejected. Two forgeries under a fresh key pass everything except the trusted-key check, which is the documented limit of the signature. 0.63 ms per verification. 47 new tests, 1,079 in total, all pass.
