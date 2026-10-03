@@ -1,12 +1,23 @@
-"""P8.2: run EZKL's official example notebook, unchanged, before touching zk_model.
+"""P8.2: run EZKL's official example notebook, with one documented change.
 
-    python experiments/p8_2_ezkl_example.py [--work-dir DIR]
+    python experiments/p8_2_ezkl_example.py [--work-dir DIR] [--unchanged]
 
 Downloads `examples/notebooks/simple_demo_all_public.ipynb` from the
 `zkonduit/ezkl` repository at tag `v23.0.5` (the pinned ezkl version), checks
 its SHA-256 against the digest pinned below, and executes it cell by cell with
-nbclient in the venv's own kernel, in a scratch directory outside the repo. No
-cell is edited, added or removed. The notebook makes a tiny random-weight CNN
+nbclient in the venv's own kernel, in a scratch directory outside the repo.
+
+One documented change (owner decision, 2026-10-03): `dynamo=False` is added
+to the notebook's `torch.onnx.export` call, and nothing else is edited, added
+or removed. Run unchanged (`--unchanged`, the first run, commit `dee2479`),
+the notebook fails at `gen_settings`. The cause is torch >= 2.9's default
+dynamo exporter, which ignores `opset_version=10` and writes opset 18, IR
+version 10 and an external `.data` file, and EZKL's tract loader rejects that.
+`dynamo=False` selects torch's legacy exporter, which honours opset 10.
+
+After the notebook, the committed P8.1 `zk_model` ONNX file (hash-checked) is
+passed to `ezkl.gen_settings` with default run args, to confirm EZKL loads it.
+Settings only; calibration, compile and setup are P8.3. The notebook makes a tiny random-weight CNN
 (no training, no project model), exports it to ONNX, and runs gen_settings,
 calibrate_settings, compile_circuit, get_srs, gen_witness, setup, prove and
 verify.
@@ -46,6 +57,11 @@ NOTEBOOK_URL = (
 )
 NOTEBOOK_SHA256 = "f921003074b5505b5bf4fa0dc1d5d06bb2292704f14b6787e7f00184e2cd2bd4"
 """Digest of the notebook as fetched from the tag on 2026-10-03 (11,826 bytes)."""
+DEVIATION_OLD = "do_constant_folding=True,"
+DEVIATION_NEW = "do_constant_folding=True, dynamo=False,"
+P8_1_ONNX = Path("results/zk/p8.1/zk_model.onnx")
+P8_1_ONNX_SHA256 = "6416735f6d7eef04d30906003a40b85c210b61253a9e53935426f3b56f7f5ca9"
+FIRST_RUN_RECORD = "results/p8.2_ezkl_example__seed1337__20261003T182134+0000.json"
 CELL_TIMEOUT_SECONDS = 1800
 ARTIFACTS = ("network.onnx", "settings.json", "network.compiled", "witness.json",
              "test.pk", "test.vk", "test.pf", "input.json", "calibration.json")
@@ -102,6 +118,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--work-dir", type=Path, default=None,
                     help="where the notebook runs and writes its files (default: a new temp dir)")
+    ap.add_argument("--unchanged", action="store_true",
+                    help="run the notebook with no change at all (fails under torch >= 2.9)")
     ap.add_argument("--seed", type=int, default=DEFAULT_SEED,
                     help="recorded only; the notebook uses torch.rand unseeded, as written upstream")
     args = ap.parse_args()
@@ -133,6 +151,26 @@ def main() -> int:
     (work / NOTEBOOK_NAME).write_bytes(raw)
 
     nb = nbformat.reads(raw.decode("utf-8"), as_version=4)
+    deviation = None
+    if not args.unchanged:
+        hits = [i for i, c in enumerate(nb.cells)
+                if c.cell_type == "code" and DEVIATION_OLD in c.source]
+        if len(hits) != 1 or nb.cells[hits[0]].source.count(DEVIATION_OLD) != 1:
+            raise SystemExit(f"expected exactly one {DEVIATION_OLD!r} in the notebook, found {hits}")
+        before = nb.cells[hits[0]].source
+        nb.cells[hits[0]].source = before.replace(DEVIATION_OLD, DEVIATION_NEW)
+        changed = [(a, b) for a, b in zip(before.splitlines(), nb.cells[hits[0]].source.splitlines()) if a != b]
+        assert len(changed) == 1
+        deviation = {"cell_index": hits[0], "line_before": changed[0][0].strip(),
+                     "line_after": changed[0][1].strip(),
+                     "reason": ("torch >= 2.9 defaults to the dynamo ONNX exporter, which ignores "
+                                "opset_version=10 and writes opset 18 / IR 10 with external data; "
+                                "EZKL 23.0.5's tract loader rejects it at gen_settings. dynamo=False "
+                                "selects the legacy exporter. Owner decision 2026-10-03 (option 1)."),
+                     "unchanged_run_record": FIRST_RUN_RECORD,
+                     "unchanged_run_error": ("RuntimeError: Failed to generate settings: [graph] "
+                                             "[tract] Translating proto model to model")}
+        (work / ("modified_" + NOTEBOOK_NAME)).write_text(nbformat.writes(nb), encoding="utf-8")
     client = NotebookClient(nb, timeout=CELL_TIMEOUT_SECONDS, kernel_name="python3",
                             resources={"metadata": {"path": str(work)}}, allow_errors=False)
 
@@ -173,11 +211,30 @@ def main() -> int:
             except Exception:
                 pass
 
+    p81 = None
+    if failure is None:
+        onnx_path = repo_root() / P8_1_ONNX
+        p81_sha = sha256_bytes(onnx_path.read_bytes())
+        if p81_sha != P8_1_ONNX_SHA256:
+            raise SystemExit(f"P8.1 ONNX SHA-256 {p81_sha} != {P8_1_ONNX_SHA256}")
+        settings_out = work / "p8.1_zk_model_settings.json"
+        t0 = time.perf_counter()
+        try:
+            ok = ezkl.gen_settings(str(onnx_path), str(settings_out))
+            err = None
+        except Exception as exc:  # recorded, not hidden
+            ok, err = False, f"{type(exc).__name__}: {exc}"
+        p81 = {"path": str(P8_1_ONNX).replace("\\", "/"), "sha256": p81_sha,
+               "run_args": "ezkl defaults (PyRunArgs())", "gen_settings_ok": ok is True,
+               "error": err, "seconds": round(time.perf_counter() - t0, 3),
+               "onnx_model": onnx_summary(onnx_path), "settings": settings_summary(settings_out)}
+        print(f"P8.1 zk_model.onnx gen_settings: {'ok' if ok is True else 'FAILED ' + str(err)}")
+
     artifacts = {name: (work / name).stat().st_size for name in ARTIFACTS if (work / name).is_file()}
     srs_dir = Path.home() / ".ezkl" / "srs"
     srs_files = ({p.name: p.stat().st_size for p in sorted(srs_dir.iterdir())}
                  if srs_dir.is_dir() else {})
-    passed = failure is None
+    passed = failure is None and (p81 is not None and p81["gen_settings_ok"])
     n_code = sum(1 for c in nb.cells if c.cell_type == "code")
 
     path = write_result(
@@ -190,7 +247,8 @@ def main() -> int:
             "ezkl_version": ezkl.__version__,
             "notebook_url": NOTEBOOK_URL,
             "notebook_sha256": nb_sha,
-            "notebook_unchanged": True,
+            "notebook_unchanged": args.unchanged,
+            "deviation": deviation,
             "work_dir_outside_repo": True,
             "kernel": "python3 (the venv's own interpreter)",
             "cell_timeout_seconds": CELL_TIMEOUT_SECONDS,
@@ -203,7 +261,9 @@ def main() -> int:
             "passed": passed,
             "code_cells_total": n_code,
             "code_cells_run": len(cells),
+            "notebook_passed": failure is None,
             "failure": failure,
+            "p8_1_zk_model_gen_settings": p81,
             "cells": cells,
             "onnx_model": onnx_summary(work / "network.onnx"),
             "settings": settings_summary(work / "settings.json"),
@@ -211,14 +271,17 @@ def main() -> int:
             "srs_files_bytes": srs_files,
             "kernel_peak_working_set_bytes": kernel_peak_wset,
         },
-        notes=("EZKL's official example run unchanged on this machine (x64 Python under "
+        notes=(("EZKL's official example run unchanged" if args.unchanged else
+                "EZKL's official example run with one documented change (dynamo=False in the "
+                "ONNX export call; see params.deviation)") + " on this machine (x64 Python under "
                "emulation on an ARM CPU, Windows). Random untrained weights, unseeded "
                "inputs as written upstream: the circuit sizes and times are a toolchain "
                "check, not P8 measurements of zk_model."),
     )
     print(f"{'PASSED' if passed else 'FAILED'}: {len(cells)}/{n_code} code cells; record {path}")
     if passed:
-        shutil.rmtree(work, ignore_errors=True) if args.work_dir is None else None
+        if args.work_dir is None:
+            shutil.rmtree(work, ignore_errors=True)
     else:
         print(f"work dir kept for inspection: {work}")
     return 0 if passed else 1
