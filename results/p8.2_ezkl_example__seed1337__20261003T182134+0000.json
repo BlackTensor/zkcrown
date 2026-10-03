@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "name": "p8.2_ezkl_example",
+  "task": "P8.2",
+  "timestamp_utc": "2026-10-03T18:21:34+00:00",
+  "git": {
+    "commit": "dee2479003860e042ecde14a77a63447a311e133",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "ezkl_version": "23.0.5",
+    "notebook_url": "https://raw.githubusercontent.com/zkonduit/ezkl/v23.0.5/examples/notebooks/simple_demo_all_public.ipynb",
+    "notebook_sha256": "f921003074b5505b5bf4fa0dc1d5d06bb2292704f14b6787e7f00184e2cd2bd4",
+    "notebook_unchanged": true,
+    "work_dir_outside_repo": true,
+    "kernel": "python3 (the venv's own interpreter)",
+    "cell_timeout_seconds": 1800,
+    "python": "3.11.9",
+    "python_machine": "AMD64",
+    "versions": {
+      "torch": "2.14.0+cpu",
+      "onnx": "1.23.1",
+      "onnxscript": "0.7.2"
+    }
+  },
+  "metrics": {
+    "passed": false,
+    "code_cells_total": 11,
+    "code_cells_run": 4,
+    "failure": {
+      "cell_index": 4,
+      "first_line": "py_run_args = ezkl.PyRunArgs()",
+      "error": "An error occurred while executing the following cell:\n------------------\n\npy_run_args = ezkl.PyRunArgs()\npy_run_args.input_visibility = \"public\"\npy_run_args.output_visibility = \"public\"\npy_run_args.param_visibility = \"fixed\" # \"fixed\" for params means that the committed to params are used for all proofs\n\nres = ezkl.gen_settings(model_path, settings_path, py_run_args=py_run_args)\nassert res == True\n\n------------------\n\n\n\u001b[31m---------------------------------------------------------------------------\u001b[39m\n\u001b[31mRuntimeError\u001b[39m                              Traceback (most recent call last)\n\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[4]\u001b[39m\u001b[32m, line 6\u001b[39m\n\u001b[32m      2\u001b[39m py_run_args.input_visibility = \u001b[33m\"public\"\u001b[39m\n\u001b[32m      3\u001b[39m py_run_args.output_visibility = \u001b[33m\"public\"\u001b[39m\n\u001b[32m      4\u001b[39m py_run_args.param_visibility = \u001b[33m\"fixed\"\u001b[39m \u001b[38;5;66;03m# \"fixed\" for params means that the committed to params are used for all proofs\u001b[39;00m\n\u001b[32m      5\u001b[39m \n\u001b[32m----> \u001b[39m\u001b[32m6\u001b[39m res = ezkl.gen_settings(model_path, settings_path, py_run_args=py_run_args)\n\u001b[32m      7\u001b[39m \u001b[38;5;28;01massert\u001b[39;00m res == \u001b[38;5;28;01mTrue\u001b[39;00m\n\n\u001b[31mRuntimeError\u001b[39m: Failed to generate settings: [graph] [tract] Translating proto model to model\n"
+    },
+    "cells": [
+      {
+        "cell_index": 1,
+        "first_line": "# check if notebook is in colab",
+        "ok": true,
+        "seconds": 3.756,
+        "output_text": "",
+        "errors": []
+      },
+      {
+        "cell_index": 2,
+        "first_line": "model_path = os.path.join('network.onnx')",
+        "ok": true,
+        "seconds": 0.012,
+        "output_text": "",
+        "errors": []
+      },
+      {
+        "cell_index": 3,
+        "first_line": "shape = [1, 28, 28]",
+        "ok": true,
+        "seconds": 13.643,
+        "output_text": "C:\\Users\\shaya\\AppData\\Local\\Temp\\ipykernel_18932\\2244243413.py:9: UserWarning: # 'dynamic_axes' is not recommended when dynamo=True, and may lead to 'torch._dynamo.exc.UserError: Constraints violated.' Supply the 'dynamic_shapes' argument instead if export is unsuccessful.\n  torch.onnx.export(circuit,               # model being run\nW1003 23:51:20.658000 18932 Lib\\site-packages\\torch\\onnx\\_internal\\exporter\\_compat.py:133] Setting ONNX exporter to use operator set version 18 because the requested opset_version 10 is a lower version than we have implementations for. Automatic version conversion will be performed, which may not be successful at converting to the requested version. If version conversion is unsuccessful, the opset version of the exported model will be kept at 18. Please consider setting opset_version >=18 to leverage latest ONNX features\n[torch.onnx] Obtain model graph for `MyModel([...]` with `torch.export.export(..., strict=False)`...\n[torch.onnx] Obtain model graph for `MyModel([...]` with `torch.export.export(..., strict=False)`... \u2705\n[torch.onnx] Run decompositions...\nThe model version conversion is not supported by the onnxscript version converter and fallback is enabled. The model will be converted using the onnx C API (target version: 10).\nFailed to convert the model to the target version 10 using the ONNX C API. The model was not modified\nTraceback (most recent call last):\n  File \"C:\\Users\\shaya\\OneDrive\\Desktop\\New Projects\\zkcrown\\.venv\\Lib\\site-packages\\onnxscript\\version_converter\\__init__.py\", line 137, in call\n    converted_proto = _c_api_utils.call_onnx_api(\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\shaya\\OneDrive\\Desktop\\New Projects\\zkcrown\\.venv\\Lib\\site-packages\\onnxscript\\version_converter\\_c_api_utils.py\", line 65, in call_onnx_api\n    result = func(proto)\n             ^^^^^^^^^^^\n  File \"C:\\Users\\shaya\\OneDrive\\Desktop\\New Projects\\zkcrown\\.venv\\Lib\\site-packages\\onnxscript\\version_converter\\__init__.py\", line 132, in _partial_convert_version\n    return onnx.version_converter.convert_version(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\shaya\\OneDrive\\Desktop\\New Projects\\zkcrown\\.venv\\Lib\\site-packages\\onnx\\version_converter.py\", line 39, in convert_version\n    converted_model_str = C.convert_version(model_str, target_version)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: D:\\a\\onnx\\onnx\\onnx/version_converter/BaseConverter.h:66: adapter_lookup: Assertion `false` failed: No Adapter From Version $15 for Shape\n[torch.onnx] Run decompositions... \u2705\n[torch.onnx] Translate the graph into ONNX...\n[torch.onnx] Translate the graph into ONNX... \u2705\n[torch.onnx] Optimize the ONNX graph...\n[torch.onnx] Optimize the ONNX graph... \u2705\n",
+        "errors": []
+      },
+      {
+        "cell_index": 4,
+        "first_line": "py_run_args = ezkl.PyRunArgs()",
+        "ok": false,
+        "seconds": 0.614,
+        "output_text": "",
+        "errors": [
+          {
+            "ename": "RuntimeError",
+            "evalue": "Failed to generate settings: [graph] [tract] Translating proto model to model"
+          }
+        ]
+      }
+    ],
+    "onnx_model": {
+      "opset_imports": {
+        "ai.onnx": 18
+      },
+      "producer": "pytorch 2.14.0+cpu",
+      "ops": [
+        "Conv",
+        "Gemm",
+        "Relu",
+        "Reshape"
+      ]
+    },
+    "settings": null,
+    "artifact_bytes": {
+      "network.onnx": 10346,
+      "input.json": 16702
+    },
+    "srs_files_bytes": {},
+    "kernel_peak_working_set_bytes": 24276992
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 36.65016939999987,
+  "notes": "EZKL's official example run unchanged on this machine (x64 Python under emulation on an ARM CPU, Windows). Random untrained weights, unseeded inputs as written upstream: the circuit sizes and times are a toolchain check, not P8 measurements of zk_model."
+}
