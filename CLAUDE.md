@@ -700,11 +700,20 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - Nothing in the file links `C` to the fingerprint except that they are published together.
     - The artifact is committed locally and has not been pushed or posted anywhere.
   - 36 new tests, 891 in total, all pass. They include the script's create, refuse, check cycle on a test key, a check that fails under another nonce, and 20 malformed records that validation rejects.
-- [~] **P5.5** Timestamp it for real: GPG signed git tag, plus OpenTimestamps if it cooperates. This is what makes "I committed before the dispute" meaningful.
-  - **Status: the signed tag is done. The proof was upgraded on 2026-10-03 and now carries Bitcoin attestations at blocks 969627 (two calendars) and 969632 (one), but the check against the chain is not yet in code, so this stays `[~]`.** To finish: add the chain check to the script, re-run `record`, then tick this box.
-    - Upgrade: all 3 calendars merged. Proof now 3,583 bytes, SHA-256 `57da906c…1e30b4d3`, still for the artifact's SHA-256 `cbdd82d9…fb9f231c`. `status` (clean tree at `b88c338`) reports it as "bitcoin-attested (unverified)".
-    - **Scratch check, not a ledger number:** block 969627 has Merkle root `370ef722…df17f42f` and block 969632 `1b125219…da016c88` on both blockstream.info and mempool.space, equal to what the proof requires. Their header times are 2026-10-02T19:37:33Z and 20:44:04Z, and the tip was 969704. Both explorers are third parties; no own Bitcoin node was used. A block's time is set by its miner and is only loosely bounded, so read it as "the artifact existed by about then".
-    - The signed tag still holds the older, pending proof.
+- [x] **P5.5** Timestamp it for real: GPG signed git tag, plus OpenTimestamps if it cooperates. This is what makes "I committed before the dispute" meaningful.
+  - **Done 2026-10-03. The proof carries Bitcoin attestations at blocks 969627 (two calendars) and 969632 (one), and both check against the chain in code.** So `commitment.json` (SHA-256 `cbdd82d9…fb9f231c`) existed by block 969627, header time 2026-10-02T19:37:33Z.
+  - **Chain check** (`check_bitcoin_attestations` in `src/crypto/timestamping.py`, run by `record`):
+    - For each attested height, both blockstream.info and mempool.space are asked for the block hash at that height and for the raw 80-byte header.
+    - The header is hashed locally. It must hash to the block hash the explorer named, meet the proof-of-work target in its own `bits` field, and carry the Merkle root the proof requires.
+    - A block counts only if both explorers answered, both passed, and both named the same block. Any failure stops `record`.
+    - Only block heights and hashes are sent.
+    - What it does not do: validate the chain. It trusts the two explorers' view of which block sits at each height, made harder to fake by the agreement and the work check. It is not a full node.
+  - **Recorded** (`record`, clean tree at `b241d5e`, result `results/p5.5_timestamp__seed1337__20261003T092522+0000.json`): every earlier check passed again (artifact canonical and equal to P5.4's, proof for that hash, good tag signature by the owner key, tagged files byte-identical). Block 969627 `000000…3152b426d` and block 969632 `000000…a64bd505` verified on both explorers. `independent_time_evidence: true`.
+  - Header times are set by miners and only loosely bounded (roughly hours), so the claim is "existed by about 19:37 UTC on 2026-10-02", not to the second.
+  - The signed tag still holds the older, pending proof (`proof_in_tag_is_current: false`). The upgraded proof is in commit `b88c338` and covers the same artifact hash. Re-tagging was not done.
+  - 11 new tests: known-answer header decoding for the Bitcoin genesis block and for block 969627, a header with a changed nonce failing the work check, and a fake explorer that is down, serves another block, or is the only one asked. Each of those fails the check.
+  - History: the upgrade itself is in the session log entry for 2026-10-03. A manual lookup on the same two explorers before the code existed gave the same roots.
+    - Upgrade: all 3 calendars merged. Proof now 3,583 bytes, SHA-256 `57da906c…1e30b4d3`, still for the artifact's SHA-256 `cbdd82d9…fb9f231c`.
   - **Owner decisions:** I create the GPG key (no passphrase, since I cannot type one), and the artifact's hash is submitted to the public OpenTimestamps calendars.
   - **What each mechanism is evidence of** (`src/crypto/timestamping.py`):
     - The GPG tag shows who vouched for the commit. Its date is the signer's own clock, so alone it is not time evidence. It would become so only through a third party, such as a host recording the push. This repo has no remote.
@@ -2179,10 +2188,10 @@ against this code yet (P7.3).
 | `created_utc` (self-asserted) | 2026-10-02T18:05:06+00:00 |
 | Artifact | `provenance/commitment.json`, 1,215 bytes |
 | Artifact SHA-256 | `cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c` |
-| Independent timestamp | TBD: proof upgraded 2026-10-03 with Bitcoin attestations, chain check not yet in code (P5.5) |
+| Independent timestamp | Bitcoin block 969627, header time 2026-10-02T19:37:33Z: `commitment.json` existed by then (P5.5; checked on two explorers, not a full node) |
 | OpenTimestamps proof | `provenance/commitment.json.ots`: pending form 619 bytes, SHA-256 `69b9adbb52a997a064cf3276b1819aa8e38613d117cb825e430f07f6781a58e7` (in the signed tag); upgraded form 3,583 bytes, SHA-256 `57da906c836c91c87c774cc77386fcb8dfea73b993cd8037b2bb8f671e30b4d3` |
 | Calendars that accepted the digest | 3 of 3 (`a.pool.opentimestamps.org`, `b.pool.opentimestamps.org`, `a.pool.eternitywall.com`) |
-| Bitcoin block of the attestation | 969627 and 969632 in the upgraded proof (2026-10-03); not yet checked against the chain in code (P5.5 `[~]`) |
+| Bitcoin block of the attestation | 969627 (`000000000000000000000d8e10dd470dd91b1125eaef9ac881f931e3152b426d`) and 969632 (`000000000000000000006635e0767377b25726bbd8df45d4a02e9e80a64bd505`); Merkle roots, header hashes and proof of work checked against blockstream.info and mempool.space |
 | Owner signing key (GPG, Ed25519) | `C7301BA7D92FC2A65257BFC2A759F8EC04BF66E7`, public key in `provenance/owner_signing_key.asc` |
 | Signed tag | `provenance-commitment-v1` on commit `4372159`, good signature; date is the signer's clock; not pushed |
 | Provenance record (P6.2) | `provenance/record.json`, 2,086 bytes, schema `zk-crown/provenance-record/v1` |
@@ -2208,15 +2217,35 @@ posted anywhere.
 
 Timestamp rows from `experiments/p5_5_timestamp.py record` (P5.5), result
 file `results/p5.5_timestamp__seed1337__20261002T181949+0000.json`, commit
-`4372159`, clean tree, run offline. The proof was created with the
+`4372159`, clean tree, run offline (superseded for the time evidence by the
+2026-10-03 run below). The proof was created with the
 `opentimestamps` library, because the `ots` command line client does not start
 on this machine. The proof's digest equals the artifact's SHA-256, and the
 tagged commit holds byte-identical copies of the artifact, the proof and the
 public key. The proof is pending: it holds three calendars' promises and no
 Bitcoin attestation, so it is not yet evidence of time. The tag's signature
 is good, and its date (2026-10-02, the signer's clock) is self-asserted. P5.5
-stays `[~]` until the proof is upgraded and its Bitcoin attestation is checked
-against the chain.
+stayed `[~]` until the proof was upgraded and its Bitcoin attestation was
+checked against the chain.
+
+Upgraded proof checked against the chain: `experiments/p5_5_timestamp.py
+record`, result file
+`results/p5.5_timestamp__seed1337__20261003T092522+0000.json`, commit
+`b241d5e`, clean tree. It contacts two block explorers and sends them block
+heights and hashes only.
+
+| Block | Block hash | Header time (UTC) | Calendars attesting | blockstream.info | mempool.space |
+|---|---|---|---|---|---|
+| 969627 | `000000000000000000000d8e10dd470dd91b1125eaef9ac881f931e3152b426d` | 2026-10-02T19:37:33 | 2 | header hashes to the hash, meets its target, Merkle root matches | same |
+| 969632 | `000000000000000000006635e0767377b25726bbd8df45d4a02e9e80a64bd505` | 2026-10-02T20:44:04 | 1 | same | same |
+
+So the artifact with SHA-256 `cbdd82d9…fb9f231c` existed by block 969627.
+That is independent of the owner's clock. It rests on the two explorers' view
+of which block is at that height, not on a full node of our own. A header
+time is set by its miner and is only loosely bounded, so the time holds to
+within hours. The signed tag still holds the pending proof; the upgraded
+proof is in commit `b88c338`. The provenance record has its own proof, still
+pending.
 
 Non-ZK opening baseline from `experiments/p5_6_verify_opening.py` (P5.6),
 result file
@@ -2521,3 +2550,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-03: Owner confirmed the three P6.1 decisions and asked for the signed record to be timestamped with OpenTimestamps later; that requirement is noted under P6.2 and is still open. P6.2. `src/crypto/signing.py`: Ed25519 via `cryptography` (installed this session, 50.0.2), write-once private key in `secrets/`, signing and a signature check against the key the record names. Code committed first (`b6b2be3`), then `experiments/p6_2_sign_provenance_record.py` run from that clean tree: it created the signing key (gitignored, no passphrase, needs backup), and wrote `provenance/record.json` (SHA-256 `28a3ad66…576169c1`, public key `94b0224b…28b02d52`). Read-back checks passed; 11 field changes, 512 signature bit flips and a foreign signature were all rejected. A re-issue under another key verifies against that key, as expected: the signature does not identify the key holder. Not pushed or posted, not independently timestamped. 39 new tests, 1,032 in total, all pass.
 - 2026-10-03: Owner backed up the record signing key. P6.3. `src/crypto/provenance_verifier.py`: checks record shape, Ed25519 signature, commitment well formed, and agreement with the commitment publication by hash; optionally the suspect's fingerprint and a trusted public key, reported as not run when not given. Code committed first (`1e79412`), then `experiments/p6_3_verify_provenance.py` run from that clean tree: genuine record valid with the dual `W*`; other suspects fail only the fingerprint check; 11 field changes, 512 signature bit flips, 4 malformed commitments and 3 changed publications all rejected. Two forgeries under a fresh key pass everything except the trusted-key check, which is the documented limit of the signature. 0.63 ms per verification. 47 new tests, 1,079 in total, all pass.
 - 2026-10-03: Owner asked to stamp the record and check P5.5. `experiments/p5_5_timestamp.py` gained `--target record` for `stamp`/`upgrade` and an offline `status` command (3 new tests). Code committed first. `provenance/record.json` stamped: 3 of 3 calendars, proof pending. P5.5 `upgrade` merged Bitcoin attestations from all 3 calendars (blocks 969627 and 969632). A scratch lookup on two block explorers matched both Merkle roots, but the chain check is not in code yet, so P5.5 stays `[~]`. `status` written from a clean tree at `b88c338`.
+- 2026-10-03: P5.5 DONE. Added `check_bitcoin_attestations` to `src/crypto/timestamping.py`: for each attested block, it fetches the header from blockstream.info and mempool.space, hashes it locally, checks its proof of work, and compares its Merkle root with the proof's. `record` now runs it and stops on any failure. 11 new tests, 1,090 in total, all pass. Code committed first (`b241d5e`), then `record` run from that clean tree: blocks 969627 and 969632 verified on both explorers, so `commitment.json` existed by 2026-10-02T19:37:33Z (header time). Not a full node; the signed tag still holds the pending proof.

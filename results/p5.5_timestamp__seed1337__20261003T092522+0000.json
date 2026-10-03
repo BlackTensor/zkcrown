@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "name": "p5.5_timestamp",
+  "task": "P5.5",
+  "timestamp_utc": "2026-10-03T09:25:22+00:00",
+  "git": {
+    "commit": "b241d5eed10b579078cfd31b0a58ae4b684e5bc6",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "artifact": "provenance/commitment.json",
+    "p5_4_reference": "results/p5.4_commitment_publication__seed1337__20261002T180506+0000.json",
+    "tag": "provenance-commitment-v1",
+    "calendars_submitted_to": [
+      "https://a.pool.opentimestamps.org",
+      "https://b.pool.opentimestamps.org",
+      "https://a.pool.eternitywall.com"
+    ],
+    "ots_client": "opentimestamps library (the ots CLI does not start on this machine)",
+    "bitcoin_attestation_checked_against_chain": true,
+    "explorers": [
+      "https://blockstream.info/api",
+      "https://mempool.space/api"
+    ]
+  },
+  "metrics": {
+    "artifact_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+    "artifact_created_utc_self_asserted": "2026-10-02T18:05:06+00:00",
+    "opentimestamps": {
+      "hash_op": "OpSHA256",
+      "file_digest": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+      "matches_file": true,
+      "pending_calendars": [
+        "https://alice.btc.calendar.opentimestamps.org",
+        "https://bob.btc.calendar.opentimestamps.org",
+        "https://finney.calendar.eternitywall.com"
+      ],
+      "bitcoin_attestations": [
+        {
+          "height": 969627,
+          "merkle_root": "370ef722dd5e8f9fcbbd1400d7376089d10c05269047bafffac3d988df17f42f"
+        },
+        {
+          "height": 969627,
+          "merkle_root": "370ef722dd5e8f9fcbbd1400d7376089d10c05269047bafffac3d988df17f42f"
+        },
+        {
+          "height": 969632,
+          "merkle_root": "1b1252195e70ae40792f5acfec6fe77763dce5a7ec56d9c0594d3888da016c88"
+        }
+      ],
+      "other_attestations": [],
+      "status": "bitcoin-attested (unverified)",
+      "ots_sha256": "57da906c836c91c87c774cc77386fcb8dfea73b993cd8037b2bb8f671e30b4d3",
+      "ots_bytes": 3583,
+      "proof_path": "provenance/commitment.json.ots",
+      "chain_check": {
+        "explorers": [
+          "https://blockstream.info/api",
+          "https://mempool.space/api"
+        ],
+        "min_explorers": 2,
+        "blocks": [
+          {
+            "height": 969627,
+            "expected_merkle_root": "370ef722dd5e8f9fcbbd1400d7376089d10c05269047bafffac3d988df17f42f",
+            "verified": true,
+            "block_hash": "000000000000000000000d8e10dd470dd91b1125eaef9ac881f931e3152b426d",
+            "header_time_utc": "2026-10-02T19:37:33+00:00",
+            "explorers": {
+              "https://blockstream.info/api": {
+                "block_hash": "000000000000000000000d8e10dd470dd91b1125eaef9ac881f931e3152b426d",
+                "header_hashes_to_block_hash": true,
+                "meets_target": true,
+                "merkle_root": "370ef722dd5e8f9fcbbd1400d7376089d10c05269047bafffac3d988df17f42f",
+                "merkle_root_matches": true,
+                "header_time": 1790969853
+              },
+              "https://mempool.space/api": {
+                "block_hash": "000000000000000000000d8e10dd470dd91b1125eaef9ac881f931e3152b426d",
+                "header_hashes_to_block_hash": true,
+                "meets_target": true,
+                "merkle_root": "370ef722dd5e8f9fcbbd1400d7376089d10c05269047bafffac3d988df17f42f",
+                "merkle_root_matches": true,
+                "header_time": 1790969853
+              }
+            }
+          },
+          {
+            "height": 969632,
+            "expected_merkle_root": "1b1252195e70ae40792f5acfec6fe77763dce5a7ec56d9c0594d3888da016c88",
+            "verified": true,
+            "block_hash": "000000000000000000006635e0767377b25726bbd8df45d4a02e9e80a64bd505",
+            "header_time_utc": "2026-10-02T20:44:04+00:00",
+            "explorers": {
+              "https://blockstream.info/api": {
+                "block_hash": "000000000000000000006635e0767377b25726bbd8df45d4a02e9e80a64bd505",
+                "header_hashes_to_block_hash": true,
+                "meets_target": true,
+                "merkle_root": "1b1252195e70ae40792f5acfec6fe77763dce5a7ec56d9c0594d3888da016c88",
+                "merkle_root_matches": true,
+                "header_time": 1790973844
+              },
+              "https://mempool.space/api": {
+                "block_hash": "000000000000000000006635e0767377b25726bbd8df45d4a02e9e80a64bd505",
+                "header_hashes_to_block_hash": true,
+                "meets_target": true,
+                "merkle_root": "1b1252195e70ae40792f5acfec6fe77763dce5a7ec56d9c0594d3888da016c88",
+                "merkle_root_matches": true,
+                "header_time": 1790973844
+              }
+            }
+          }
+        ],
+        "all_verified": true,
+        "earliest_verified_block": {
+          "height": 969627,
+          "block_hash": "000000000000000000000d8e10dd470dd91b1125eaef9ac881f931e3152b426d",
+          "header_time_utc": "2026-10-02T19:37:33+00:00"
+        }
+      },
+      "independent_time_evidence": true,
+      "proof_in_tag_is_current": false
+    },
+    "gpg_tag": {
+      "good": true,
+      "fingerprint": "C7301BA7D92FC2A65257BFC2A759F8EC04BF66E7",
+      "signed_date": "2026-10-02",
+      "signed_unix": 1790965185,
+      "tag": "provenance-commitment-v1",
+      "verify_exit_code": 0,
+      "object_type": "tag",
+      "commit": "4372159765455ac0625e5353c442b44ab1656c92",
+      "expected_fingerprint": "C7301BA7D92FC2A65257BFC2A759F8EC04BF66E7",
+      "tagged_commit_holds_artifact": true,
+      "tagged_commit_holds_public_key": true,
+      "public_key_path": "provenance/owner_signing_key.asc",
+      "public_key_file_fingerprint": "C7301BA7D92FC2A65257BFC2A759F8EC04BF66E7",
+      "signature_time_is_self_asserted": true,
+      "pushed_to_a_third_party": false
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 13.48752020000029,
+  "notes": "The GPG tag shows who vouched for the commit; its date is the signer's clock. The OpenTimestamps proof is time evidence only once it carries a Bitcoin attestation that has been checked against the chain. A pending proof holds calendar promises only. The chain check trusts two explorers' view of which block is at each height; it hashes the headers and checks their work, but it is not a full node."
+}
