@@ -101,8 +101,13 @@ def fetch(entry: PtauEntry, dest_dir: Path = PTAU_DIR, *, download: bool = True)
         raise FileNotFoundError(dest)
     with tempfile.NamedTemporaryFile(dir=dest_dir, suffix=".part", delete=False) as tmp:
         tmp_path = Path(tmp.name)
-        with urllib.request.urlopen(entry.url, timeout=120) as resp:
-            shutil.copyfileobj(resp, tmp, length=1 << 20)
+        try:
+            with urllib.request.urlopen(entry.url, timeout=120) as resp:
+                shutil.copyfileobj(resp, tmp, length=1 << 20)
+        except BaseException:
+            tmp.close()
+            tmp_path.unlink(missing_ok=True)
+            raise
     got = blake2b_file(tmp_path)
     if got != entry.blake2b_512:
         tmp_path.unlink(missing_ok=True)

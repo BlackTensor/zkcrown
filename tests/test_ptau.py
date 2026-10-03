@@ -74,3 +74,13 @@ def test_probe_multiplicity_matches_p53_layout():
     # K_hi, K_lo, S are 128-bit; the nonce is 248-bit; one Poseidon(5).
     assert script.PROBE_MULTIPLICITY == {"poseidon5": 1, "num2bits128": 3, "num2bits248": 1}
     assert "Poseidon(5)" in script.PROBES["poseidon5"]
+
+
+def test_failed_download_leaves_no_partial_file(tmp_path, monkeypatch):
+    def refuse(url, timeout):
+        raise ptau.urllib.error.HTTPError(url, 403, "Forbidden", None, None)
+
+    monkeypatch.setattr(ptau.urllib.request, "urlopen", refuse)
+    with pytest.raises(ptau.urllib.error.HTTPError):
+        fetch(_entry(b"genuine"), tmp_path)
+    assert list(tmp_path.iterdir()) == []

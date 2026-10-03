@@ -860,7 +860,10 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - Toy figures, not ledger 8.5 numbers: 517 constraints (default circom optimisation), 2 private and 1 public input; proof 803 bytes and verification key 2,929 bytes as snarkjs JSON. Every snarkjs call takes about 1.7–2.8 s, mostly Node start-up; `prepare phase2` 10.5 s. Real-circuit sizes and times are P7.6 and P7.7.
   - The proof, public signals and verification key are committed in `results/zk/p7.3_toy/`; the ptau, zkey, r1cs and witness are left out as gitignored binaries. A test re-verifies the committed proof and checks it is rejected against `hash + 1`.
   - 9 new tests, 1,112 in total, all pass (the committed-proof test was skipped in the pre-run suite, as the proof did not exist yet).
-- [ ] **P7.4** Download an appropriately sized Hermez `.ptau` file. Use the smallest power of tau that fits the circuit.
+- [~] **P7.4** Download an appropriately sized Hermez `.ptau` file. Use the smallest power of tau that fits the circuit.
+  - **Blocked on an owner decision (2026-10-03): the official source refuses downloads.** Sizing is done: a probe of the circomlib parts P7.5 will use (`Poseidon(5)` 835, `Num2Bits(128)` 129 three times, `Num2Bits(248)` 249) gives an estimate of 1,471 constraints, so power 11 (2,048). The fetch code (`src/zk/ptau.py`, `experiments/p7_4_fetch_ptau.py`, committed at `35d97c2`, then a cleanup fix) takes the URL and BLAKE2b-512 from the pinned snarkjs 0.7.6 README and refuses any file whose hash differs.
+  - The run from the clean tree got HTTP 403 `AccessDenied` from `storage.googleapis.com/zkevm/ptau/`, and the older Hermez S3 bucket also returns 403. No file was downloaded, and no result was written. The failed run left an empty `.part` file, now deleted; the cleanup bug is fixed and tested.
+  - Mirrors found carry only the 2^15 and 2^20 files, not 2^11; they would be checked against the same README hash.
 - [ ] **P7.5** Write the real circuit: private inputs `K`, `S`, nonce; public input `C`; constraint `Poseidon(K, S, nonce) == C`. Must match P5.3 exactly.
 - [ ] **P7.6** Generate the proving and verification keys. Record key sizes and peak RAM.
 - [ ] **P7.7** Generate a proof and verify it. Record proof size, prove time, verify time. **Measure, do not quote marketing numbers.**
