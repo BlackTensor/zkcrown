@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "name": "p7.3_toy_poseidon_proof",
+  "task": "P7.3",
+  "timestamp_utc": "2026-10-03T10:35:40+00:00",
+  "git": {
+    "commit": "7ced78d0463c246ddd65abeefbbd9919d66f4746",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "circuit": "src/zk/circuits/toy_poseidon_preimage.circom",
+    "circuit_sha256": "ac2deea17db3b0a70a1d31f3b872736647e1e2c7ad9d44d836711d316dafeeb2",
+    "statement": "know preimage[0..1] with Poseidon(preimage) == hash; hash public",
+    "poseidon_template": "circomlib Poseidon(2)",
+    "proof_system": "groth16 over bn128 (snarkjs)",
+    "circom_flags": "--r1cs --wasm --sym, default optimisation (-O1)",
+    "powers_of_tau": "local single-contributor, power 10 (toy only; not trusted)",
+    "phase2": "one local contribution, OS-random entropy, not stored",
+    "preimage_label": "zk-crown/p7.3/toy-preimage/v1\\0"
+  },
+  "metrics": {
+    "r1cs": {
+      "wires": 520,
+      "constraints": 517,
+      "private_inputs": 2,
+      "public_inputs": 1,
+      "labels": 771,
+      "outputs": 0
+    },
+    "preimage": [
+      "268947030284710473987522749648774357855456848563213837106436211112212112387",
+      "184301478143168742587920602891871126449091803919032521493020832271706842214"
+    ],
+    "hash_host_poseidon": "20426954283608291122577569355427267001077536012427431543517597449919409559877",
+    "witness_computed_and_checked": true,
+    "public_signals_equal_host_hash": true,
+    "honest_proof_verified": true,
+    "sanity_wrong_hash_witness_exit_code": 1,
+    "sanity_wrong_hash_failed_on_constraint": true,
+    "sanity_proof_verified_against_hash_plus_1": false,
+    "file_bytes": {
+      "r1cs": 69120,
+      "wasm": 1747694,
+      "ptau": 1181115,
+      "zkey": 254699,
+      "vkey": 2929,
+      "witness": 16716,
+      "proof": 803,
+      "public": 84
+    },
+    "sha256": {
+      "vkey": "2ea139d1d17c05c36d3b85f7bc7d4b19060015e469874b1819291351e08ce5dc",
+      "proof": "f493541ec7457a486d235656469354d6dc736c04e841e8749473bc3f572e257e",
+      "public": "c2bcad487eb9a8c013a551c114359aee6b98ff6c06e3b0acbf197c999d7caab3"
+    },
+    "steps": [
+      {
+        "name": "circom_compile",
+        "seconds": 2.221,
+        "returncode": 0
+      },
+      {
+        "name": "r1cs_info",
+        "seconds": 1.761,
+        "returncode": 0
+      },
+      {
+        "name": "ptau_new",
+        "seconds": 2.085,
+        "returncode": 0
+      },
+      {
+        "name": "ptau_contribute",
+        "seconds": 2.737,
+        "returncode": 0
+      },
+      {
+        "name": "ptau_prepare_phase2",
+        "seconds": 10.5,
+        "returncode": 0
+      },
+      {
+        "name": "groth16_setup",
+        "seconds": 2.578,
+        "returncode": 0
+      },
+      {
+        "name": "zkey_contribute",
+        "seconds": 1.963,
+        "returncode": 0
+      },
+      {
+        "name": "zkey_verify",
+        "seconds": 2.763,
+        "returncode": 0
+      },
+      {
+        "name": "zkey_export_vkey",
+        "seconds": 1.884,
+        "returncode": 0
+      },
+      {
+        "name": "wtns_calculate_honest",
+        "seconds": 0.726,
+        "returncode": 0
+      },
+      {
+        "name": "wtns_check",
+        "seconds": 1.817,
+        "returncode": 0
+      },
+      {
+        "name": "groth16_prove_honest",
+        "seconds": 2.282,
+        "returncode": 0
+      },
+      {
+        "name": "groth16_verify_honest",
+        "seconds": 1.94,
+        "returncode": 0
+      },
+      {
+        "name": "wtns_calculate_wrong_hash",
+        "seconds": 0.759,
+        "returncode": 1
+      },
+      {
+        "name": "groth16_verify_wrong_public",
+        "seconds": 1.988,
+        "returncode": 1
+      }
+    ],
+    "committed_copies": "results/zk/p7.3_toy/{proof,public,verification_key}.json"
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 38.41369290000057,
+  "notes": "Toy circuit and toy, untrusted setup. Sizes and times describe this toy only, not the P7.5 circuit."
+}
