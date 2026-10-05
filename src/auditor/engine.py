@@ -1,16 +1,24 @@
-"""The auditor engine (P9.1): a suspect model plus the provenance record in, an `AuditVerdict` out.
+"""The auditor engine (P9.1, checks wired in P9.2): a suspect model plus the provenance record in, an `AuditVerdict` out.
 
     verdict = audit(suspect_state_dict, record, publication, trusted_public_key=...)
 
-What runs in P9.1
------------------
-Only the record precondition: the P6.3 verifier on the record and its
+What runs
+---------
+First the record precondition: the P6.3 verifier on the record and its
 publication (and the trusted key, when given). It is run without the suspect,
-because comparing fingerprints is the ``fingerprint`` slot's job. Every one of
-the five slots comes back ``not_run`` with the reason ``"not wired (P9.2)"``
-unless a check is passed in ``checks``; the default registry is empty. An
-invalid record does not stop the checks: ``record_valid`` is reported at the
-top level and what it means is left to P9.3.
+because comparing fingerprints is the ``fingerprint`` slot's job. An invalid
+record does not stop the checks: ``record_valid`` is reported at the top level
+and what it means is left to P9.3.
+
+Then the checks. With ``checks=None`` the P9.2 registry runs
+(`src.auditor.checks.default_checks`: fingerprint, behavioral, weight,
+commitment, zk_proof). A slot left out of an explicit ``checks`` mapping comes
+back ``not_run``, "not wired (P9.2)".
+
+The suspect is its state dict, plus optionally the queryable model the thief
+ships (``suspect_model``, for example a fused INT8 runtime) and the
+architecture to load the state dict into when no model is given
+(``suspect_arch``, default ``main_model(width=32)``).
 
 Check interface
 ---------------
@@ -84,13 +92,24 @@ class CheckOutcome:
 class CheckContext:
     """What a check sees: the suspect, the public files, and only the secrets it declared."""
 
-    def __init__(self, suspect_state: Mapping[str, Any], record: Any, publication: Any,
+    def __init__(self, suspect: "_Suspect", record: Any, publication: Any,
                  secrets: OwnerSecrets | None, allowed: tuple[str, ...]):
-        self.suspect_state = suspect_state
+        self.suspect_state = suspect.state
+        self.arch = dict(suspect.arch)
+        self.arch_text = ", ".join(f"{k}={v}" for k, v in sorted(self.arch.items()))
+        self._suspect = suspect
         self.record = record
         self.publication = publication
         self._secrets = secrets
         self._allowed = allowed
+
+    def state_tensors(self) -> dict[str, Any]:
+        """The suspect state dict as CPU torch tensors."""
+        return self._suspect.tensors()
+
+    def model(self):
+        """A queryable suspect model, or None if there is none."""
+        return self._suspect.model()
 
     def __repr__(self) -> str:
         return f"CheckContext(allowed_secrets={self._allowed!r})"
@@ -99,6 +118,33 @@ class CheckContext:
         if name not in self._allowed or self._secrets is None:
             raise PermissionError(f"this check did not declare the secret {name!r}")
         return self._secrets.get(name)
+
+
+class _Suspect:
+    """The suspect as given, with its tensors and queryable model built once."""
+
+    def __init__(self, state: Mapping[str, Any], arch: Mapping[str, Any], model: Any = None):
+        self.state, self.arch, self._model, self._tensors, self._tried = state, dict(arch), model, None, False
+
+    def tensors(self) -> dict[str, Any]:
+        if self._tensors is None:
+            import torch
+
+            self._tensors = {k: torch.as_tensor(v).cpu() for k, v in self.state.items()}
+        return self._tensors
+
+    def model(self):
+        if self._model is None and not self._tried:
+            self._tried = True
+            try:
+                from src.models.main_model import MainModel
+
+                built = MainModel(**self.arch)
+                built.load_state_dict(self.tensors(), strict=True)
+                self._model = built.eval()
+            except Exception:  # noqa: BLE001 -- no queryable model; checks say so
+                self._model = None
+        return self._model
 
 
 class Check(Protocol):
@@ -169,7 +215,8 @@ def _run_check(check: Check, context_args: tuple, secrets: OwnerSecrets | None,
     return CheckResult(**{**result.__dict__, "duration_seconds": round(elapsed, 6)}), True
 
 
-def _suspect_inputs(state: Mapping[str, Any], label: str | None, file_sha256: str | None) -> dict[str, Any]:
+def _suspect_inputs(state: Mapping[str, Any], label: str | None, file_sha256: str | None,
+                    arch: Mapping[str, Any], runtime_model_supplied: bool) -> dict[str, Any]:
     fingerprint = fingerprint_state_dict(state)
     inputs: dict[str, Any] = {
         "label": label,
@@ -179,13 +226,15 @@ def _suspect_inputs(state: Mapping[str, Any], label: str | None, file_sha256: st
         "loads_into_main_model": False,
         "parameter_count": None,
         "load_problem": None,
+        "arch": dict(arch),
+        "runtime_model_supplied": runtime_model_supplied,
     }
     try:
         import torch
 
         from src.models.main_model import MainModel
 
-        model = MainModel(**MAIN_MODEL_ARCH)
+        model = MainModel(**dict(arch))
         model.load_state_dict({k: torch.as_tensor(v) for k, v in state.items()}, strict=True)
         inputs["loads_into_main_model"] = True
         inputs["parameter_count"] = sum(p.numel() for p in model.parameters())
@@ -206,7 +255,9 @@ def audit(suspect_state: Mapping[str, Any], record: Any, publication: Any, *,
           checks: Mapping[str, Check] | None = None,
           owner_secrets: OwnerSecrets | None = None,
           suspect_label: str | None = None,
-          suspect_file_sha256: str | None = None) -> AuditVerdict:
+          suspect_file_sha256: str | None = None,
+          suspect_model: Any = None,
+          suspect_arch: Mapping[str, Any] | None = None) -> AuditVerdict:
     """Audit one suspect against the provenance record. See the module docstring.
 
     Args:
@@ -214,15 +265,25 @@ def audit(suspect_state: Mapping[str, Any], record: Any, publication: Any, *,
         record: the signed provenance record (``provenance/record.json``).
         publication: the commitment publication (``provenance/commitment.json``).
         trusted_public_key: the owner's Ed25519 key, obtained outside the record.
-        checks: slot name to check. Missing slots are ``not_run``, "not wired (P9.2)".
+        checks: slot name to check. ``None`` runs the P9.2 registry; a slot missing
+            from an explicit mapping is ``not_run``, "not wired (P9.2)".
         owner_secrets: needed only by checks that declare secrets; also arms the
             guard's value scan.
         suspect_label, suspect_file_sha256: descriptive, copied into ``inputs``.
+        suspect_model: the queryable model as shipped, when it is more than the
+            state dict in ``main_model`` (P4.4's fused INT8 runtime).
+        suspect_arch: the ``main_model`` arguments to load the state dict with
+            when no model is given. Default ``{"width": 32}``.
     """
     start = time.perf_counter()
     if not isinstance(suspect_state, Mapping):
         raise TypeError("suspect_state must be a state dict")
-    checks = dict(checks or {})
+    if checks is None:
+        from src.auditor.checks import default_checks
+
+        checks = default_checks()
+    checks = dict(checks)
+    arch = dict(suspect_arch) if suspect_arch is not None else dict(MAIN_MODEL_ARCH)
     for slot, check in checks.items():
         if slot not in SLOTS:
             raise ValueError(f"unknown slot {slot!r}; slots are {SLOTS}")
@@ -236,12 +297,13 @@ def audit(suspect_state: Mapping[str, Any], record: Any, publication: Any, *,
     inputs = {
         "record_sha256": _sha_or_none(record_sha256, record),
         "publication_sha256": _sha_or_none(artifact_sha256, publication),
-        "suspect": _suspect_inputs(suspect_state, suspect_label, suspect_file_sha256),
+        "suspect": _suspect_inputs(suspect_state, suspect_label, suspect_file_sha256, arch,
+                                   suspect_model is not None),
         "trusted_public_key_supplied": trusted_public_key is not None,
     }
 
     results, used = [], set()
-    context_args = (suspect_state, record, publication)
+    context_args = (_Suspect(suspect_state, arch, suspect_model), record, publication)
     for slot in SLOTS:
         if slot not in checks:
             results.append(CheckResult(slot=slot, status="not_run", reason=NOT_WIRED))

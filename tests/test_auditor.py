@@ -73,9 +73,9 @@ def run_stub(stub, secrets=SECRETS):
 # --- the P9.1 default: record precondition only, five slots not run ----------
 
 
-def test_default_audit_runs_only_the_record_precondition():
+def test_with_no_checks_only_the_record_precondition_runs():
     rec, pub = files()
-    verdict = audit(state(), rec, pub, trusted_public_key=OWNER_HEX)
+    verdict = audit(state(), rec, pub, trusted_public_key=OWNER_HEX, checks={})
     assert verdict.record_valid
     assert [c.slot for c in verdict.checks] == list(SLOTS)
     assert all(c.status == "not_run" and c.reason == NOT_WIRED for c in verdict.checks)
@@ -90,7 +90,7 @@ def test_default_audit_runs_only_the_record_precondition():
 
 def test_inputs_describe_the_suspect_and_files():
     rec, pub = files()
-    verdict = audit(state(), rec, pub, suspect_label="demo", suspect_file_sha256="ab" * 32)
+    verdict = audit(state(), rec, pub, suspect_label="demo", suspect_file_sha256="ab" * 32, checks={})
     suspect = verdict.inputs["suspect"]
     assert suspect["fingerprint"] == fingerprint_state_dict(state()).to_dict()
     assert suspect["label"] == "demo" and suspect["state_entries"] == 2
@@ -103,7 +103,7 @@ def test_a_main_model_suspect_reports_its_parameter_count():
     torch.manual_seed(0)
     model_state = MainModel(width=32).state_dict()
     rec, pub = files(model_state)
-    suspect = audit(model_state, rec, pub).inputs["suspect"]
+    suspect = audit(model_state, rec, pub, checks={}).inputs["suspect"]
     assert suspect["loads_into_main_model"] is True and suspect["parameter_count"] == 307_946
 
 
@@ -120,7 +120,7 @@ def test_an_invalid_record_still_lets_checks_run():
 
 def test_a_malformed_record_is_a_verdict_not_an_exception():
     _, pub = files()
-    verdict = audit(state(), {"not": "a record"}, pub)
+    verdict = audit(state(), {"not": "a record"}, pub, checks={})
     assert verdict.record_valid is False and verdict.inputs["record_sha256"] is None
 
 
@@ -129,7 +129,7 @@ def test_the_committed_record_and_publication_audit_as_valid():
         pytest.skip("committed provenance files absent")
     rec, _ = read_record(RECORD_PATH)
     pub, _ = read_publication(ARTIFACT_PATH)
-    verdict = audit(state(), rec, pub, trusted_public_key=rec["owner"]["public_key"]["hex"])
+    verdict = audit(state(), rec, pub, trusted_public_key=rec["owner"]["public_key"]["hex"], checks={})
     assert verdict.record_valid and all(c.status == "not_run" for c in verdict.checks)
 
 
@@ -263,7 +263,7 @@ def test_base64_is_caught_only_by_the_value_scan():
 def test_the_built_verdict_is_scanned_as_a_whole():
     rec, pub = files()
     with pytest.raises(SecretLeak):
-        audit(state(), rec, pub, owner_secrets=SECRETS, suspect_label="copy of " + TEST_K.hex())
+        audit(state(), rec, pub, owner_secrets=SECRETS, suspect_label="copy of " + TEST_K.hex(), checks={})
 
 
 def test_no_secret_anywhere_in_a_verdict_built_with_secrets():

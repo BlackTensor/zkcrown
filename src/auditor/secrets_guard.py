@@ -50,7 +50,7 @@ from src.watermark.signature import SIGNATURE_BYTES
 
 MAX_SAFE_INT = 2**53
 MAX_STATISTIC_STRING = 120
-MAX_REASON = 500
+MAX_REASON = 1000
 MAX_STATISTIC_ENTRIES = 64
 HEX_RUN = re.compile(r"[0-9a-fA-F]{16,}")
 STATISTIC_NAME = re.compile(r"^[a-z][a-z0-9_]{0,63}$")

@@ -30,7 +30,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 VERDICT_SCHEMA = "zk-crown/audit-verdict/v1"
-AUDITOR_VERSION = "p9.1"
+AUDITOR_VERSION = "p9.2"
 SLOTS = ("fingerprint", "behavioral", "weight", "commitment", "zk_proof")
 OUTCOME_STATUSES = {
     "fingerprint": ("passed", "failed"),
