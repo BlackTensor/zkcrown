@@ -12,7 +12,7 @@ Two audits, each must give the stated verdict or the script stops:
 1. **Genuine.** Dual `W*` as suspect, the committed record and publication,
    the P6.2 public key as trusted key: ``record_valid`` true, the public key
    trusted, all five slots ``not_run`` with "not wired (P9.2)", no secrets
-   used, no grade.
+   used, technical evidence strength "not assessed" (P9.3 computes a grade).
 2. **Tampered record.** The same with the record's model label changed (not
    re-signed): ``record_valid`` false, and the audit still returns all five
    slots, unchanged.
@@ -45,8 +45,8 @@ def expect(verdict, *, record_valid: bool) -> dict:
         problems.append("slots out of order")
     if any(c["status"] != "not_run" or c["reason"] != NOT_WIRED for c in d["checks"]):
         problems.append("a slot is not 'not_run, not wired (P9.2)'")
-    if d["secrets_used"] or d["grade"] is not None:
-        problems.append("secrets used or a grade given")
+    if d["secrets_used"] or d["grade"]["suspect"]["technical_evidence_strength"] != "not assessed":
+        problems.append("secrets used, or a grade without any check run (since P9.3 the grade is always computed)")
     if problems:
         raise SystemExit("unexpected verdict: " + "; ".join(problems))
     return d

@@ -79,7 +79,8 @@ def test_with_no_checks_only_the_record_precondition_runs():
     assert verdict.record_valid
     assert [c.slot for c in verdict.checks] == list(SLOTS)
     assert all(c.status == "not_run" and c.reason == NOT_WIRED for c in verdict.checks)
-    assert verdict.secrets_used == () and verdict.grade is None
+    assert verdict.secrets_used == ()
+    assert verdict.grade["suspect"]["technical_evidence_strength"] == "not assessed"
     d = verdict.to_dict()
     assert d["schema"] == VERDICT_SCHEMA and d["record_valid"] is True and d["limitations"] == list(LIMITATIONS)
     assert d["record_status"]["public_key_trusted"] is True

@@ -15,8 +15,9 @@ One `AuditVerdict` per suspect. Contents, in order:
    `CheckResult`.
 4. **secrets_used**: which of `K`, `S`, nonce a check that ran declared and
    was given. Empty when nothing secret was read (P9.6).
-5. **grade**: always ``None`` here. Graded verdicts are P9.3; nothing in
-   this object combines p-values or says "stolen".
+5. **grade**: computed by `src.auditor.grading` from the checks (P9.3):
+   technical evidence strength for the suspect, the owner's evidence in its
+   own section, and the not-legal-evidence line.
 6. **limitations**: fixed text attached to every verdict.
 7. **run**: auditor version, UTC time, git snapshot, duration.
 
@@ -30,7 +31,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 VERDICT_SCHEMA = "zk-crown/audit-verdict/v1"
-AUDITOR_VERSION = "p9.2"
+AUDITOR_VERSION = "p9.3"
 SLOTS = ("fingerprint", "behavioral", "weight", "commitment", "zk_proof")
 OUTCOME_STATUSES = {
     "fingerprint": ("passed", "failed"),
@@ -44,7 +45,6 @@ REASON_REQUIRED = ("not_applicable", "not_run", "error")
 P_VALUE_KINDS = ("exact", "upper_bound")
 LEVELS = (0.05, 0.01, 1e-3, 1e-6, 1e-9)
 NOT_WIRED = "not wired (P9.2)"
-GRADE_NOTE = "Graded verdicts are P9.3. This verdict reports each check separately and combines nothing."
 LIMITATIONS = (
     "Distillation into a fresh student removed both watermarks in every measured case (P4.7, P4.10); "
     "a distilled copy leaves no evidence for these checks.",
@@ -121,13 +121,17 @@ class AuditVerdict:
     checks: tuple[CheckResult, ...]
     secrets_used: tuple[str, ...]
     run: dict[str, Any]
-    grade: None = None
 
     def __post_init__(self) -> None:
         if tuple(c.slot for c in self.checks) != SLOTS:
             raise ValueError(f"checks must be exactly the slots {SLOTS}, in order")
-        if self.grade is not None:
-            raise ValueError("grading is P9.3; grade must be None")
+
+    @property
+    def grade(self) -> dict[str, Any]:
+        """The P9.3 grade, computed from the checks and record status every time; never stored by hand."""
+        from src.auditor.grading import grade
+
+        return grade({c.slot: c.to_dict() for c in self.checks}, self.record_status)
 
     @property
     def record_valid(self) -> bool:
@@ -145,7 +149,6 @@ class AuditVerdict:
             "checks": [c.to_dict() for c in self.checks],
             "secrets_used": list(self.secrets_used),
             "grade": self.grade,
-            "grade_note": GRADE_NOTE,
             "limitations": list(LIMITATIONS),
             "run": dict(self.run),
         }
