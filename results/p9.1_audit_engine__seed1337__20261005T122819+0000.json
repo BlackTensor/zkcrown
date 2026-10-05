@@ -1,0 +1,296 @@
+{
+  "schema_version": 1,
+  "name": "p9.1_audit_engine",
+  "task": "P9.1",
+  "timestamp_utc": "2026-10-05T12:28:19+00:00",
+  "git": {
+    "commit": "6bb1a1fd892295d404975f814d948ec20c30c844",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "record": "provenance/record.json",
+    "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+    "publication": "provenance/commitment.json",
+    "publication_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+    "suspect_file_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+    "trusted_public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+    "trusted_public_key_source": "the P6.2 result record (same repository; a mechanism check)"
+  },
+  "metrics": {
+    "genuine": {
+      "schema": "zk-crown/audit-verdict/v1",
+      "record_valid": true,
+      "inputs": {
+        "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+        "publication_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+        "suspect": {
+          "label": "dual_W_star (P3.6)",
+          "file_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+          "fingerprint": {
+            "sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+            "version": "zk-crown/model-fingerprint/v1",
+            "tensors": 38,
+            "elements": 308848,
+            "data_bytes": 1235416
+          },
+          "state_entries": 38,
+          "loads_into_main_model": true,
+          "parameter_count": 307946,
+          "load_problem": null
+        },
+        "trusted_public_key_supplied": true
+      },
+      "record_status": {
+        "schema": "zk-crown/provenance-verdict/v1",
+        "valid": true,
+        "record_valid": true,
+        "record_well_formed": true,
+        "signature_valid": true,
+        "commitment_well_formed": true,
+        "matches_publication": true,
+        "fingerprint_matches": null,
+        "public_key_trusted": true,
+        "checks_not_run": [
+          "fingerprint_matches"
+        ],
+        "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+        "owner_id": "blacktensor-zkcrown-owner",
+        "public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+        "commitment_decimal": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+        "record_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+        "suspect_fingerprint_sha256": null,
+        "problems": []
+      },
+      "checks": [
+        {
+          "slot": "fingerprint",
+          "status": "not_run",
+          "method": null,
+          "statistic": {},
+          "p_value": null,
+          "p_value_kind": null,
+          "strongest_level_rejected": null,
+          "reason": "not wired (P9.2)",
+          "duration_seconds": null,
+          "guard_rejected": false
+        },
+        {
+          "slot": "behavioral",
+          "status": "not_run",
+          "method": null,
+          "statistic": {},
+          "p_value": null,
+          "p_value_kind": null,
+          "strongest_level_rejected": null,
+          "reason": "not wired (P9.2)",
+          "duration_seconds": null,
+          "guard_rejected": false
+        },
+        {
+          "slot": "weight",
+          "status": "not_run",
+          "method": null,
+          "statistic": {},
+          "p_value": null,
+          "p_value_kind": null,
+          "strongest_level_rejected": null,
+          "reason": "not wired (P9.2)",
+          "duration_seconds": null,
+          "guard_rejected": false
+        },
+        {
+          "slot": "commitment",
+          "status": "not_run",
+          "method": null,
+          "statistic": {},
+          "p_value": null,
+          "p_value_kind": null,
+          "strongest_level_rejected": null,
+          "reason": "not wired (P9.2)",
+          "duration_seconds": null,
+          "guard_rejected": false
+        },
+        {
+          "slot": "zk_proof",
+          "status": "not_run",
+          "method": null,
+          "statistic": {},
+          "p_value": null,
+          "p_value_kind": null,
+          "strongest_level_rejected": null,
+          "reason": "not wired (P9.2)",
+          "duration_seconds": null,
+          "guard_rejected": false
+        }
+      ],
+      "secrets_used": [],
+      "grade": null,
+      "grade_note": "Graded verdicts are P9.3. This verdict reports each check separately and combines nothing.",
+      "limitations": [
+        "Distillation into a fresh student removed both watermarks in every measured case (P4.7, P4.10); a distilled copy leaves no evidence for these checks.",
+        "The weight test needs the owner's carrier layout. A physically channel-pruned or narrower suspect is not applicable unless re-aligned, which is not implemented (Icebox).",
+        "The provenance record's own OpenTimestamps proof is pending; only the commitment publication has independent time evidence (Bitcoin block 969627, P5.5).",
+        "This is a technical ownership verification demonstration, not legal evidence."
+      ],
+      "run": {
+        "auditor_version": "p9.1",
+        "created_utc": "2026-10-05T12:28:19+00:00",
+        "git": {
+          "commit": "6bb1a1fd892295d404975f814d948ec20c30c844",
+          "branch": "master",
+          "dirty": false,
+          "available": true,
+          "source": "git"
+        },
+        "duration_seconds": 0.211488
+      }
+    },
+    "tampered_record": {
+      "schema": "zk-crown/audit-verdict/v1",
+      "record_valid": false,
+      "inputs": {
+        "record_sha256": "7ae1a17cc9c1cccff3710e04c2dfc2e5e6145a3c347afeba1bd66b734f935445",
+        "publication_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+        "suspect": {
+          "label": "dual_W_star (P3.6)",
+          "file_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+          "fingerprint": {
+            "sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+            "version": "zk-crown/model-fingerprint/v1",
+            "tensors": 38,
+            "elements": 308848,
+            "data_bytes": 1235416
+          },
+          "state_entries": 38,
+          "loads_into_main_model": true,
+          "parameter_count": 307946,
+          "load_problem": null
+        },
+        "trusted_public_key_supplied": true
+      },
+      "record_status": {
+        "schema": "zk-crown/provenance-verdict/v1",
+        "valid": false,
+        "record_valid": false,
+        "record_well_formed": true,
+        "signature_valid": false,
+        "commitment_well_formed": true,
+        "matches_publication": false,
+        "fingerprint_matches": null,
+        "public_key_trusted": true,
+        "checks_not_run": [
+          "fingerprint_matches"
+        ],
+        "record_sha256": "7ae1a17cc9c1cccff3710e04c2dfc2e5e6145a3c347afeba1bd66b734f935445",
+        "owner_id": "blacktensor-zkcrown-owner",
+        "public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+        "commitment_decimal": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+        "record_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+        "suspect_fingerprint_sha256": null,
+        "problems": [
+          "the signature does not verify under the public key the record names",
+          "record and publication disagree on: model label"
+        ]
+      },
+      "checks": [
+        {
+          "slot": "fingerprint",
+          "status": "not_run",
+          "method": null,
+          "statistic": {},
+          "p_value": null,
+          "p_value_kind": null,
+          "strongest_level_rejected": null,
+          "reason": "not wired (P9.2)",
+          "duration_seconds": null,
+          "guard_rejected": false
+        },
+        {
+          "slot": "behavioral",
+          "status": "not_run",
+          "method": null,
+          "statistic": {},
+          "p_value": null,
+          "p_value_kind": null,
+          "strongest_level_rejected": null,
+          "reason": "not wired (P9.2)",
+          "duration_seconds": null,
+          "guard_rejected": false
+        },
+        {
+          "slot": "weight",
+          "status": "not_run",
+          "method": null,
+          "statistic": {},
+          "p_value": null,
+          "p_value_kind": null,
+          "strongest_level_rejected": null,
+          "reason": "not wired (P9.2)",
+          "duration_seconds": null,
+          "guard_rejected": false
+        },
+        {
+          "slot": "commitment",
+          "status": "not_run",
+          "method": null,
+          "statistic": {},
+          "p_value": null,
+          "p_value_kind": null,
+          "strongest_level_rejected": null,
+          "reason": "not wired (P9.2)",
+          "duration_seconds": null,
+          "guard_rejected": false
+        },
+        {
+          "slot": "zk_proof",
+          "status": "not_run",
+          "method": null,
+          "statistic": {},
+          "p_value": null,
+          "p_value_kind": null,
+          "strongest_level_rejected": null,
+          "reason": "not wired (P9.2)",
+          "duration_seconds": null,
+          "guard_rejected": false
+        }
+      ],
+      "secrets_used": [],
+      "grade": null,
+      "grade_note": "Graded verdicts are P9.3. This verdict reports each check separately and combines nothing.",
+      "limitations": [
+        "Distillation into a fresh student removed both watermarks in every measured case (P4.7, P4.10); a distilled copy leaves no evidence for these checks.",
+        "The weight test needs the owner's carrier layout. A physically channel-pruned or narrower suspect is not applicable unless re-aligned, which is not implemented (Icebox).",
+        "The provenance record's own OpenTimestamps proof is pending; only the commitment publication has independent time evidence (Bitcoin block 969627, P5.5).",
+        "This is a technical ownership verification demonstration, not legal evidence."
+      ],
+      "run": {
+        "auditor_version": "p9.1",
+        "created_utc": "2026-10-05T12:28:19+00:00",
+        "git": {
+          "commit": "6bb1a1fd892295d404975f814d948ec20c30c844",
+          "branch": "master",
+          "dirty": false,
+          "available": true,
+          "source": "git"
+        },
+        "duration_seconds": 0.207154
+      }
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 0.6892996999995376,
+  "notes": "Auditor engine with only the record precondition (P6.3) run. All five check slots are not_run, 'not wired (P9.2)'. No secrets read. No watermark or fingerprint result."
+}
