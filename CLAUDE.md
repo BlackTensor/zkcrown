@@ -1140,7 +1140,18 @@ Each attack task must report, in one table row: attack strength, resulting clean
   - **Every refusal was an error, never a clean `False`.** In ezkl 23.0.5 the Python `verify` raised `RuntimeError("Failed to run verify: [halo2] …")` in all 42 cases and returned True in every control. Any caller (P9) must treat an exception from `verify` as a rejection, not as a crash to retry or ignore. The same holds for snarkjs (P7.8).
   - Observed: the 2 wrong-count cases report "constraint system is not satisfied", not a shape error.
   - Limits: one proof, one image pair, single bit flips only, local Windows CPU (x64 Python emulated on ARM), not Colab. The tamper files and the image 1 witness stay in `zk/ezkl/zk_model/p8.5/` (gitignored).
-- [ ] **P8.6** Check quantization fidelity: EZKL quantizes when converting ONNX to a circuit, so the circuit output can diverge from PyTorch. Measure the agreement between PyTorch and the circuit (top-1 class, and the size of the output differences) on MNIST test images. **This is a real risk to the demo and must be measured, not assumed.** (Reworded 2026-10-03, owner decision (c3); was: how often the trigger still produces the watermark response inside the circuit.)
+- [x] **P8.6** Check quantization fidelity: EZKL quantizes when converting ONNX to a circuit, so the circuit output can diverge from PyTorch. Measure the agreement between PyTorch and the circuit (top-1 class, and the size of the output differences) on MNIST test images. **This is a real risk to the demo and must be measured, not assumed.** (Reworded 2026-10-03, owner decision (c3); was: how often the trigger still produces the watermark response inside the circuit.)
+  - **The circuit agrees with PyTorch on all 10,000 MNIST test images: 10,000/10,000 top-1, 0 disagreements, 0 argmax ties. Circuit accuracy 9,896/10,000 = 98.96%, equal to PyTorch's (same images right and wrong, McNemar p = 1). Largest absolute logit difference 0.0101, mean 0.0018.** One model (P0.7 `zk_model`) and one set of scale settings (input/param scale 13, logrows 18, P8.3 `accuracy` calibration); nothing here says how other scales or models behave.
+  - `experiments/p8_6_ezkl_fidelity.py`, local CPU, 3,583 s in all, clean tree at `faca56f`, result `results/p8.6_ezkl_fidelity__seed1337__20261005T115835+0000.json`. P8.3 artifacts hash-checked; ezkl 23.0.5.
+  - **Image set, fixed before the run:** all 10,000 official MNIST test images, in index order, normalised as in training. Not a sample: a scratch timing of 20 in-process `gen_witness` calls gave about 0.28 s per image, so the whole set was affordable and sampling would only have added sampling error.
+  - **Method:**
+    - Bulk by witness generation only (`ezkl.gen_witness`, the circuit's quantised forward pass, no proof). 10 chunks of 1,000, each in its own process under the P8.3 watchdog, run one after another. New stage `gen_witness_batch` in `src/zk/ezkl/stages.py`.
+    - Circuit class = argmax of ezkl's dequantised outputs. PyTorch: float32, eval mode; it reproduced P0.7's 9,896 correct (checked in the run).
+    - **Proved subset, fixed before the run:** 10 indices from `numpy default_rng(1337).choice(10000, 10, replace=False)`: 1854, 2894, 3914, 5399, 5458, 7264, 8745, 8773, 9205, 9463. Each was proved with the P8.3 key and verified with the committed verification key: **10 of 10 accepted, and every proof's public outputs equal that image's witness-only outputs exactly.** Image 0's witness outputs also equal the committed P8.4 proof's.
+  - **Logit differences** (100,000 logits): max 0.0101 (image 8116, label 6), mean 0.0018, median 0.0015, 99th percentile 0.0062; mean of each image's largest difference 0.0044.
+  - **Time per image** (the `gen_witness` call only, in-process): median 0.307 s, mean 0.309 s, range 0.234–0.582 s, 99th percentile 0.382 s. Each 1,000-image chunk took 303–361 s of process time, peak working set 124–129 MiB. Bulk total 3,313 s. Proofs in the subset took 19.5–23.7 s each at 2.34–2.45 GiB peak working set.
+  - Limits: one model, one set of scale settings, one run, local Windows CPU (x64 Python emulated on ARM), not Colab. The bulk figures come from witness generation; that they are what a proof carries is checked on 11 images (the 10 plus P8.4's), not all 10,000. Settings carry ezkl's default `check_mode: UNSAFE`, not investigated here.
+  - 4 new tests, 1,185 in total, all pass.
 - [ ] **P8.7** Frame the statement correctly: the proof shows that a model with committed weights produces a given output on a given public input. State plainly that this shows the zkML pipeline works and what it costs, and nothing about watermarks or ownership. Document what this does and does not demonstrate. (Reworded 2026-10-03, owner decision (c3); was: "this committed model produces this response on an input I am not revealing".)
 - [ ] **P8.8** If `zk_model` blows the RAM budget, shrink it and re-run rather than escalating hardware. Record what size was actually provable on Colab free. That measured ceiling is itself a good portfolio result.
 
@@ -2466,6 +2477,23 @@ Channel-pruning weight figures assume re-alignment (P4.3 caveat). The
 | Proof size | 806 bytes, snarkjs JSON; public signals `[C]` only (P7.7) | 3,072 bytes proof; 140,052 bytes as ezkl JSON with 794 public instances (784 input, 10 output) (P8.4) |
 | Ran on Colab free without OOM | TBD | TBD |
 
+Circuit fidelity for Track B (P8.6), result file
+`results/p8.6_ezkl_fidelity__seed1337__20261005T115835+0000.json`, local CPU,
+clean tree at `faca56f`. One model (P0.7 `zk_model`) and one set of scale
+settings (input/param scale 13, logrows 18).
+
+| Item | Value |
+|---|---|
+| Images | all 10,000 MNIST test images, fixed before the run |
+| Top-1 agreement, circuit vs PyTorch | 10,000 / 10,000 (100%), 0 disagreements, 0 argmax ties |
+| Accuracy, PyTorch / circuit | 9,896 / 9,896 (98.96% both); same images right, McNemar p = 1 |
+| Absolute logit difference | max 0.0101 (image 8116), mean 0.0018, median 0.0015, p99 0.0062 |
+| Time per image, witness only (`gen_witness`) | median 0.307 s, mean 0.309 s, range 0.234–0.582 s |
+| Proved subset (10 seed-fixed images) | 10 / 10 verify; outputs equal the witness-only outputs exactly |
+
+Bulk figures are from witness generation; the proved subset and P8.4's image 0
+tie them to what a proof carries on 11 images. Local Windows CPU, not Colab.
+
 Proof-level negative tests (P7.8), result file
 `results/p7.8_negative_tests__seed1337__20261003T175623+0000.json`, CPU, clean
 tree at `3999e6a`, public demo values only, committed verification key. **206
@@ -3013,3 +3041,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-04: P8.4 DONE. Proved `zk_model` inference on MNIST test image 0, fixed by position before the run, with the P8.3 artifacts hash-checked. Witness 0.3 s; prove 21.7 s at a 2.45 GiB peak; proof 3,072 bytes (140,052 as JSON). Circuit class 7 = PyTorch class 7 = label 7, largest logit difference 0.0031. Sanity check only, no verify. Proof, public instances and input committed; proving key and SRS not. P8.5 not started.
 - 2026-10-04: P8.5 DONE. The P8.4 proof verifies with the committed settings and verification key: median 0.215 s, 223 MiB peak. 42 tampered variants (outputs, inputs, proof bit flips, another image's instances, wrong instance count): 0 accepted, all refused by an exception rather than a clean False; 3 of 3 honest controls accepted. Evidence about the cases tried, not a soundness proof. P8.6 not started.
 - 2026-10-03: Owner chose Phase 8 option (c3): plain inference on the P0.7 `zk_model` first, with the watermarked `zk_model` (a) to be revisited after P8.5. The decision is recorded at the top of Phase 8; P8.4, P8.6 and P8.7 were reworded, and (a) went to the Icebox with its per-trigger commitment requirement (`868d864`). That commit also removed a stray NUL byte in the P7.3 note. The byte had made git store CLAUDE.md as binary, so the commit renormalises every line ending. P8.1: installed onnx 1.23.1 and onnxruntime 1.30.0, then exported `zk_model` (opset 13, Conv/Relu/Flatten/Gemm, 26,214 bytes, deterministic, weights bit-identical) and compared ONNX Runtime with PyTorch: 10,000/10,000 test and 1,000/1,000 random top-1 agree, max logit diff 1.53e-5, accuracy 98.96% both. Code committed first (`6acbc55`), run from that clean tree. EZKL not installed. P8.2 not started.
+- 2026-10-05: P8.6 DONE. All 10,000 MNIST test images by witness generation (10 chunks of 1,000, own process each, new `gen_witness_batch` stage), plus 10 seed-fixed images proved and verified. Code committed first (`faca56f`), run from that clean tree in 3,583 s. Circuit vs PyTorch top-1 10,000/10,000, 0 disagreements; accuracy 98.96% both; max |logit diff| 0.0101, mean 0.0018; median 0.307 s per image. 10/10 proofs verify with outputs equal to the bulk pass; image 0 equals P8.4. One model, one set of scales. One test bug fixed before commit (tied maxima in my own summary test). P8.7 not started.

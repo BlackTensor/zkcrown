@@ -1,0 +1,346 @@
+{
+  "schema_version": 1,
+  "name": "p8.6_ezkl_fidelity",
+  "task": "P8.6",
+  "timestamp_utc": "2026-10-05T11:58:35+00:00",
+  "git": {
+    "commit": "faca56fa25cab88a2e28c17d32512d8e19c2c137",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "ezkl_version": "23.0.5",
+    "model": "P0.7 zk_model via the P8.1 ONNX file; one model",
+    "scale_settings": {
+      "input_scale": 13,
+      "param_scale": 13,
+      "scale_rebase_multiplier": 1,
+      "logrows": 18,
+      "check_mode": "UNSAFE"
+    },
+    "one_set_of_scale_settings": true,
+    "image_set": {
+      "split": "MNIST test (official 10,000)",
+      "indices": "all, 0..9999 in order",
+      "chosen": "fixed before the run: the whole test set, not a sample",
+      "why_all": "a scratch timing of 20 in-process gen_witness calls gave ~0.28 s per image, so all 10,000 take ~47 min",
+      "normalisation": "as in training, (x - 0.1307) / 0.3081"
+    },
+    "bulk_mode": "witness only (ezkl.gen_witness), 10 chunks of 1,000, one process each, sequential",
+    "circuit_class": "argmax of ezkl's dequantised outputs (pretty_elements.rescaled_outputs)",
+    "pytorch_logits": "float32, eval mode, batched over the test set",
+    "proved_subset": {
+      "indices": [
+        1854,
+        2894,
+        3914,
+        5399,
+        5458,
+        7264,
+        8745,
+        8773,
+        9205,
+        9463
+      ],
+      "chosen": "numpy default_rng(1337).choice(10000, 10, replace=False), sorted; fixed before the run"
+    },
+    "p8_3_artifacts_sha256_checked": {
+      "vk": "c582aec46db7e6bd4ea6aae5c7675882e58940b56d776d6a7797d623f7da8023",
+      "pk": "26eea202b695940d4883a3636d595cf1ec8c6a1a84a9cff075fcca3f170c46c2",
+      "settings": "f4480ce9bed9864545c0d764879b2c59e17a4d986a40830d4231b09d2633563f",
+      "compiled_circuit": "78acdba682bb68ae0dfb7ae1ef49823a8a3198a5a9047dc10c70ffedfabbac10",
+      "srs": "d0148475717a2ba269784a178cb0ab617bc77f16c58d4a3cbdfe785b591c7034"
+    },
+    "limits": {
+      "stage_timeout_seconds": 3600,
+      "stage_memory_limit_bytes": 8589934592
+    }
+  },
+  "metrics": {
+    "n": 10000,
+    "top1_agree": 10000,
+    "top1_agreement_rate": 1.0,
+    "disagreements": [],
+    "circuit_argmax_ties": [],
+    "abs_logit_diff": {
+      "max": 0.010105133056640625,
+      "mean": 0.001797087030960247,
+      "median": 0.0014634132385253906,
+      "p99": 0.006190073490142816,
+      "per_image_max_mean": 0.004392102949414402,
+      "argmax_image_index": 8116,
+      "argmax_image_label": 6
+    },
+    "pytorch_correct": 9896,
+    "circuit_correct": 9896,
+    "pytorch_accuracy": 0.9896,
+    "circuit_accuracy": 0.9896,
+    "paired_drop_pytorch_to_circuit": {
+      "n": 10000,
+      "reference_correct": 9896,
+      "other_correct": 9896,
+      "reference_accuracy": 0.9896,
+      "other_accuracy": 0.9896,
+      "drop": 0.0,
+      "both_right": 9896,
+      "reference_only_right": 0,
+      "other_only_right": 0,
+      "both_wrong": 104,
+      "drop_se": 0.0,
+      "drop_ci_low": 0.0,
+      "drop_ci_high": 0.0,
+      "ci_z": 1.959963984540054,
+      "mcnemar_exact_p": 1.0
+    },
+    "time_per_image_seconds": {
+      "what": "the ezkl.gen_witness call only, one image, in-process",
+      "median": 0.30709380000007513,
+      "mean": 0.30895147717000054,
+      "min": 0.23367580000012822,
+      "max": 0.5815619999998489,
+      "p99": 0.3816417309996632
+    },
+    "bulk_wall_seconds": 3312.6000000000004,
+    "chunks": [
+      {
+        "first_index": 0,
+        "process_seconds": 340.882,
+        "call_seconds": 340.387,
+        "peak_working_set_bytes": 135172096,
+        "peak_private_bytes": 348041216,
+        "watchdog_peak_tree_working_set_bytes": 157335552,
+        "value": {
+          "images": 1000,
+          "errors": 0
+        }
+      },
+      {
+        "first_index": 1000,
+        "process_seconds": 337.445,
+        "call_seconds": 336.917,
+        "peak_working_set_bytes": 130244608,
+        "peak_private_bytes": 344444928,
+        "watchdog_peak_tree_working_set_bytes": 151273472,
+        "value": {
+          "images": 1000,
+          "errors": 0
+        }
+      },
+      {
+        "first_index": 2000,
+        "process_seconds": 322.183,
+        "call_seconds": 321.639,
+        "peak_working_set_bytes": 132321280,
+        "peak_private_bytes": 344190976,
+        "watchdog_peak_tree_working_set_bytes": 154906624,
+        "value": {
+          "images": 1000,
+          "errors": 0
+        }
+      },
+      {
+        "first_index": 3000,
+        "process_seconds": 303.674,
+        "call_seconds": 303.228,
+        "peak_working_set_bytes": 129515520,
+        "peak_private_bytes": 342114304,
+        "watchdog_peak_tree_working_set_bytes": 152862720,
+        "value": {
+          "images": 1000,
+          "errors": 0
+        }
+      },
+      {
+        "first_index": 4000,
+        "process_seconds": 347.004,
+        "call_seconds": 346.492,
+        "peak_working_set_bytes": 130764800,
+        "peak_private_bytes": 345903104,
+        "watchdog_peak_tree_working_set_bytes": 151973888,
+        "value": {
+          "images": 1000,
+          "errors": 0
+        }
+      },
+      {
+        "first_index": 5000,
+        "process_seconds": 314.373,
+        "call_seconds": 313.834,
+        "peak_working_set_bytes": 133046272,
+        "peak_private_bytes": 344973312,
+        "watchdog_peak_tree_working_set_bytes": 155938816,
+        "value": {
+          "images": 1000,
+          "errors": 0
+        }
+      },
+      {
+        "first_index": 6000,
+        "process_seconds": 357.632,
+        "call_seconds": 357.166,
+        "peak_working_set_bytes": 132333568,
+        "peak_private_bytes": 344748032,
+        "watchdog_peak_tree_working_set_bytes": 154517504,
+        "value": {
+          "images": 1000,
+          "errors": 0
+        }
+      },
+      {
+        "first_index": 7000,
+        "process_seconds": 313.293,
+        "call_seconds": 312.779,
+        "peak_working_set_bytes": 133042176,
+        "peak_private_bytes": 345952256,
+        "watchdog_peak_tree_working_set_bytes": 155742208,
+        "value": {
+          "images": 1000,
+          "errors": 0
+        }
+      },
+      {
+        "first_index": 8000,
+        "process_seconds": 362.024,
+        "call_seconds": 361.475,
+        "peak_working_set_bytes": 134512640,
+        "peak_private_bytes": 346370048,
+        "watchdog_peak_tree_working_set_bytes": 157597696,
+        "value": {
+          "images": 1000,
+          "errors": 0
+        }
+      },
+      {
+        "first_index": 9000,
+        "process_seconds": 314.09,
+        "call_seconds": 313.59,
+        "peak_working_set_bytes": 135331840,
+        "peak_private_bytes": 348061696,
+        "watchdog_peak_tree_working_set_bytes": 158441472,
+        "value": {
+          "images": 1000,
+          "errors": 0
+        }
+      }
+    ],
+    "image0_matches_p8_4_proof_outputs": true,
+    "proved_subset": [
+      {
+        "index": 1854,
+        "label": 6,
+        "verify_outcome": "accepted",
+        "proof_outputs_equal_bulk_witness": true,
+        "circuit_class": 6,
+        "pytorch_class": 6,
+        "prove_seconds": 22.46,
+        "prove_peak_working_set_bytes": 2626285568
+      },
+      {
+        "index": 2894,
+        "label": 0,
+        "verify_outcome": "accepted",
+        "proof_outputs_equal_bulk_witness": true,
+        "circuit_class": 0,
+        "pytorch_class": 0,
+        "prove_seconds": 23.741,
+        "prove_peak_working_set_bytes": 2626310144
+      },
+      {
+        "index": 3914,
+        "label": 6,
+        "verify_outcome": "accepted",
+        "proof_outputs_equal_bulk_witness": true,
+        "circuit_class": 6,
+        "pytorch_class": 6,
+        "prove_seconds": 23.573,
+        "prove_peak_working_set_bytes": 2512076800
+      },
+      {
+        "index": 5399,
+        "label": 1,
+        "verify_outcome": "accepted",
+        "proof_outputs_equal_bulk_witness": true,
+        "circuit_class": 1,
+        "pytorch_class": 1,
+        "prove_seconds": 23.617,
+        "prove_peak_working_set_bytes": 2626199552
+      },
+      {
+        "index": 5458,
+        "label": 6,
+        "verify_outcome": "accepted",
+        "proof_outputs_equal_bulk_witness": true,
+        "circuit_class": 6,
+        "pytorch_class": 6,
+        "prove_seconds": 23.406,
+        "prove_peak_working_set_bytes": 2626236416
+      },
+      {
+        "index": 7264,
+        "label": 5,
+        "verify_outcome": "accepted",
+        "proof_outputs_equal_bulk_witness": true,
+        "circuit_class": 5,
+        "pytorch_class": 5,
+        "prove_seconds": 22.94,
+        "prove_peak_working_set_bytes": 2626281472
+      },
+      {
+        "index": 8745,
+        "label": 1,
+        "verify_outcome": "accepted",
+        "proof_outputs_equal_bulk_witness": true,
+        "circuit_class": 1,
+        "pytorch_class": 1,
+        "prove_seconds": 19.527,
+        "prove_peak_working_set_bytes": 2626154496
+      },
+      {
+        "index": 8773,
+        "label": 4,
+        "verify_outcome": "accepted",
+        "proof_outputs_equal_bulk_witness": true,
+        "circuit_class": 4,
+        "pytorch_class": 4,
+        "prove_seconds": 20.27,
+        "prove_peak_working_set_bytes": 2626240512
+      },
+      {
+        "index": 9205,
+        "label": 8,
+        "verify_outcome": "accepted",
+        "proof_outputs_equal_bulk_witness": true,
+        "circuit_class": 8,
+        "pytorch_class": 8,
+        "prove_seconds": 20.338,
+        "prove_peak_working_set_bytes": 2626273280
+      },
+      {
+        "index": 9463,
+        "label": 7,
+        "verify_outcome": "accepted",
+        "proof_outputs_equal_bulk_witness": true,
+        "circuit_class": 7,
+        "pytorch_class": 7,
+        "prove_seconds": 20.578,
+        "prove_peak_working_set_bytes": 2626244608
+      }
+    ],
+    "proved_subset_all_verify_and_equal_bulk": true
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 3582.9832348,
+  "notes": "One model (P0.7 zk_model) and one set of scale settings (input/param scale 13, logrows 18, P8.3 accuracy calibration). Local Windows CPU (x64 Python emulated on ARM), not Colab. Bulk figures are from witness generation; 10 fixed images were also proved and verified."
+}
