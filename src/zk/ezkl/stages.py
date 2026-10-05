@@ -22,6 +22,10 @@ Stages:
   is async; unawaited it returns a pending Future (P8.2).
 - `setup`: `ezkl.setup`, writing the verification and proving keys.
 - `gen_witness`: `ezkl.gen_witness` for one input file (P8.4).
+- `gen_witness_batch`: `ezkl.gen_witness` for each input in a `.npy` array, in
+  one process, reusing one input and one witness file (P8.6). Writes each
+  image's dequantised outputs and the time of its `gen_witness` call to a JSON
+  results file; an exception for one image is recorded, not raised.
 - `prove`: `ezkl.prove` from a witness, compiled circuit and proving key (P8.4).
 - `verify`: `ezkl.verify` on one proof file (P8.5). Reports the outcome, not
   just the return value: `accepted` (True), `rejected` (a clean False), or
@@ -42,8 +46,8 @@ import sys
 import time
 
 RESULT_PREFIX = "RESULT "
-STAGES = ("baseline", "gen_settings", "calibrate", "compile", "get_srs", "setup", "gen_witness", "prove",
-          "verify", "verify_batch")
+STAGES = ("baseline", "gen_settings", "calibrate", "compile", "get_srs", "setup", "gen_witness",
+          "gen_witness_batch", "prove", "verify", "verify_batch")
 
 
 async def _await_srs(**kwargs):
@@ -68,6 +72,44 @@ def verify_outcome(proof: str, settings: str, vk: str, srs: str) -> dict:
     return {"outcome": outcome, "error": error, "seconds": time.perf_counter() - t0}
 
 
+def witness_batch(inputs: str, indices: list[int], compiled: str, work_dir: str, results: str) -> dict:
+    """Witness-only circuit evaluation of many inputs (P8.6).
+
+    `inputs` is a `.npy` array, one flattened, normalised image per row, in
+    the order of `indices`. Each image is written to the same input file, run
+    through `ezkl.gen_witness`, and its `pretty_elements.rescaled_outputs`
+    read back from the witness file. Only the `gen_witness` call is timed.
+    """
+    import os
+
+    import ezkl
+    import numpy as np
+
+    xs = np.load(inputs)
+    if len(xs) != len(indices):
+        raise ValueError(f"{len(xs)} inputs for {len(indices)} indices")
+    data, witness = os.path.join(work_dir, "input.json"), os.path.join(work_dir, "witness.json")
+    rows = []
+    for idx, x in zip(indices, xs):
+        with open(data, "w") as f:
+            json.dump({"input_data": [x.astype(float).tolist()]}, f)
+        if os.path.exists(witness):
+            os.remove(witness)
+        t0 = time.perf_counter()
+        try:
+            ezkl.gen_witness(data, compiled, witness)
+            seconds, error = time.perf_counter() - t0, None
+            with open(witness) as f:
+                pretty = json.load(f)["pretty_elements"]
+            outputs = [float(v) for v in pretty["rescaled_outputs"][0]]
+        except Exception as exc:  # recorded, not hidden
+            seconds, error, outputs = time.perf_counter() - t0, f"{type(exc).__name__}: {exc}"[:500], None
+        rows.append({"index": int(idx), "seconds": seconds, "outputs": outputs, "error": error})
+    with open(results, "w") as f:
+        json.dump(rows, f)
+    return {"images": len(rows), "errors": sum(r["error"] is not None for r in rows)}
+
+
 def run_stage(stage: str, kw: dict):
     import ezkl
 
@@ -89,6 +131,8 @@ def run_stage(stage: str, kw: dict):
         return ezkl.setup(kw["compiled"], kw["vk"], kw["pk"], srs_path=kw["srs"])
     if stage == "gen_witness":
         return ezkl.gen_witness(kw["data"], kw["compiled"], kw["witness"])
+    if stage == "gen_witness_batch":
+        return witness_batch(kw["inputs"], kw["indices"], kw["compiled"], kw["work_dir"], kw["results"])
     if stage == "prove":
         return ezkl.prove(kw["witness"], kw["compiled"], kw["pk"], kw["proof"], srs_path=kw["srs"])
     if stage == "verify":
@@ -107,7 +151,7 @@ def main(argv: list[str]) -> int:
     from src.zk.toolchain import own_peak_memory
 
     peak_ws, peak_private = own_peak_memory()
-    print(RESULT_PREFIX + json.dumps({"stage": stage, "value": (value if isinstance(value, (bool, str, int, float)) or stage in ("verify", "verify_batch")
+    print(RESULT_PREFIX + json.dumps({"stage": stage, "value": (value if isinstance(value, (bool, str, int, float)) or stage in ("verify", "verify_batch", "gen_witness_batch")
                                                 else type(value).__name__),
                                       "seconds": seconds, "peak_working_set_bytes": peak_ws,
                                       "peak_private_bytes": peak_private}), flush=True)
