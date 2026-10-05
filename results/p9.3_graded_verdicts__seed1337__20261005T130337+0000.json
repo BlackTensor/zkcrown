@@ -1,0 +1,921 @@
+{
+  "schema_version": 1,
+  "name": "p9.3_graded_verdicts",
+  "task": "P9.3",
+  "timestamp_utc": "2026-10-05T13:03:37+00:00",
+  "git": {
+    "commit": "8fe50ea05dd00c4dc383bd67eb3b6b9ee466614e",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "p9_2_result": "results/p9.2_audit_suspects__seed1337__20261005T124654+0000.json",
+    "p9_2_sha256": "039707c238bc3233b0107a3d955dac492d1fb4dbc8e2cca146c4a321ccbfc360",
+    "phase4_rows": "P4.9 master table record",
+    "tiers": "p <= 1e-9 very strong, 1e-6 strong, 1e-3 moderate, 0.01 weak, 0.05 marginal, else none",
+    "combination": "Bonferroni over two tests: min(1, 2 * min(p_behavioral, p_weight))",
+    "borderline": "within half a decade of a level, or fired within 1 trigger of k* = 29 at 1e-6"
+  },
+  "metrics": {
+    "suspects": [
+      {
+        "suspect": "verbatim",
+        "kind": "theft (live)",
+        "technical_evidence_strength": "very strong",
+        "combined_p_value": 7.529723899198053e-96,
+        "behavioral_tier": "very strong",
+        "behavioral_p": 3.764861949599026e-96,
+        "weight_tier": "very strong",
+        "weight_p": 1.0654520501555637e-23,
+        "tests_assessed": 2,
+        "exact_copy": true,
+        "borderline": [],
+        "statement": "Technical evidence strength: very strong. The suspect responds to the owner's keyed behavioral and weight tests beyond what a model independent of the owner's key would, combined p = 7.53e-96 (Bonferroni over two tests).",
+        "caveats": [],
+        "owner_evidence": {
+          "record_valid": true,
+          "public_key_trusted": true,
+          "commitment": "passed",
+          "zk_proof": "passed",
+          "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+        },
+        "grade": {
+          "scheme": "zk-crown/evidence-grade/v1",
+          "suspect": {
+            "technical_evidence_strength": "very strong",
+            "combined_p_value": 7.529723899198053e-96,
+            "combined_strongest_level_rejected": 1e-09,
+            "combination": "Bonferroni over the two pre-declared watermark tests: p_combined = min(1, 2 * min(p_behavioral, p_weight)) over the tests assessed. Valid under any dependence between them; the p-values are not pooled.",
+            "tests_assessed": 2,
+            "watermarks": {
+              "behavioral": {
+                "status": "detected",
+                "assessed": true,
+                "p_value": 3.764861949599026e-96,
+                "p_value_kind": "exact",
+                "strongest_level_rejected": 1e-09,
+                "tier": "very strong",
+                "borderline": []
+              },
+              "weight": {
+                "status": "detected",
+                "assessed": true,
+                "p_value": 1.0654520501555637e-23,
+                "p_value_kind": "upper_bound",
+                "strongest_level_rejected": 1e-09,
+                "tier": "very strong",
+                "borderline": [],
+                "note": "the p-value is an upper bound, so this tier is conservative"
+              }
+            },
+            "exact_copy": true,
+            "fingerprint_statement": "Exact copy: the suspect is bit for bit the model the owner's record names.",
+            "borderline": [],
+            "statement": "Technical evidence strength: very strong. The suspect responds to the owner's keyed behavioral and weight tests beyond what a model independent of the owner's key would, combined p = 7.53e-96 (Bonferroni over two tests).",
+            "caveats": []
+          },
+          "owner_evidence": {
+            "record_valid": true,
+            "public_key_trusted": true,
+            "commitment": "passed",
+            "zk_proof": "passed",
+            "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+          },
+          "not_legal_evidence": "This is a technical ownership verification demonstration, not legal evidence."
+        }
+      },
+      {
+        "suspect": "int8",
+        "kind": "theft (live)",
+        "technical_evidence_strength": "very strong",
+        "combined_p_value": 7.529723899198053e-96,
+        "behavioral_tier": "very strong",
+        "behavioral_p": 3.764861949599026e-96,
+        "weight_tier": "very strong",
+        "weight_p": 1.9090786982778142e-25,
+        "tests_assessed": 2,
+        "exact_copy": false,
+        "borderline": [],
+        "statement": "Technical evidence strength: very strong. The suspect responds to the owner's keyed behavioral and weight tests beyond what a model independent of the owner's key would, combined p = 7.53e-96 (Bonferroni over two tests).",
+        "caveats": [],
+        "owner_evidence": {
+          "record_valid": true,
+          "public_key_trusted": true,
+          "commitment": "passed",
+          "zk_proof": "passed",
+          "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+        },
+        "grade": {
+          "scheme": "zk-crown/evidence-grade/v1",
+          "suspect": {
+            "technical_evidence_strength": "very strong",
+            "combined_p_value": 7.529723899198053e-96,
+            "combined_strongest_level_rejected": 1e-09,
+            "combination": "Bonferroni over the two pre-declared watermark tests: p_combined = min(1, 2 * min(p_behavioral, p_weight)) over the tests assessed. Valid under any dependence between them; the p-values are not pooled.",
+            "tests_assessed": 2,
+            "watermarks": {
+              "behavioral": {
+                "status": "detected",
+                "assessed": true,
+                "p_value": 3.764861949599026e-96,
+                "p_value_kind": "exact",
+                "strongest_level_rejected": 1e-09,
+                "tier": "very strong",
+                "borderline": []
+              },
+              "weight": {
+                "status": "detected",
+                "assessed": true,
+                "p_value": 1.9090786982778142e-25,
+                "p_value_kind": "upper_bound",
+                "strongest_level_rejected": 1e-09,
+                "tier": "very strong",
+                "borderline": [],
+                "note": "the p-value is an upper bound, so this tier is conservative"
+              }
+            },
+            "exact_copy": false,
+            "fingerprint_statement": "Not an exact copy of the model the record names. That is all a failed fingerprint means.",
+            "borderline": [],
+            "statement": "Technical evidence strength: very strong. The suspect responds to the owner's keyed behavioral and weight tests beyond what a model independent of the owner's key would, combined p = 7.53e-96 (Bonferroni over two tests).",
+            "caveats": []
+          },
+          "owner_evidence": {
+            "record_valid": true,
+            "public_key_trusted": true,
+            "commitment": "passed",
+            "zk_proof": "passed",
+            "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+          },
+          "not_legal_evidence": "This is a technical ownership verification demonstration, not legal evidence."
+        }
+      },
+      {
+        "suspect": "prune_global_50",
+        "kind": "theft (live)",
+        "technical_evidence_strength": "very strong",
+        "combined_p_value": 7.529723899198053e-96,
+        "behavioral_tier": "very strong",
+        "behavioral_p": 3.764861949599026e-96,
+        "weight_tier": "very strong",
+        "weight_p": 4.96097379610609e-23,
+        "tests_assessed": 2,
+        "exact_copy": false,
+        "borderline": [],
+        "statement": "Technical evidence strength: very strong. The suspect responds to the owner's keyed behavioral and weight tests beyond what a model independent of the owner's key would, combined p = 7.53e-96 (Bonferroni over two tests).",
+        "caveats": [],
+        "owner_evidence": {
+          "record_valid": true,
+          "public_key_trusted": true,
+          "commitment": "passed",
+          "zk_proof": "passed",
+          "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+        },
+        "grade": {
+          "scheme": "zk-crown/evidence-grade/v1",
+          "suspect": {
+            "technical_evidence_strength": "very strong",
+            "combined_p_value": 7.529723899198053e-96,
+            "combined_strongest_level_rejected": 1e-09,
+            "combination": "Bonferroni over the two pre-declared watermark tests: p_combined = min(1, 2 * min(p_behavioral, p_weight)) over the tests assessed. Valid under any dependence between them; the p-values are not pooled.",
+            "tests_assessed": 2,
+            "watermarks": {
+              "behavioral": {
+                "status": "detected",
+                "assessed": true,
+                "p_value": 3.764861949599026e-96,
+                "p_value_kind": "exact",
+                "strongest_level_rejected": 1e-09,
+                "tier": "very strong",
+                "borderline": []
+              },
+              "weight": {
+                "status": "detected",
+                "assessed": true,
+                "p_value": 4.96097379610609e-23,
+                "p_value_kind": "upper_bound",
+                "strongest_level_rejected": 1e-09,
+                "tier": "very strong",
+                "borderline": [],
+                "note": "the p-value is an upper bound, so this tier is conservative"
+              }
+            },
+            "exact_copy": false,
+            "fingerprint_statement": "Not an exact copy of the model the record names. That is all a failed fingerprint means.",
+            "borderline": [],
+            "statement": "Technical evidence strength: very strong. The suspect responds to the owner's keyed behavioral and weight tests beyond what a model independent of the owner's key would, combined p = 7.53e-96 (Bonferroni over two tests).",
+            "caveats": []
+          },
+          "owner_evidence": {
+            "record_valid": true,
+            "public_key_trusted": true,
+            "commitment": "passed",
+            "zk_proof": "passed",
+            "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+          },
+          "not_legal_evidence": "This is a technical ownership verification demonstration, not legal evidence."
+        }
+      },
+      {
+        "suspect": "overwrite_weight_0.1",
+        "kind": "theft (live)",
+        "technical_evidence_strength": "very strong",
+        "combined_p_value": 7.529723899198053e-96,
+        "behavioral_tier": "very strong",
+        "behavioral_p": 3.764861949599026e-96,
+        "weight_tier": "very strong",
+        "weight_p": 1.0972406123266973e-23,
+        "tests_assessed": 2,
+        "exact_copy": false,
+        "borderline": [],
+        "statement": "Technical evidence strength: very strong. The suspect responds to the owner's keyed behavioral and weight tests beyond what a model independent of the owner's key would, combined p = 7.53e-96 (Bonferroni over two tests).",
+        "caveats": [],
+        "owner_evidence": {
+          "record_valid": true,
+          "public_key_trusted": true,
+          "commitment": "passed",
+          "zk_proof": "passed",
+          "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+        },
+        "grade": {
+          "scheme": "zk-crown/evidence-grade/v1",
+          "suspect": {
+            "technical_evidence_strength": "very strong",
+            "combined_p_value": 7.529723899198053e-96,
+            "combined_strongest_level_rejected": 1e-09,
+            "combination": "Bonferroni over the two pre-declared watermark tests: p_combined = min(1, 2 * min(p_behavioral, p_weight)) over the tests assessed. Valid under any dependence between them; the p-values are not pooled.",
+            "tests_assessed": 2,
+            "watermarks": {
+              "behavioral": {
+                "status": "detected",
+                "assessed": true,
+                "p_value": 3.764861949599026e-96,
+                "p_value_kind": "exact",
+                "strongest_level_rejected": 1e-09,
+                "tier": "very strong",
+                "borderline": []
+              },
+              "weight": {
+                "status": "detected",
+                "assessed": true,
+                "p_value": 1.0972406123266973e-23,
+                "p_value_kind": "upper_bound",
+                "strongest_level_rejected": 1e-09,
+                "tier": "very strong",
+                "borderline": [],
+                "note": "the p-value is an upper bound, so this tier is conservative"
+              }
+            },
+            "exact_copy": false,
+            "fingerprint_statement": "Not an exact copy of the model the record names. That is all a failed fingerprint means.",
+            "borderline": [],
+            "statement": "Technical evidence strength: very strong. The suspect responds to the owner's keyed behavioral and weight tests beyond what a model independent of the owner's key would, combined p = 7.53e-96 (Bonferroni over two tests).",
+            "caveats": []
+          },
+          "owner_evidence": {
+            "record_valid": true,
+            "public_key_trusted": true,
+            "commitment": "passed",
+            "zk_proof": "passed",
+            "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+          },
+          "not_legal_evidence": "This is a technical ownership verification demonstration, not legal evidence."
+        }
+      },
+      {
+        "suspect": "finetune_lr0.05_e20",
+        "kind": "theft (Phase 4 weights)",
+        "technical_evidence_strength": "very strong",
+        "combined_p_value": 1.0620866919649127e-20,
+        "behavioral_tier": "none",
+        "behavioral_p": 0.8785059003362857,
+        "weight_tier": "very strong",
+        "weight_p": 5.3104334598245634e-21,
+        "tests_assessed": 2,
+        "exact_copy": false,
+        "borderline": [],
+        "statement": "Technical evidence strength: very strong. The suspect responds to the owner's keyed weight test beyond what a model independent of the owner's key would, combined p = 1.06e-20 (Bonferroni over two tests). The behavioral test finds no evidence; the grade rests on one test.",
+        "caveats": [],
+        "owner_evidence": {
+          "record_valid": true,
+          "public_key_trusted": true,
+          "commitment": "passed",
+          "zk_proof": "passed",
+          "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+        },
+        "grade": {
+          "scheme": "zk-crown/evidence-grade/v1",
+          "suspect": {
+            "technical_evidence_strength": "very strong",
+            "combined_p_value": 1.0620866919649127e-20,
+            "combined_strongest_level_rejected": 1e-09,
+            "combination": "Bonferroni over the two pre-declared watermark tests: p_combined = min(1, 2 * min(p_behavioral, p_weight)) over the tests assessed. Valid under any dependence between them; the p-values are not pooled.",
+            "tests_assessed": 2,
+            "watermarks": {
+              "behavioral": {
+                "status": "not_detected",
+                "assessed": true,
+                "p_value": 0.8785059003362857,
+                "p_value_kind": "exact",
+                "strongest_level_rejected": null,
+                "tier": "none",
+                "borderline": []
+              },
+              "weight": {
+                "status": "detected",
+                "assessed": true,
+                "p_value": 5.3104334598245634e-21,
+                "p_value_kind": "upper_bound",
+                "strongest_level_rejected": 1e-09,
+                "tier": "very strong",
+                "borderline": [],
+                "note": "the p-value is an upper bound, so this tier is conservative"
+              }
+            },
+            "exact_copy": false,
+            "fingerprint_statement": "Not an exact copy of the model the record names. That is all a failed fingerprint means.",
+            "borderline": [],
+            "statement": "Technical evidence strength: very strong. The suspect responds to the owner's keyed weight test beyond what a model independent of the owner's key would, combined p = 1.06e-20 (Bonferroni over two tests). The behavioral test finds no evidence; the grade rests on one test.",
+            "caveats": []
+          },
+          "owner_evidence": {
+            "record_valid": true,
+            "public_key_trusted": true,
+            "commitment": "passed",
+            "zk_proof": "passed",
+            "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+          },
+          "not_legal_evidence": "This is a technical ownership verification demonstration, not legal evidence."
+        }
+      },
+      {
+        "suspect": "channel50_finetune_lr0.1_e60",
+        "kind": "theft (Phase 4 weights)",
+        "technical_evidence_strength": "none",
+        "combined_p_value": 0.3129851331078212,
+        "behavioral_tier": "none",
+        "behavioral_p": 0.9370445912730502,
+        "weight_tier": "none",
+        "weight_p": 0.1564925665539106,
+        "tests_assessed": 2,
+        "exact_copy": false,
+        "borderline": [
+          "weight: p = 0.156 is within a factor of 3.2 of the 0.05 level; the grade uses the exact comparison (z = 1.926)"
+        ],
+        "statement": "Technical evidence strength: no evidence. Neither assessed watermark test rejects independence from the owner's key at 0.05 (combined p = 0.313).",
+        "caveats": [
+          "No evidence is not exoneration, and it does not mean the model is independent of the owner's. Distillation into a fresh student and channel pruning followed by fine-tuning both removed both watermarks in Phase 4 (P4.6, P4.7) and leave no evidence for these checks."
+        ],
+        "owner_evidence": {
+          "record_valid": true,
+          "public_key_trusted": true,
+          "commitment": "passed",
+          "zk_proof": "passed",
+          "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+        },
+        "grade": {
+          "scheme": "zk-crown/evidence-grade/v1",
+          "suspect": {
+            "technical_evidence_strength": "none",
+            "combined_p_value": 0.3129851331078212,
+            "combined_strongest_level_rejected": null,
+            "combination": "Bonferroni over the two pre-declared watermark tests: p_combined = min(1, 2 * min(p_behavioral, p_weight)) over the tests assessed. Valid under any dependence between them; the p-values are not pooled.",
+            "tests_assessed": 2,
+            "watermarks": {
+              "behavioral": {
+                "status": "not_detected",
+                "assessed": true,
+                "p_value": 0.9370445912730502,
+                "p_value_kind": "exact",
+                "strongest_level_rejected": null,
+                "tier": "none",
+                "borderline": []
+              },
+              "weight": {
+                "status": "not_detected",
+                "assessed": true,
+                "p_value": 0.1564925665539106,
+                "p_value_kind": "upper_bound",
+                "strongest_level_rejected": null,
+                "tier": "none",
+                "borderline": [
+                  "p = 0.156 is within a factor of 3.2 of the 0.05 level; the grade uses the exact comparison (z = 1.926)"
+                ],
+                "note": "the p-value is an upper bound, so this tier is conservative"
+              }
+            },
+            "exact_copy": false,
+            "fingerprint_statement": "Not an exact copy of the model the record names. That is all a failed fingerprint means.",
+            "borderline": [
+              "weight: p = 0.156 is within a factor of 3.2 of the 0.05 level; the grade uses the exact comparison (z = 1.926)"
+            ],
+            "statement": "Technical evidence strength: no evidence. Neither assessed watermark test rejects independence from the owner's key at 0.05 (combined p = 0.313).",
+            "caveats": [
+              "No evidence is not exoneration, and it does not mean the model is independent of the owner's. Distillation into a fresh student and channel pruning followed by fine-tuning both removed both watermarks in Phase 4 (P4.6, P4.7) and leave no evidence for these checks."
+            ]
+          },
+          "owner_evidence": {
+            "record_valid": true,
+            "public_key_trusted": true,
+            "commitment": "passed",
+            "zk_proof": "passed",
+            "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+          },
+          "not_legal_evidence": "This is a technical ownership verification demonstration, not legal evidence."
+        }
+      },
+      {
+        "suspect": "distill_50k_w32",
+        "kind": "theft (Phase 4 weights)",
+        "technical_evidence_strength": "none",
+        "combined_p_value": 1.0,
+        "behavioral_tier": "none",
+        "behavioral_p": 0.9895393098644958,
+        "weight_tier": "none",
+        "weight_p": 1.0,
+        "tests_assessed": 2,
+        "exact_copy": false,
+        "borderline": [],
+        "statement": "Technical evidence strength: no evidence. Neither assessed watermark test rejects independence from the owner's key at 0.05 (combined p = 1).",
+        "caveats": [
+          "No evidence is not exoneration, and it does not mean the model is independent of the owner's. Distillation into a fresh student and channel pruning followed by fine-tuning both removed both watermarks in Phase 4 (P4.6, P4.7) and leave no evidence for these checks."
+        ],
+        "owner_evidence": {
+          "record_valid": true,
+          "public_key_trusted": true,
+          "commitment": "passed",
+          "zk_proof": "passed",
+          "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+        },
+        "grade": {
+          "scheme": "zk-crown/evidence-grade/v1",
+          "suspect": {
+            "technical_evidence_strength": "none",
+            "combined_p_value": 1.0,
+            "combined_strongest_level_rejected": null,
+            "combination": "Bonferroni over the two pre-declared watermark tests: p_combined = min(1, 2 * min(p_behavioral, p_weight)) over the tests assessed. Valid under any dependence between them; the p-values are not pooled.",
+            "tests_assessed": 2,
+            "watermarks": {
+              "behavioral": {
+                "status": "not_detected",
+                "assessed": true,
+                "p_value": 0.9895393098644958,
+                "p_value_kind": "exact",
+                "strongest_level_rejected": null,
+                "tier": "none",
+                "borderline": []
+              },
+              "weight": {
+                "status": "not_detected",
+                "assessed": true,
+                "p_value": 1.0,
+                "p_value_kind": "upper_bound",
+                "strongest_level_rejected": null,
+                "tier": "none",
+                "borderline": [],
+                "note": "the p-value is an upper bound, so this tier is conservative"
+              }
+            },
+            "exact_copy": false,
+            "fingerprint_statement": "Not an exact copy of the model the record names. That is all a failed fingerprint means.",
+            "borderline": [],
+            "statement": "Technical evidence strength: no evidence. Neither assessed watermark test rejects independence from the owner's key at 0.05 (combined p = 1).",
+            "caveats": [
+              "No evidence is not exoneration, and it does not mean the model is independent of the owner's. Distillation into a fresh student and channel pruning followed by fine-tuning both removed both watermarks in Phase 4 (P4.6, P4.7) and leave no evidence for these checks."
+            ]
+          },
+          "owner_evidence": {
+            "record_valid": true,
+            "public_key_trusted": true,
+            "commitment": "passed",
+            "zk_proof": "passed",
+            "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+          },
+          "not_legal_evidence": "This is a technical ownership verification demonstration, not legal evidence."
+        }
+      },
+      {
+        "suspect": "distill_50k_w16",
+        "kind": "theft (Phase 4 weights), no carrier layout",
+        "technical_evidence_strength": "none",
+        "combined_p_value": 1.0,
+        "behavioral_tier": "none",
+        "behavioral_p": 0.9370445912730502,
+        "weight_tier": "not assessed",
+        "weight_p": null,
+        "tests_assessed": 1,
+        "exact_copy": false,
+        "borderline": [],
+        "statement": "Technical evidence strength: no evidence. Neither assessed watermark test rejects independence from the owner's key at 0.05 (combined p = 1).",
+        "caveats": [
+          "No evidence is not exoneration, and it does not mean the model is independent of the owner's. Distillation into a fresh student and channel pruning followed by fine-tuning both removed both watermarks in Phase 4 (P4.6, P4.7) and leave no evidence for these checks.",
+          "Lower confidence: the weight test could not be run because the suspect lacks the owner's carrier layout (a different width or physically removed channels). That is not a negative result; only the behavioral test was assessed."
+        ],
+        "owner_evidence": {
+          "record_valid": true,
+          "public_key_trusted": true,
+          "commitment": "passed",
+          "zk_proof": "passed",
+          "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+        },
+        "grade": {
+          "scheme": "zk-crown/evidence-grade/v1",
+          "suspect": {
+            "technical_evidence_strength": "none",
+            "combined_p_value": 1.0,
+            "combined_strongest_level_rejected": null,
+            "combination": "Bonferroni over the two pre-declared watermark tests: p_combined = min(1, 2 * min(p_behavioral, p_weight)) over the tests assessed. Valid under any dependence between them; the p-values are not pooled.",
+            "tests_assessed": 1,
+            "watermarks": {
+              "behavioral": {
+                "status": "not_detected",
+                "assessed": true,
+                "p_value": 0.9370445912730502,
+                "p_value_kind": "exact",
+                "strongest_level_rejected": null,
+                "tier": "none",
+                "borderline": []
+              },
+              "weight": {
+                "status": "not_applicable",
+                "assessed": false,
+                "p_value": null,
+                "p_value_kind": null,
+                "strongest_level_rejected": null,
+                "tier": "not assessed",
+                "borderline": [],
+                "note": "not assessed (not_applicable): the owner's carrier layout is not present (carrier tensor 'features.0.weight' has shape (16, 3, 3, 3), expected (32, 3, 3, 3)). The suspect may be a different width or have channels physically removed. Channel re-alignment is not implemented, so the weight test cannot be run on it; this is not evidence either way."
+              }
+            },
+            "exact_copy": false,
+            "fingerprint_statement": "Not an exact copy of the model the record names. That is all a failed fingerprint means.",
+            "borderline": [],
+            "statement": "Technical evidence strength: no evidence. Neither assessed watermark test rejects independence from the owner's key at 0.05 (combined p = 1).",
+            "caveats": [
+              "No evidence is not exoneration, and it does not mean the model is independent of the owner's. Distillation into a fresh student and channel pruning followed by fine-tuning both removed both watermarks in Phase 4 (P4.6, P4.7) and leave no evidence for these checks.",
+              "Lower confidence: the weight test could not be run because the suspect lacks the owner's carrier layout (a different width or physically removed channels). That is not a negative result; only the behavioral test was assessed."
+            ]
+          },
+          "owner_evidence": {
+            "record_valid": true,
+            "public_key_trusted": true,
+            "commitment": "passed",
+            "zk_proof": "passed",
+            "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+          },
+          "not_legal_evidence": "This is a technical ownership verification demonstration, not legal evidence."
+        }
+      },
+      {
+        "suspect": "clean_W",
+        "kind": "not stolen (owner's model trained without K)",
+        "technical_evidence_strength": "none",
+        "combined_p_value": 1.0,
+        "behavioral_tier": "none",
+        "behavioral_p": 0.9993033048155396,
+        "weight_tier": "none",
+        "weight_p": 0.9842171527544341,
+        "tests_assessed": 2,
+        "exact_copy": false,
+        "borderline": [],
+        "statement": "Technical evidence strength: no evidence. Neither assessed watermark test rejects independence from the owner's key at 0.05 (combined p = 1).",
+        "caveats": [
+          "No evidence is not exoneration, and it does not mean the model is independent of the owner's. Distillation into a fresh student and channel pruning followed by fine-tuning both removed both watermarks in Phase 4 (P4.6, P4.7) and leave no evidence for these checks."
+        ],
+        "owner_evidence": {
+          "record_valid": true,
+          "public_key_trusted": true,
+          "commitment": "passed",
+          "zk_proof": "passed",
+          "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+        },
+        "grade": {
+          "scheme": "zk-crown/evidence-grade/v1",
+          "suspect": {
+            "technical_evidence_strength": "none",
+            "combined_p_value": 1.0,
+            "combined_strongest_level_rejected": null,
+            "combination": "Bonferroni over the two pre-declared watermark tests: p_combined = min(1, 2 * min(p_behavioral, p_weight)) over the tests assessed. Valid under any dependence between them; the p-values are not pooled.",
+            "tests_assessed": 2,
+            "watermarks": {
+              "behavioral": {
+                "status": "not_detected",
+                "assessed": true,
+                "p_value": 0.9993033048155396,
+                "p_value_kind": "exact",
+                "strongest_level_rejected": null,
+                "tier": "none",
+                "borderline": []
+              },
+              "weight": {
+                "status": "not_detected",
+                "assessed": true,
+                "p_value": 0.9842171527544341,
+                "p_value_kind": "upper_bound",
+                "strongest_level_rejected": null,
+                "tier": "none",
+                "borderline": [],
+                "note": "the p-value is an upper bound, so this tier is conservative"
+              }
+            },
+            "exact_copy": false,
+            "fingerprint_statement": "Not an exact copy of the model the record names. That is all a failed fingerprint means.",
+            "borderline": [],
+            "statement": "Technical evidence strength: no evidence. Neither assessed watermark test rejects independence from the owner's key at 0.05 (combined p = 1).",
+            "caveats": [
+              "No evidence is not exoneration, and it does not mean the model is independent of the owner's. Distillation into a fresh student and channel pruning followed by fine-tuning both removed both watermarks in Phase 4 (P4.6, P4.7) and leave no evidence for these checks."
+            ]
+          },
+          "owner_evidence": {
+            "record_valid": true,
+            "public_key_trusted": true,
+            "commitment": "passed",
+            "zk_proof": "passed",
+            "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+          },
+          "not_legal_evidence": "This is a technical ownership verification demonstration, not legal evidence."
+        }
+      },
+      {
+        "suspect": "untrained_unrelated",
+        "kind": "not stolen (fresh init, seed 20261005)",
+        "technical_evidence_strength": "none",
+        "combined_p_value": 1.0,
+        "behavioral_tier": "none",
+        "behavioral_p": 0.6847489311159016,
+        "weight_tier": "none",
+        "weight_p": 0.932875916636264,
+        "tests_assessed": 2,
+        "exact_copy": false,
+        "borderline": [],
+        "statement": "Technical evidence strength: no evidence. Neither assessed watermark test rejects independence from the owner's key at 0.05 (combined p = 1).",
+        "caveats": [
+          "No evidence is not exoneration, and it does not mean the model is independent of the owner's. Distillation into a fresh student and channel pruning followed by fine-tuning both removed both watermarks in Phase 4 (P4.6, P4.7) and leave no evidence for these checks."
+        ],
+        "owner_evidence": {
+          "record_valid": true,
+          "public_key_trusted": true,
+          "commitment": "passed",
+          "zk_proof": "passed",
+          "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+        },
+        "grade": {
+          "scheme": "zk-crown/evidence-grade/v1",
+          "suspect": {
+            "technical_evidence_strength": "none",
+            "combined_p_value": 1.0,
+            "combined_strongest_level_rejected": null,
+            "combination": "Bonferroni over the two pre-declared watermark tests: p_combined = min(1, 2 * min(p_behavioral, p_weight)) over the tests assessed. Valid under any dependence between them; the p-values are not pooled.",
+            "tests_assessed": 2,
+            "watermarks": {
+              "behavioral": {
+                "status": "not_detected",
+                "assessed": true,
+                "p_value": 0.6847489311159016,
+                "p_value_kind": "exact",
+                "strongest_level_rejected": null,
+                "tier": "none",
+                "borderline": []
+              },
+              "weight": {
+                "status": "not_detected",
+                "assessed": true,
+                "p_value": 0.932875916636264,
+                "p_value_kind": "upper_bound",
+                "strongest_level_rejected": null,
+                "tier": "none",
+                "borderline": [],
+                "note": "the p-value is an upper bound, so this tier is conservative"
+              }
+            },
+            "exact_copy": false,
+            "fingerprint_statement": "Not an exact copy of the model the record names. That is all a failed fingerprint means.",
+            "borderline": [],
+            "statement": "Technical evidence strength: no evidence. Neither assessed watermark test rejects independence from the owner's key at 0.05 (combined p = 1).",
+            "caveats": [
+              "No evidence is not exoneration, and it does not mean the model is independent of the owner's. Distillation into a fresh student and channel pruning followed by fine-tuning both removed both watermarks in Phase 4 (P4.6, P4.7) and leave no evidence for these checks."
+            ]
+          },
+          "owner_evidence": {
+            "record_valid": true,
+            "public_key_trusted": true,
+            "commitment": "passed",
+            "zk_proof": "passed",
+            "statement": "These describe the owner's published evidence (the signed record, the commitment and its timestamp, the committed proofs), not the suspect. They never change the suspect's grade."
+          },
+          "not_legal_evidence": "This is a technical ownership verification demonstration, not legal evidence."
+        }
+      }
+    ],
+    "phase4_grade_counts": {
+      "very strong": 70,
+      "strong": 4,
+      "weak": 1,
+      "none": 8,
+      "moderate": 2
+    },
+    "phase4_borderline": [
+      {
+        "task": "P4.2",
+        "family": "prune_layerwise",
+        "setting": "sparsity 70%",
+        "fired": 23,
+        "weight_z": 9.986049428925249,
+        "behavioral_tier": "moderate",
+        "weight_tier": "very strong",
+        "combined_p_value": 4.434556576268158e-22,
+        "technical_evidence_strength": "very strong",
+        "flags": [
+          "behavioral: p = 0.000529 is within a factor of 3.2 of the 0.001 level; the grade uses the exact comparison"
+        ]
+      },
+      {
+        "task": "P4.2",
+        "family": "prune_layerwise",
+        "setting": "sparsity 80%",
+        "fired": 15,
+        "weight_z": 9.81373932996989,
+        "behavioral_tier": "none",
+        "weight_tier": "very strong",
+        "combined_p_value": 2.4416995046206485e-21,
+        "technical_evidence_strength": "very strong",
+        "flags": [
+          "behavioral: p = 0.141 is within a factor of 3.2 of the 0.05 level; the grade uses the exact comparison"
+        ]
+      },
+      {
+        "task": "P4.2",
+        "family": "prune_layerwise",
+        "setting": "sparsity 90%",
+        "fired": 15,
+        "weight_z": 9.362602744079227,
+        "behavioral_tier": "none",
+        "weight_tier": "very strong",
+        "combined_p_value": 1.8461435129651571e-19,
+        "technical_evidence_strength": "very strong",
+        "flags": [
+          "behavioral: p = 0.141 is within a factor of 3.2 of the 0.05 level; the grade uses the exact comparison"
+        ]
+      },
+      {
+        "task": "P4.3",
+        "family": "prune_channel",
+        "setting": "channels 20%",
+        "fired": 19,
+        "weight_z": 9.591545609375839,
+        "behavioral_tier": "marginal",
+        "weight_tier": "very strong",
+        "combined_p_value": 2.108497170116409e-20,
+        "technical_evidence_strength": "very strong",
+        "flags": [
+          "behavioral: p = 0.0136 is within a factor of 3.2 of the 0.01 level; the grade uses the exact comparison"
+        ]
+      },
+      {
+        "task": "P4.3",
+        "family": "prune_channel",
+        "setting": "channels 70%",
+        "fired": 12,
+        "weight_z": 5.47454736267996,
+        "behavioral_tier": "none",
+        "weight_tier": "strong",
+        "combined_p_value": 6.208432312386796e-07,
+        "technical_evidence_strength": "strong",
+        "flags": [
+          "combined: p = 6.21e-07 is within a factor of 3.2 of the 1e-06 level; the grade uses the exact comparison"
+        ]
+      },
+      {
+        "task": "P4.3",
+        "family": "prune_channel",
+        "setting": "channels 80%",
+        "fired": 8,
+        "weight_z": 3.7349868288068206,
+        "behavioral_tier": "none",
+        "weight_tier": "moderate",
+        "combined_p_value": 0.0018698143612163297,
+        "technical_evidence_strength": "weak",
+        "flags": [
+          "weight: p = 0.000935 is within a factor of 3.2 of the 0.001 level; the grade uses the exact comparison (z = 3.735)",
+          "combined: p = 0.00187 is within a factor of 3.2 of the 0.001 level; the grade uses the exact comparison"
+        ]
+      },
+      {
+        "task": "P4.3",
+        "family": "prune_channel",
+        "setting": "channels 90%",
+        "fired": 10,
+        "weight_z": 2.083399339703735,
+        "behavioral_tier": "none",
+        "weight_tier": "none",
+        "combined_p_value": 0.22829212416650904,
+        "technical_evidence_strength": "none",
+        "flags": [
+          "weight: p = 0.114 is within a factor of 3.2 of the 0.05 level; the grade uses the exact comparison (z = 2.083)"
+        ]
+      },
+      {
+        "task": "P4.5",
+        "family": "finetune",
+        "setting": "LR 0.01, 60 ep",
+        "fired": 30,
+        "weight_z": 10.066508628243767,
+        "behavioral_tier": "strong",
+        "weight_tier": "very strong",
+        "combined_p_value": 1.9792564525761845e-22,
+        "technical_evidence_strength": "very strong",
+        "flags": [
+          "behavioral: 30 fired, within 1 trigger of the 29 the 1e-6 level needs; one trigger more or fewer changes the tier. The grade uses the exact count"
+        ]
+      },
+      {
+        "task": "P4.5",
+        "family": "finetune",
+        "setting": "LR 0.1, 60 ep",
+        "fired": 4,
+        "weight_z": 6.485196375523912,
+        "behavioral_tier": "none",
+        "weight_tier": "very strong",
+        "combined_p_value": 1.4733327374152299e-09,
+        "technical_evidence_strength": "strong",
+        "flags": [
+          "weight: p = 7.37e-10 is within a factor of 3.2 of the 1e-09 level; the grade uses the exact comparison (z = 6.485)",
+          "combined: p = 1.47e-09 is within a factor of 3.2 of the 1e-09 level; the grade uses the exact comparison"
+        ]
+      },
+      {
+        "task": "P4.6",
+        "family": "prune_finetune_global",
+        "setting": "sparsity 90%, LR 0.1, 60 ep",
+        "fired": 4,
+        "weight_z": 6.597280812386402,
+        "behavioral_tier": "none",
+        "weight_tier": "very strong",
+        "combined_p_value": 7.077643772065466e-10,
+        "technical_evidence_strength": "very strong",
+        "flags": [
+          "weight: p = 3.54e-10 is within a factor of 3.2 of the 1e-09 level; the grade uses the exact comparison (z = 6.597)",
+          "combined: p = 7.08e-10 is within a factor of 3.2 of the 1e-09 level; the grade uses the exact comparison"
+        ]
+      },
+      {
+        "task": "P4.6",
+        "family": "prune_finetune_channel",
+        "setting": "channels 10%, LR 0.01, 20 ep",
+        "fired": 19,
+        "weight_z": 9.763146252691485,
+        "behavioral_tier": "marginal",
+        "weight_tier": "very strong",
+        "combined_p_value": 4.006514886086367e-21,
+        "technical_evidence_strength": "very strong",
+        "flags": [
+          "behavioral: p = 0.0136 is within a factor of 3.2 of the 0.01 level; the grade uses the exact comparison"
+        ]
+      },
+      {
+        "task": "P4.6",
+        "family": "prune_finetune_channel",
+        "setting": "channels 50%, LR 0.1, 60 ep",
+        "fired": 7,
+        "weight_z": 1.9260045525325618,
+        "behavioral_tier": "none",
+        "weight_tier": "none",
+        "combined_p_value": 0.3129851331078212,
+        "technical_evidence_strength": "none",
+        "flags": [
+          "weight: p = 0.156 is within a factor of 3.2 of the 0.05 level; the grade uses the exact comparison (z = 1.926)"
+        ]
+      },
+      {
+        "task": "P4.8",
+        "family": "overwrite_weight",
+        "setting": "alpha' 2",
+        "fired": 18,
+        "weight_z": 9.717565334303226,
+        "behavioral_tier": "marginal",
+        "weight_tier": "very strong",
+        "combined_p_value": 6.245718070343471e-21,
+        "technical_evidence_strength": "very strong",
+        "flags": [
+          "behavioral: p = 0.0267 is within a factor of 3.2 of the 0.01 level; the grade uses the exact comparison",
+          "behavioral: p = 0.0267 is within a factor of 3.2 of the 0.05 level; the grade uses the exact comparison"
+        ]
+      }
+    ]
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 0.20819659999870055,
+  "notes": "Grades computed from the committed P9.2 verdicts and the Phase 4 rows; no model or secret read. Technical evidence strength only; not legal evidence."
+}

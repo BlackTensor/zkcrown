@@ -1223,7 +1223,40 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - the committed Bitcoin attestation height;
     - a `0x` public signal accepted by value, another `C` failed, an ezkl exception counted as a rejection, a changed proof file failed, and a missing file `not_run`.
   - P9.1 tests now pass `checks={}` explicitly. 1,250 tests in total, all pass.
-- [ ] **P9.3** Implement graded verdicts driven by the measured thresholds from P2.8 and P3.7. No hardcoded verdicts. Evidence strength must be a function of statistics.
+- [x] **P9.3** Implement graded verdicts driven by the measured thresholds from P2.8 and P3.7. No hardcoded verdicts. Evidence strength must be a function of statistics.
+  - `src/auditor/grading.py`. The grade is a pure function of the check results and the record status. `AuditVerdict.grade` computes it every time and nothing stores it by hand. Output schema `zk-crown/evidence-grade/v1`, worded as **technical evidence strength**, with the not-legal-evidence line.
+  - **Per watermark:** each test is graded from its own p-value (exact P2.8; P3.7 upper bound). The tier is the strictest level rejected, compared exactly: ≤ 1e-9 very strong, ≤ 1e-6 strong, ≤ 1e-3 moderate, ≤ 0.01 weak, ≤ 0.05 marginal, otherwise none. These are the levels behind P2.8's k\* and P3.7's z\*. A test that is `not_run`, `not_applicable`, `error`, or lacks a p-value is "not assessed".
+  - **Combined (suspect grade):** Bonferroni over the two pre-declared tests, `min(1, 2 * min(p_behavioral, p_weight))` over the tests assessed, always times 2. It is valid under any dependence between the tests. **Not pooled** (no Fisher or Stouffer): that would need independence under the null, which rests on separate PRF streams, an argument not checked here. Two marginal tests (0.03 each) therefore give "none" (0.06); a test covers this.
+  - **Separate sections:**
+    - `owner_evidence` holds record valid, key trusted, commitment and ZK proof status. A test runs every combination and shows it never changes the suspect section.
+    - Fingerprint: "exact copy" when it passes; otherwise "not an exact copy… that is all a failed fingerprint means". It does not affect the grade.
+  - **"None" (no evidence)** always carries the caveat that it is not exoneration and does not mean the model is independent: distillation and channel pruning plus fine-tuning removed both watermarks (P4.6, P4.7).
+  - **Weight `not_applicable`:** adds a "Lower confidence… not a negative result; only the behavioral test was assessed" caveat. An invalid record adds a caveat that the pre-commitment assumption is unsupported.
+  - **Borderline:** flagged when p is within half a decade (factor 3.2) of a level, or when fired is within one trigger of k\* = 29 at 1e-6, because the count is discrete. The grade uses the exact comparison and is never rounded either way.
+  - A test checks the wording for "stolen", "guilty", "proves ownership" and similar terms.
+  - **Run** (`experiments/p9_3_grade_suspects.py`, CPU, under 1 s, clean tree at `8fe50ea`, result `results/p9.3_graded_verdicts__seed1337__20261005T130337+0000.json`). It grades the committed P9.2 verdicts, with the file SHA-256 recorded, and reads no model or secret.
+
+    | Suspect | Grade | Combined p | Behavioral tier | Weight tier | Exact copy |
+    |---|---|---|---|---|---|
+    | verbatim (dual `W*`) | very strong | 7.5e-96 | very strong | very strong | yes |
+    | INT8 | very strong | 7.5e-96 | very strong | very strong | no |
+    | global pruning 50% | very strong | 7.5e-96 | very strong | very strong | no |
+    | thief's weight watermark, alpha' 0.1 | very strong | 7.5e-96 | very strong | very strong | no |
+    | fine-tune LR 0.05, 20 ep | very strong (one test) | 1.1e-20 | none | very strong | no |
+    | channel 50% + fine-tune LR 0.1, 60 ep | none | 0.31 | none | none (borderline: p 0.156 near 0.05) | no |
+    | distillation 50k, width 32 | none | 1 | none | none | no |
+    | distillation 50k, width 16 | none, lower confidence | 1 | none | not assessed | no |
+    | clean `W` (not stolen) | **none** | 1 | none | none | no |
+    | untrained, unrelated | **none** | 1 | none | none | no |
+
+  - **Borderline survey** (same grading on the 85 Phase 4 rows from the P4.9 record): 70 very strong, 4 strong, 2 moderate, 1 weak, 8 none. Phase 4 had 11 rows with neither watermark detected at 1e-6; 3 of those now grade above none. The two channel-plus-fine-tuning runs at z 4.85 and 4.54 grade moderate (combined 1.6e-5 and 6.8e-5). Channel pruning at 80% grades weak (combined 1.9e-3; the model is at chance). 13 rows are flagged borderline, among them:
+    - P4.5 LR 0.01, 60 ep: 30 fired against k\* 29 (count rule); grade very strong through the weight test.
+    - P4.5 LR 0.1, 60 ep: weight p 7.4e-10 near 1e-9. The test alone is very strong, but the combined 1.5e-9 is strong. The Bonferroni factor moves it down a tier.
+    - P4.6 global 90%, LR 0.1, 60 ep: combined 7.1e-10, very strong, near 1e-9.
+    - P4.3 channels 70%: combined 6.2e-7, strong, near 1e-6.
+    - P4.3 channels 80%: weight p 9.4e-4 near 1e-3; combined 1.9e-3 weak.
+    - The rest are tests near 0.05 or 0.01 whose suspect grade comes from the other test.
+  - Changes elsewhere: the verdict's `grade` is now computed (it was `None` in P9.1 and P9.2). The P9.1 test and the P9.1 script now expect "not assessed" when no check runs. 22 new tests, 1,272 in total, all pass.
 - [ ] **P9.4** Test the auditor against three model classes: our `W*`, our attacked variants, and genuinely unrelated third party models. The unrelated-model test proves the auditor is not a rubber stamp, so it is mandatory.
 - [ ] **P9.5** Build the Streamlit dashboard: upload a suspect model, watch the checks run, see the forensic report.
 - [ ] **P9.6** Show "private data revealed: 0" only where it is literally true, with a tooltip explaining precisely what stayed private.
@@ -3110,3 +3143,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-05: P8.8 marked `[-]`: answered by existing measurements, ceiling not reached. Setup peak 1.84 GiB (P8.3) and proving 2.45 GiB (P8.4), this machine, not Colab; no shrink needed. The Colab-free provable size was not measured; added to the Icebox as an optional extension. No experiment run. P9.1 not started.
 - 2026-10-05: P9.1. Owner approved the verdict object before the code was written. `src/auditor/`: engine, verdict object (`zk-crown/audit-verdict/v1`) and a no-secrets guard (structural rule, plus a value scan when secrets are supplied, plus a scan of the whole verdict). Only the P6.3 record precondition runs; all five slots are `not_run`, "not wired (P9.2)". An invalid record still lets checks run. Dual `W*` audit run from a clean tree: record valid, five slots not run. A scratch check with the real `K`, `S` and nonce: 5 leak attempts refused, 0 needle hits in the verdicts and the result file. 42 new tests, 1,227 in total. P9.2 not started.
 - 2026-10-05: P9.2. Wired the five checks in `src/auditor/checks.py`: fingerprint, behavioral and weight at 1e-6 (both need `K`), commitment, and zk_proof (Groth16 plus EZKL; exceptions count as rejections; public signal compared by value). The weight check is `not_applicable` without the carrier layout; re-alignment was not built. Ran on the P6.4 suspects plus a width-16 student and an untrained model, from a clean tree. Every theft reproduced Phase 4. Clean `W` and the untrained model were not called watermarked. Only the verbatim copy passed the fingerprint check. Commitment and ZK checks passed throughout. 23 new tests, 1,250 in total. P9.3 not started.
+- 2026-10-05: P9.3. Graded verdicts in `src/auditor/grading.py`: a per-watermark tier from its own p-value (exact levels 0.05 to 1e-9), and a suspect grade by Bonferroni over the two tests, not pooled. Owner evidence sits in its own section and never changes the suspect grade. Fingerprint means exact copy or not. The no-evidence caveat and the not-applicable lower-confidence caveat are attached. Borderline flags use half a decade, or one trigger of k*. P9.2 suspects: clean `W` and the untrained model grade none; the copy, INT8, pruning and overwrite grade very strong; fine-tuning grades very strong on one test; channel plus fine-tuning and distillation grade none. Phase 4 survey: 13 borderline rows reported. First run on the grading tests found that 30 fired against k* 29 was not flagged, so the count rule was added. 22 new tests, 1,272 in total. P9.4 not started.
