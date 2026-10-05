@@ -742,7 +742,7 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - **The third check goes beyond the task's wording.** The commitment binds `S` only as an opaque value. Without this check, someone could republish the same `C` under another owner id and the opening would still fit. It is possible only because `K` is revealed.
     - **A mismatch is a verdict, not an exception.** Malformed openings (wrong lengths or types) raise.
     - **The verifier takes only the artifact and the opening.** It reads nothing under `secrets/` and needs no model. The script's `--opening file.json` mode is what a third party would run.
-  - **What an opening costs** (written in the module): the verifier ends up holding `K`, 79 secret bytes in all (32 + 16 + 31). From `K` they can derive every trigger, target and `P_K`, so after a real opening the key is burned. That is the comparison point for P7 and P9.6.
+  - **What an opening costs** (written in the module): the verifier ends up holding `K`, 79 secret bytes in all (32 + 16 + 31). From `K` they can derive every trigger, target and `P_K`, so after a real opening the key is burned. That is the comparison point for P7 and P9.8 (was P9.6 before the 2026-10-05 dashboard replan).
   - **Self-check** (`experiments/p5_6_verify_opening.py`, CPU, 9 s, clean tree at `73a4086`), against the real artifact (SHA-256 equal to P5.4's), with the opening held in memory only:
     - **The true opening is accepted.**
     - **2,635 wrong openings tried, 0 accepted:** all 632 single-bit flips of `K`, `S` and the nonce; `K`'s halves swapped; `S` and the nonce zeroed; and 1,000 public wrong keys, each with the true `S` and with its own correctly derived `S`.
@@ -1258,10 +1258,47 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - The rest are tests near 0.05 or 0.01 whose suspect grade comes from the other test.
   - Changes elsewhere: the verdict's `grade` is now computed (it was `None` in P9.1 and P9.2). The P9.1 test and the P9.1 script now expect "not assessed" when no check runs. 22 new tests, 1,272 in total, all pass.
 - [ ] **P9.4** Test the auditor against three model classes: our `W*`, our attacked variants, and genuinely unrelated third party models. The unrelated-model test proves the auditor is not a rubber stamp, so it is mandatory.
-- [ ] **P9.5** Build the Streamlit dashboard: upload a suspect model, watch the checks run, see the forensic report.
-- [ ] **P9.6** Show "private data revealed: 0" only where it is literally true, with a tooltip explaining precisely what stayed private.
-- [ ] **P9.7** Deploy free on Streamlit Community Cloud with a bundled demo model so a reviewer can click through without setup.
-- [ ] **P9.8** Record a short demo GIF for the README.
+
+### Dashboard (P9.5 to P9.16)
+
+Replanned 2026-10-05 at the owner's request: the single dashboard task became the tasks below, one at a time. The old P9.6 (private-data line), P9.7 (deploy) and P9.8 (demo GIF) are kept as P9.8, P9.15 and P9.16.
+
+**Rules for every dashboard task (P9.5 to P9.16):**
+
+- **Numbers come from committed files only.** Every displayed number is read at run time from committed files in `results/` (and images from `figures/`), through the P9.5 data layer, which checks each file against a SHA-256 manifest. No measured value is typed into UI code. Where a number is derived (a tier, a null pmf), it is computed by the repo's own functions (`src/auditor/grading.py`, `src/watermark/significance.py`, `src/watermark/weight_significance.py`) from committed values.
+- **No secrets in the hosted demo.** The hosted app never contains the real `K` or any file under `secrets/`, and nothing in it can read them. The watermark checks need `K`, so the hosted demo shows **precomputed verdicts from the real run** (P9.2 / P9.3 result files), or uses a **clearly labelled public demo key**. Every screen says which one it is showing.
+- **Private data line.** "Private data revealed" comes from the verdict's `secrets_used`, never a constant. Its tooltip states the no-secrets guard's known limit: it does not catch a single small secret value (one target class, one bit of `S`), nor fragments in encodings it does not list.
+- **Free hosting only:** Streamlit Community Cloud, with a bundled demo model. No paid services, no chain spend.
+- **Claims stay within Section 7.** Do not write "proves ownership", "stolen" as a verdict, "unremovable", or "zero-knowledge" applied to the watermark. Use "technical evidence strength". The line "This is a technical ownership verification demonstration, not legal evidence." is visible on every page.
+- **No new experiments.** No dashboard task trains, attacks, proves or measures anything new. If a panel needs data that is not committed, it shows what is committed and says what is missing, or the gap goes to the Icebox.
+- Visual polish is the goal (a portfolio piece), but it never takes precedence over the rules above.
+
+- [ ] **P9.5** App foundation: the Streamlit skeleton in `app/`, page navigation, a shared visual theme, and the data layer.
+  - `app/data.py` reads only committed `results/` and `figures/` files listed in a manifest with their SHA-256, and refuses any other path.
+  - The not-legal-evidence footer appears on every page.
+  - Tests check four things: the app imports nothing from `secrets/`; no path under `secrets/` is reachable; the manifest hashes match; no UI module contains measured values as literals.
+  - Added by Claude as groundwork, so that each later panel is one small task.
+- [ ] **P9.6** Landing page: a hero section, a one-line pitch, and a pipeline diagram (watermark → attack → commit → prove → audit). Each stage links to its panel. The headline figures shown are read from committed results.
+- [ ] **P9.7** Live audit: the visitor picks a suspect (verbatim copy, INT8, pruned, fine-tuned, distilled, clean `W`, untrained model). The five checks then run one by one with step-by-step progress, ending in the P9.3 grade with its caveats and the separate owner-evidence section.
+  - Hosted, the behavioral and weight checks are **replayed** from the committed P9.2 verdicts (they need `K`), and each step is labelled "replayed from <result file>".
+  - Fingerprint, commitment and ZK checks may run live when their inputs are bundled and the toolchain is available on the host. Each is labelled "live" or "replayed".
+  - The grade is recomputed live with `grading.py` from the verdict shown.
+- [ ] **P9.8** "Private data revealed" on the audit result (the old P9.6). Shown only where it is literally true, computed from `secrets_used`, with a tooltip saying exactly what stayed private and the guard's known limit. In replay mode it describes the recorded run, and says so.
+- [ ] **P9.9** Evidence-strength view: each p-value drawn against its null, so a visitor can see why 100 of 100 triggers is not chance.
+  - Behavioral: the `Binomial(100, 1/9)` bound (computed with `significance.py`), the committed P2.8 fired-count histograms over 1,000 wrong keys, and k\* at each level.
+  - Weight: the proven bound `exp(-z²/2)`, N(0, 1) as a reference, and the committed P3.7 aggregates and figure. The 1,000 per-key z values are **not** committed, so the panel says it draws the bound, not those samples.
+  - The suspect's own statistic is marked on each.
+- [ ] **P9.10** Attack-lab explorer: the P4.9 heatmap made interactive from the committed P4.9 rows. Filters by attack family and setting, the accuracy cost shown beside each result, both detection tests, and the P9.3 tier per row.
+- [ ] **P9.11** Trigger gallery: the **public demo-key** triggers next to their clean base images, from the committed P1.3 figures and statistics (PSNR, amplitude sweep). Labelled as demo-key triggers; the real triggers are never shown.
+- [ ] **P9.12** Provenance and theft-timeline panel.
+  - Provenance: commitment `C`, the model fingerprint, Bitcoin block 969627 (from the committed P5.5 chain check), and the record signature and GPG tag status.
+  - Timeline: the P6.4 timeline, including the thief's backdated counter-claim and what is and is not symmetric between the two claims.
+- [ ] **P9.13** ZK panel: Track A (Circom/Groth16) and Track B (EZKL) stats from P7.5 to P7.8 and P8.3 to P8.6: sizes, times on this machine (not Colab), and the tampered proofs that were rejected (206 / 0 and 42 / 0). Each track says what it proves and what it does not (from `docs/ZK_STATEMENT.md` and `docs/ZKML_STATEMENT.md`).
+- [ ] **P9.14** Honest-limits tab. It covers distillation removing both watermarks (P4.7, P4.10), channel pruning plus fine-tuning, the single-contributor Groth16 setup, P7.9 blocked (with its constraint count), the unfinished Hermez verify, and the record's pending timestamp. It ends with the not-legal-evidence line.
+- [ ] **P9.15** Deploy free on Streamlit Community Cloud with a bundled demo model, so a reviewer can click through without setup (the old P9.7).
+  - Before deploying, check that the deployed tree contains nothing from `secrets/` and that every page states replay versus live.
+  - Owner decision needed at this task: which model files, if any, are bundled, and whether the ZK toolchain is installed on the host or the ZK checks are replayed.
+- [ ] **P9.16** Record a short demo GIF for the README (the old P9.8).
 
 ## Phase 10: Portfolio polish
 
@@ -2915,6 +2952,7 @@ Ideas that are explicitly not in scope right now. Add here instead of expanding 
   - Evidence would be k proved fires out of N, tested with the P2.8 bound, not one fire. Unmeasured risk: a 6,138-parameter model may not memorise 100 triggers; a smaller N is the fallback.
   - What it still would not show: that the triggers derive from `K` (P7.9 blocked), or anything about a stolen model, which is still tested by querying (P2.8).
 - Colab-free zkML ceiling (P8.8, optional extension). `zk_model` (6,138 params) set up at 1.84 GiB and proved at 2.45 GiB peak on this machine, not Colab, so the RAM budget never bound and the largest model provable on Colab free was not measured. An extension could run the P8.3–P8.5 pipeline on Colab free, then on progressively larger MNIST models, until setup or proving runs out of memory or time, and record that size. Not needed for any current task.
+- Upload-a-suspect audit in the dashboard (dropped from the old P9.5 in the 2026-10-05 replan). The hosted app has no `K`, so it cannot run the watermark checks on an uploaded model. It would need a local-only mode that reads `K` from `secrets/`, and that mode must never be deployed.
 - Poseidon permutation reference vector (P5.2): the t = 3 permutation vector on `[0, 1, 2]` was entered from recall and has single-source confirmation only (it matches our code). If revisited, re-fetch it from its source, or have circomlibjs output the full permutation state directly. Its source is the Poseidon authors' reference repository, not circomlibjs.
 
 ---
@@ -3144,3 +3182,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-05: P9.1. Owner approved the verdict object before the code was written. `src/auditor/`: engine, verdict object (`zk-crown/audit-verdict/v1`) and a no-secrets guard (structural rule, plus a value scan when secrets are supplied, plus a scan of the whole verdict). Only the P6.3 record precondition runs; all five slots are `not_run`, "not wired (P9.2)". An invalid record still lets checks run. Dual `W*` audit run from a clean tree: record valid, five slots not run. A scratch check with the real `K`, `S` and nonce: 5 leak attempts refused, 0 needle hits in the verdicts and the result file. 42 new tests, 1,227 in total. P9.2 not started.
 - 2026-10-05: P9.2. Wired the five checks in `src/auditor/checks.py`: fingerprint, behavioral and weight at 1e-6 (both need `K`), commitment, and zk_proof (Groth16 plus EZKL; exceptions count as rejections; public signal compared by value). The weight check is `not_applicable` without the carrier layout; re-alignment was not built. Ran on the P6.4 suspects plus a width-16 student and an untrained model, from a clean tree. Every theft reproduced Phase 4. Clean `W` and the untrained model were not called watermarked. Only the verbatim copy passed the fingerprint check. Commitment and ZK checks passed throughout. 23 new tests, 1,250 in total. P9.3 not started.
 - 2026-10-05: P9.3. Graded verdicts in `src/auditor/grading.py`: a per-watermark tier from its own p-value (exact levels 0.05 to 1e-9), and a suspect grade by Bonferroni over the two tests, not pooled. Owner evidence sits in its own section and never changes the suspect grade. Fingerprint means exact copy or not. The no-evidence caveat and the not-applicable lower-confidence caveat are attached. Borderline flags use half a decade, or one trigger of k*. P9.2 suspects: clean `W` and the untrained model grade none; the copy, INT8, pruning and overwrite grade very strong; fine-tuning grades very strong on one test; channel plus fine-tuning and distillation grade none. Phase 4 survey: 13 borderline rows reported. First run on the grading tests found that 30 fired against k* 29 was not flagged, so the count rule was added. 22 new tests, 1,272 in total. P9.4 not started.
+- 2026-10-05: Phase 9 dashboard replanned at the owner's request (CLAUDE.md only, no code). P9.5 became twelve tasks, P9.5 to P9.16: foundation and data layer, landing, live audit (replayed on the host), private-data line, evidence-strength view, attack-lab explorer, trigger gallery, provenance and timeline, ZK panel, honest limits, deploy, GIF. Dashboard rules added: committed files only, no secrets hosted, `secrets_used` with the guard's limit, free hosting, Section 7 wording, no new experiments. The upload-a-suspect idea went to the Icebox.
