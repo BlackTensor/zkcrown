@@ -1,0 +1,2066 @@
+{
+  "schema_version": 1,
+  "name": "p9.2_audit_suspects",
+  "task": "P9.2",
+  "timestamp_utc": "2026-10-05T12:46:54+00:00",
+  "git": {
+    "commit": "c7607559b52bea3bf807df49d5b2e71eb4aed2db",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+    "publication_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+    "trusted_public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+    "detection_alpha": "1e-6",
+    "checks": {
+      "fingerprint": "P5.1",
+      "behavioral": "P2.4 / P2.8 at 1e-6",
+      "weight": "P3.3 / P3.7 at 1e-6",
+      "commitment": "P5.3 / P5.4 / P5.5",
+      "zk_proof": "P7.7 (Groth16) / P8.4 (EZKL)"
+    },
+    "suspects": {
+      "verbatim": {
+        "kind": "theft (live)",
+        "arch": {
+          "width": 32
+        },
+        "runtime_model": false,
+        "file_sha256": null
+      },
+      "int8": {
+        "kind": "theft (live)",
+        "arch": {
+          "width": 32
+        },
+        "runtime_model": true,
+        "file_sha256": null
+      },
+      "prune_global_50": {
+        "kind": "theft (live)",
+        "arch": {
+          "width": 32
+        },
+        "runtime_model": false,
+        "file_sha256": null
+      },
+      "overwrite_weight_0.1": {
+        "kind": "theft (live)",
+        "arch": {
+          "width": 32
+        },
+        "runtime_model": false,
+        "file_sha256": null
+      },
+      "finetune_lr0.05_e20": {
+        "kind": "theft (Phase 4 weights)",
+        "arch": {
+          "width": 32
+        },
+        "runtime_model": false,
+        "file_sha256": "011edc0069ffdf1171606497c2fe8b4364743f325b1de147f6a0a0e61f3a6ad4"
+      },
+      "channel50_finetune_lr0.1_e60": {
+        "kind": "theft (Phase 4 weights)",
+        "arch": {
+          "width": 32
+        },
+        "runtime_model": false,
+        "file_sha256": "6674a5d813a50995a51763156a75a29c7f540d0a651d286cfedb49fa2168d346"
+      },
+      "distill_50k_w32": {
+        "kind": "theft (Phase 4 weights)",
+        "arch": {
+          "width": 32
+        },
+        "runtime_model": false,
+        "file_sha256": "a18c6d807cde79854cf844804bf5e7b90111025aee69a5e4a90b5698614fa7ca"
+      },
+      "distill_50k_w16": {
+        "kind": "theft (Phase 4 weights), no carrier layout",
+        "arch": {
+          "width": 16
+        },
+        "runtime_model": false,
+        "file_sha256": "bc7e789d5a5c1d2b567452438d9eb728f10793eb7808a2e5c9206fd9627c66c0"
+      },
+      "clean_W": {
+        "kind": "not stolen (owner's model trained without K)",
+        "arch": {
+          "width": 32
+        },
+        "runtime_model": false,
+        "file_sha256": "54f112f4d7edc2ddacc181f8f4db25da27874e7e65aaf9407778a3ce5122fdcf"
+      },
+      "untrained_unrelated": {
+        "kind": "not stolen (fresh init, seed 20261005)",
+        "arch": {
+          "width": 32
+        },
+        "runtime_model": false,
+        "file_sha256": null
+      }
+    }
+  },
+  "metrics": {
+    "table": [
+      {
+        "suspect": "verbatim",
+        "kind": "theft (live)",
+        "record_valid": true,
+        "fingerprint_status": "passed",
+        "behavioral_status": "detected",
+        "weight_status": "detected",
+        "commitment_status": "passed",
+        "zk_proof_status": "passed",
+        "fired": 100,
+        "behavioral_p_value": 3.764861949599026e-96,
+        "weight_z": 10.28552944378844,
+        "weight_p_value_bound": 1.0654520501555637e-23,
+        "weight_reason": null,
+        "guard_rejected": [],
+        "secrets_used": [
+          "K"
+        ]
+      },
+      {
+        "suspect": "int8",
+        "kind": "theft (live)",
+        "record_valid": true,
+        "fingerprint_status": "failed",
+        "behavioral_status": "detected",
+        "weight_status": "detected",
+        "commitment_status": "passed",
+        "zk_proof_status": "passed",
+        "fired": 100,
+        "behavioral_p_value": 3.764861949599026e-96,
+        "weight_z": 10.669396098757112,
+        "weight_p_value_bound": 1.9090786982778142e-25,
+        "weight_reason": null,
+        "guard_rejected": [],
+        "secrets_used": [
+          "K"
+        ]
+      },
+      {
+        "suspect": "prune_global_50",
+        "kind": "theft (live)",
+        "record_valid": true,
+        "fingerprint_status": "failed",
+        "behavioral_status": "detected",
+        "weight_status": "detected",
+        "commitment_status": "passed",
+        "zk_proof_status": "passed",
+        "fired": 100,
+        "behavioral_p_value": 3.764861949599026e-96,
+        "weight_z": 10.134875932889983,
+        "weight_p_value_bound": 4.96097379610609e-23,
+        "weight_reason": null,
+        "guard_rejected": [],
+        "secrets_used": [
+          "K"
+        ]
+      },
+      {
+        "suspect": "overwrite_weight_0.1",
+        "kind": "theft (live)",
+        "record_valid": true,
+        "fingerprint_status": "failed",
+        "behavioral_status": "detected",
+        "weight_status": "detected",
+        "commitment_status": "passed",
+        "zk_proof_status": "passed",
+        "fired": 100,
+        "behavioral_p_value": 3.764861949599026e-96,
+        "weight_z": 10.28267072748622,
+        "weight_p_value_bound": 1.0972406123266973e-23,
+        "weight_reason": null,
+        "guard_rejected": [],
+        "secrets_used": [
+          "K"
+        ]
+      },
+      {
+        "suspect": "finetune_lr0.05_e20",
+        "kind": "theft (Phase 4 weights)",
+        "record_valid": true,
+        "fingerprint_status": "failed",
+        "behavioral_status": "not_detected",
+        "weight_status": "detected",
+        "commitment_status": "passed",
+        "zk_proof_status": "passed",
+        "fired": 8,
+        "behavioral_p_value": 0.8785059003362857,
+        "weight_z": 9.66277532493648,
+        "weight_p_value_bound": 5.3104334598245634e-21,
+        "weight_reason": null,
+        "guard_rejected": [],
+        "secrets_used": [
+          "K"
+        ]
+      },
+      {
+        "suspect": "channel50_finetune_lr0.1_e60",
+        "kind": "theft (Phase 4 weights)",
+        "record_valid": true,
+        "fingerprint_status": "failed",
+        "behavioral_status": "not_detected",
+        "weight_status": "not_detected",
+        "commitment_status": "passed",
+        "zk_proof_status": "passed",
+        "fired": 7,
+        "behavioral_p_value": 0.9370445912730502,
+        "weight_z": 1.9260045525325618,
+        "weight_p_value_bound": 0.1564925665539106,
+        "weight_reason": null,
+        "guard_rejected": [],
+        "secrets_used": [
+          "K"
+        ]
+      },
+      {
+        "suspect": "distill_50k_w32",
+        "kind": "theft (Phase 4 weights)",
+        "record_valid": true,
+        "fingerprint_status": "failed",
+        "behavioral_status": "not_detected",
+        "weight_status": "not_detected",
+        "commitment_status": "passed",
+        "zk_proof_status": "passed",
+        "fired": 5,
+        "behavioral_p_value": 0.9895393098644958,
+        "weight_z": -1.1130018339780978,
+        "weight_p_value_bound": 1.0,
+        "weight_reason": null,
+        "guard_rejected": [],
+        "secrets_used": [
+          "K"
+        ]
+      },
+      {
+        "suspect": "distill_50k_w16",
+        "kind": "theft (Phase 4 weights), no carrier layout",
+        "record_valid": true,
+        "fingerprint_status": "failed",
+        "behavioral_status": "not_detected",
+        "weight_status": "not_applicable",
+        "commitment_status": "passed",
+        "zk_proof_status": "passed",
+        "fired": 7,
+        "behavioral_p_value": 0.9370445912730502,
+        "weight_z": null,
+        "weight_p_value_bound": null,
+        "weight_reason": "the owner's carrier layout is not present (carrier tensor 'features.0.weight' has shape (16, 3, 3, 3), expected (32, 3, 3, 3)). The suspect may be a different width or have channels physically removed. Channel re-alignment is not implemented, so the weight test cannot be run on it; this is not evidence either way.",
+        "guard_rejected": [],
+        "secrets_used": [
+          "K"
+        ]
+      },
+      {
+        "suspect": "clean_W",
+        "kind": "not stolen (owner's model trained without K)",
+        "record_valid": true,
+        "fingerprint_status": "failed",
+        "behavioral_status": "not_detected",
+        "weight_status": "not_detected",
+        "commitment_status": "passed",
+        "zk_proof_status": "passed",
+        "fired": 3,
+        "behavioral_p_value": 0.9993033048155396,
+        "weight_z": 0.17837445211362188,
+        "weight_p_value_bound": 0.9842171527544341,
+        "weight_reason": null,
+        "guard_rejected": [],
+        "secrets_used": [
+          "K"
+        ]
+      },
+      {
+        "suspect": "untrained_unrelated",
+        "kind": "not stolen (fresh init, seed 20261005)",
+        "record_valid": true,
+        "fingerprint_status": "failed",
+        "behavioral_status": "not_detected",
+        "weight_status": "not_detected",
+        "commitment_status": "passed",
+        "zk_proof_status": "passed",
+        "fired": 10,
+        "behavioral_p_value": 0.6847489311159016,
+        "weight_z": 0.3727816544259177,
+        "weight_p_value_bound": 0.932875916636264,
+        "weight_reason": null,
+        "guard_rejected": [],
+        "secrets_used": [
+          "K"
+        ]
+      }
+    ],
+    "verdicts": {
+      "verbatim": {
+        "schema": "zk-crown/audit-verdict/v1",
+        "record_valid": true,
+        "inputs": {
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "publication_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+          "suspect": {
+            "label": "verbatim",
+            "file_sha256": null,
+            "fingerprint": {
+              "sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+              "version": "zk-crown/model-fingerprint/v1",
+              "tensors": 38,
+              "elements": 308848,
+              "data_bytes": 1235416
+            },
+            "state_entries": 38,
+            "loads_into_main_model": true,
+            "parameter_count": 307946,
+            "load_problem": null,
+            "arch": {
+              "width": 32
+            },
+            "runtime_model_supplied": false
+          },
+          "trusted_public_key_supplied": true
+        },
+        "record_status": {
+          "schema": "zk-crown/provenance-verdict/v1",
+          "valid": true,
+          "record_valid": true,
+          "record_well_formed": true,
+          "signature_valid": true,
+          "commitment_well_formed": true,
+          "matches_publication": true,
+          "fingerprint_matches": null,
+          "public_key_trusted": true,
+          "checks_not_run": [
+            "fingerprint_matches"
+          ],
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "owner_id": "blacktensor-zkcrown-owner",
+          "public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+          "commitment_decimal": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+          "record_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+          "suspect_fingerprint_sha256": null,
+          "problems": []
+        },
+        "checks": [
+          {
+            "slot": "fingerprint",
+            "status": "passed",
+            "method": "P5.1",
+            "statistic": {
+              "matches": true,
+              "digest_equal": true,
+              "tensors_equal": true,
+              "elements_equal": true,
+              "data_bytes_equal": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "The suspect is bit for bit the model the record names (P5.1 fingerprint).",
+            "duration_seconds": 0.008296,
+            "guard_rejected": false
+          },
+          {
+            "slot": "behavioral",
+            "status": "detected",
+            "method": "P2.4 / P2.8 at 1e-6",
+            "statistic": {
+              "n": 100,
+              "fired": 100,
+              "wdr": 1.0,
+              "predicted_base_label": 0,
+              "predicted_other_class": 0,
+              "target_probability_mean": 0.9994276165962219,
+              "target_probability_min": 0.9932290315628052,
+              "k_star_at_alpha": 29,
+              "detection_alpha": 1e-06,
+              "null_expected_fired_bound": 11.11111111111111,
+              "p_value_log10": -95.42425094393249
+            },
+            "p_value": 3.764861949599026e-96,
+            "p_value_kind": "exact",
+            "strongest_level_rejected": 1e-09,
+            "reason": "100 of 100 owner triggers gave their keyed target; detection at 1e-6 needs 29. Exact P2.8 test against a model independent of K, triggers regenerated from K and matched to the record's trigger set commitment.",
+            "duration_seconds": 2.30467,
+            "guard_rejected": false
+          },
+          {
+            "slot": "weight",
+            "status": "detected",
+            "method": "P3.3 / P3.7 at 1e-6",
+            "statistic": {
+              "correlation": 0.9091209522245879,
+              "z": 10.28552944378844,
+              "bit_matches": 126,
+              "rows": 128,
+              "dim": 307040,
+              "amplitude": 0.10610112901917498,
+              "projected_rms": 0.1167073850399654,
+              "p_value_bound_log10": -22.97246609059683,
+              "z_threshold_at_alpha": 5.256521769756932,
+              "detection_alpha": 1e-06
+            },
+            "p_value": 1.0654520501555637e-23,
+            "p_value_kind": "upper_bound",
+            "strongest_level_rejected": 1e-09,
+            "reason": "Blind extraction with K over the owner's carrier: z = 10.29, 126 of 128 bits; detection at 1e-6 needs z >= 5.257. P3.7 bound, valid for any model independent of K. Zero-masked channels keep the layout and are tested.",
+            "duration_seconds": 0.100768,
+            "guard_rejected": false
+          },
+          {
+            "slot": "commitment",
+            "status": "passed",
+            "method": "P5.3 / P5.4 / P5.5",
+            "statistic": {
+              "c_well_formed": true,
+              "publication_hash_matches_record": true,
+              "c_equals_published_c": true,
+              "ots_proof_for_publication": true,
+              "ots_bitcoin_attestations": 3,
+              "ots_earliest_block_height": 969627
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "C is well formed (layout v1, BN254) and equals the published C. This shows only that the record commits to the published C. It does not show that anyone knows an opening of C (see zk_proof), it does not tie C to the suspect model or to the triggers, and the attestation heights are read from the proof offline, not checked against the chain here (P5.5 did that).",
+            "duration_seconds": 0.102485,
+            "guard_rejected": false
+          },
+          {
+            "slot": "zk_proof",
+            "status": "passed",
+            "method": "P7.7 (Groth16) / P8.4 (EZKL)",
+            "statistic": {
+              "artifacts_match_committed": true,
+              "groth16_public_signals": 1,
+              "groth16_public_signal_equals_record_c": true,
+              "groth16_verified": true,
+              "ezkl_verified": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "Both committed proofs verify. Track A (Groth16, P7.7) proves knowledge of an opening of the published C (K, S, nonce in range); its only public signal is C. It is not about the suspect model, and its single-contributor setup is not sound against the owner (P7.6). Track B (EZKL, P8.4) proves inference of the MNIST zk_model on one public image; it concerns zk_model, not this suspect, and nothing about watermarks.",
+            "duration_seconds": 2.390242,
+            "guard_rejected": false
+          }
+        ],
+        "secrets_used": [
+          "K"
+        ],
+        "grade": null,
+        "grade_note": "Graded verdicts are P9.3. This verdict reports each check separately and combines nothing.",
+        "limitations": [
+          "Distillation into a fresh student removed both watermarks in every measured case (P4.7, P4.10); a distilled copy leaves no evidence for these checks.",
+          "The weight test needs the owner's carrier layout. A physically channel-pruned or narrower suspect is not applicable unless re-aligned, which is not implemented (Icebox).",
+          "The provenance record's own OpenTimestamps proof is pending; only the commitment publication has independent time evidence (Bitcoin block 969627, P5.5).",
+          "This is a technical ownership verification demonstration, not legal evidence."
+        ],
+        "run": {
+          "auditor_version": "p9.2",
+          "created_utc": "2026-10-05T12:46:28+00:00",
+          "git": {
+            "commit": "c7607559b52bea3bf807df49d5b2e71eb4aed2db",
+            "branch": "master",
+            "dirty": false,
+            "available": true,
+            "source": "git"
+          },
+          "duration_seconds": 5.101796
+        }
+      },
+      "int8": {
+        "schema": "zk-crown/audit-verdict/v1",
+        "record_valid": true,
+        "inputs": {
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "publication_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+          "suspect": {
+            "label": "int8",
+            "file_sha256": null,
+            "fingerprint": {
+              "sha256": "f40b84175a729d21fc21f6056ae58ac82b907973d2f88bf2b563b25a1d0097f7",
+              "version": "zk-crown/model-fingerprint/v1",
+              "tensors": 38,
+              "elements": 308848,
+              "data_bytes": 1235416
+            },
+            "state_entries": 38,
+            "loads_into_main_model": true,
+            "parameter_count": 307946,
+            "load_problem": null,
+            "arch": {
+              "width": 32
+            },
+            "runtime_model_supplied": true
+          },
+          "trusted_public_key_supplied": true
+        },
+        "record_status": {
+          "schema": "zk-crown/provenance-verdict/v1",
+          "valid": true,
+          "record_valid": true,
+          "record_well_formed": true,
+          "signature_valid": true,
+          "commitment_well_formed": true,
+          "matches_publication": true,
+          "fingerprint_matches": null,
+          "public_key_trusted": true,
+          "checks_not_run": [
+            "fingerprint_matches"
+          ],
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "owner_id": "blacktensor-zkcrown-owner",
+          "public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+          "commitment_decimal": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+          "record_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+          "suspect_fingerprint_sha256": null,
+          "problems": []
+        },
+        "checks": [
+          {
+            "slot": "fingerprint",
+            "status": "failed",
+            "method": "P5.1",
+            "statistic": {
+              "matches": false,
+              "digest_equal": false,
+              "tensors_equal": true,
+              "elements_equal": true,
+              "data_bytes_equal": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "The suspect is a different set of weights from the model the record names. Every modification, including conv-BN fusion and every Phase 4 attack, changes the fingerprint, so this alone says nothing about theft; the watermark checks address that.",
+            "duration_seconds": 0.008126,
+            "guard_rejected": false
+          },
+          {
+            "slot": "behavioral",
+            "status": "detected",
+            "method": "P2.4 / P2.8 at 1e-6",
+            "statistic": {
+              "n": 100,
+              "fired": 100,
+              "wdr": 1.0,
+              "predicted_base_label": 0,
+              "predicted_other_class": 0,
+              "target_probability_mean": 0.9994258880615234,
+              "target_probability_min": 0.9936624765396118,
+              "k_star_at_alpha": 29,
+              "detection_alpha": 1e-06,
+              "null_expected_fired_bound": 11.11111111111111,
+              "p_value_log10": -95.42425094393249
+            },
+            "p_value": 3.764861949599026e-96,
+            "p_value_kind": "exact",
+            "strongest_level_rejected": 1e-09,
+            "reason": "100 of 100 owner triggers gave their keyed target; detection at 1e-6 needs 29. Exact P2.8 test against a model independent of K, triggers regenerated from K and matched to the record's trigger set commitment.",
+            "duration_seconds": 0.359972,
+            "guard_rejected": false
+          },
+          {
+            "slot": "weight",
+            "status": "detected",
+            "method": "P3.3 / P3.7 at 1e-6",
+            "statistic": {
+              "correlation": 0.943050291574556,
+              "z": 10.669396098757112,
+              "bit_matches": 128,
+              "rows": 128,
+              "dim": 307040,
+              "amplitude": 0.27864226882044807,
+              "projected_rms": 0.2954691508076577,
+              "p_value_bound_log10": -24.719176168241578,
+              "z_threshold_at_alpha": 5.256521769756932,
+              "detection_alpha": 1e-06
+            },
+            "p_value": 1.9090786982778142e-25,
+            "p_value_kind": "upper_bound",
+            "strongest_level_rejected": 1e-09,
+            "reason": "Blind extraction with K over the owner's carrier: z = 10.67, 128 of 128 bits; detection at 1e-6 needs z >= 5.257. P3.7 bound, valid for any model independent of K. Zero-masked channels keep the layout and are tested.",
+            "duration_seconds": 0.103773,
+            "guard_rejected": false
+          },
+          {
+            "slot": "commitment",
+            "status": "passed",
+            "method": "P5.3 / P5.4 / P5.5",
+            "statistic": {
+              "c_well_formed": true,
+              "publication_hash_matches_record": true,
+              "c_equals_published_c": true,
+              "ots_proof_for_publication": true,
+              "ots_bitcoin_attestations": 3,
+              "ots_earliest_block_height": 969627
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "C is well formed (layout v1, BN254) and equals the published C. This shows only that the record commits to the published C. It does not show that anyone knows an opening of C (see zk_proof), it does not tie C to the suspect model or to the triggers, and the attestation heights are read from the proof offline, not checked against the chain here (P5.5 did that).",
+            "duration_seconds": 0.007757,
+            "guard_rejected": false
+          },
+          {
+            "slot": "zk_proof",
+            "status": "passed",
+            "method": "P7.7 (Groth16) / P8.4 (EZKL)",
+            "statistic": {
+              "artifacts_match_committed": true,
+              "groth16_public_signals": 1,
+              "groth16_public_signal_equals_record_c": true,
+              "groth16_verified": true,
+              "ezkl_verified": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "Both committed proofs verify. Track A (Groth16, P7.7) proves knowledge of an opening of the published C (K, S, nonce in range); its only public signal is C. It is not about the suspect model, and its single-contributor setup is not sound against the owner (P7.6). Track B (EZKL, P8.4) proves inference of the MNIST zk_model on one public image; it concerns zk_model, not this suspect, and nothing about watermarks.",
+            "duration_seconds": 2.400238,
+            "guard_rejected": false
+          }
+        ],
+        "secrets_used": [
+          "K"
+        ],
+        "grade": null,
+        "grade_note": "Graded verdicts are P9.3. This verdict reports each check separately and combines nothing.",
+        "limitations": [
+          "Distillation into a fresh student removed both watermarks in every measured case (P4.7, P4.10); a distilled copy leaves no evidence for these checks.",
+          "The weight test needs the owner's carrier layout. A physically channel-pruned or narrower suspect is not applicable unless re-aligned, which is not implemented (Icebox).",
+          "The provenance record's own OpenTimestamps proof is pending; only the commitment publication has independent time evidence (Bitcoin block 969627, P5.5).",
+          "This is a technical ownership verification demonstration, not legal evidence."
+        ],
+        "run": {
+          "auditor_version": "p9.2",
+          "created_utc": "2026-10-05T12:46:31+00:00",
+          "git": {
+            "commit": "c7607559b52bea3bf807df49d5b2e71eb4aed2db",
+            "branch": "master",
+            "dirty": false,
+            "available": true,
+            "source": "git"
+          },
+          "duration_seconds": 3.051017
+        }
+      },
+      "prune_global_50": {
+        "schema": "zk-crown/audit-verdict/v1",
+        "record_valid": true,
+        "inputs": {
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "publication_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+          "suspect": {
+            "label": "prune_global_50",
+            "file_sha256": null,
+            "fingerprint": {
+              "sha256": "46b12f32c0774852ee242ae369f44e571434f00723300a2642363b2422eb7f69",
+              "version": "zk-crown/model-fingerprint/v1",
+              "tensors": 38,
+              "elements": 308848,
+              "data_bytes": 1235416
+            },
+            "state_entries": 38,
+            "loads_into_main_model": true,
+            "parameter_count": 307946,
+            "load_problem": null,
+            "arch": {
+              "width": 32
+            },
+            "runtime_model_supplied": false
+          },
+          "trusted_public_key_supplied": true
+        },
+        "record_status": {
+          "schema": "zk-crown/provenance-verdict/v1",
+          "valid": true,
+          "record_valid": true,
+          "record_well_formed": true,
+          "signature_valid": true,
+          "commitment_well_formed": true,
+          "matches_publication": true,
+          "fingerprint_matches": null,
+          "public_key_trusted": true,
+          "checks_not_run": [
+            "fingerprint_matches"
+          ],
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "owner_id": "blacktensor-zkcrown-owner",
+          "public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+          "commitment_decimal": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+          "record_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+          "suspect_fingerprint_sha256": null,
+          "problems": []
+        },
+        "checks": [
+          {
+            "slot": "fingerprint",
+            "status": "failed",
+            "method": "P5.1",
+            "statistic": {
+              "matches": false,
+              "digest_equal": false,
+              "tensors_equal": true,
+              "elements_equal": true,
+              "data_bytes_equal": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "The suspect is a different set of weights from the model the record names. Every modification, including conv-BN fusion and every Phase 4 attack, changes the fingerprint, so this alone says nothing about theft; the watermark checks address that.",
+            "duration_seconds": 0.0088,
+            "guard_rejected": false
+          },
+          {
+            "slot": "behavioral",
+            "status": "detected",
+            "method": "P2.4 / P2.8 at 1e-6",
+            "statistic": {
+              "n": 100,
+              "fired": 100,
+              "wdr": 1.0,
+              "predicted_base_label": 0,
+              "predicted_other_class": 0,
+              "target_probability_mean": 0.9943016171455383,
+              "target_probability_min": 0.9346902966499329,
+              "k_star_at_alpha": 29,
+              "detection_alpha": 1e-06,
+              "null_expected_fired_bound": 11.11111111111111,
+              "p_value_log10": -95.42425094393249
+            },
+            "p_value": 3.764861949599026e-96,
+            "p_value_kind": "exact",
+            "strongest_level_rejected": 1e-09,
+            "reason": "100 of 100 owner triggers gave their keyed target; detection at 1e-6 needs 29. Exact P2.8 test against a model independent of K, triggers regenerated from K and matched to the record's trigger set commitment.",
+            "duration_seconds": 0.178825,
+            "guard_rejected": false
+          },
+          {
+            "slot": "weight",
+            "status": "detected",
+            "method": "P3.3 / P3.7 at 1e-6",
+            "statistic": {
+              "correlation": 0.8958049373288555,
+              "z": 10.134875932889983,
+              "bit_matches": 125,
+              "rows": 128,
+              "dim": 307040,
+              "amplitude": 0.09430914536051305,
+              "projected_rms": 0.10527866216246537,
+              "p_value_bound_log10": -22.30443306690386,
+              "z_threshold_at_alpha": 5.256521769756932,
+              "detection_alpha": 1e-06
+            },
+            "p_value": 4.96097379610609e-23,
+            "p_value_kind": "upper_bound",
+            "strongest_level_rejected": 1e-09,
+            "reason": "Blind extraction with K over the owner's carrier: z = 10.13, 125 of 128 bits; detection at 1e-6 needs z >= 5.257. P3.7 bound, valid for any model independent of K. Zero-masked channels keep the layout and are tested.",
+            "duration_seconds": 0.103265,
+            "guard_rejected": false
+          },
+          {
+            "slot": "commitment",
+            "status": "passed",
+            "method": "P5.3 / P5.4 / P5.5",
+            "statistic": {
+              "c_well_formed": true,
+              "publication_hash_matches_record": true,
+              "c_equals_published_c": true,
+              "ots_proof_for_publication": true,
+              "ots_bitcoin_attestations": 3,
+              "ots_earliest_block_height": 969627
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "C is well formed (layout v1, BN254) and equals the published C. This shows only that the record commits to the published C. It does not show that anyone knows an opening of C (see zk_proof), it does not tie C to the suspect model or to the triggers, and the attestation heights are read from the proof offline, not checked against the chain here (P5.5 did that).",
+            "duration_seconds": 0.006347,
+            "guard_rejected": false
+          },
+          {
+            "slot": "zk_proof",
+            "status": "passed",
+            "method": "P7.7 (Groth16) / P8.4 (EZKL)",
+            "statistic": {
+              "artifacts_match_committed": true,
+              "groth16_public_signals": 1,
+              "groth16_public_signal_equals_record_c": true,
+              "groth16_verified": true,
+              "ezkl_verified": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "Both committed proofs verify. Track A (Groth16, P7.7) proves knowledge of an opening of the published C (K, S, nonce in range); its only public signal is C. It is not about the suspect model, and its single-contributor setup is not sound against the owner (P7.6). Track B (EZKL, P8.4) proves inference of the MNIST zk_model on one public image; it concerns zk_model, not this suspect, and nothing about watermarks.",
+            "duration_seconds": 2.387681,
+            "guard_rejected": false
+          }
+        ],
+        "secrets_used": [
+          "K"
+        ],
+        "grade": null,
+        "grade_note": "Graded verdicts are P9.3. This verdict reports each check separately and combines nothing.",
+        "limitations": [
+          "Distillation into a fresh student removed both watermarks in every measured case (P4.7, P4.10); a distilled copy leaves no evidence for these checks.",
+          "The weight test needs the owner's carrier layout. A physically channel-pruned or narrower suspect is not applicable unless re-aligned, which is not implemented (Icebox).",
+          "The provenance record's own OpenTimestamps proof is pending; only the commitment publication has independent time evidence (Bitcoin block 969627, P5.5).",
+          "This is a technical ownership verification demonstration, not legal evidence."
+        ],
+        "run": {
+          "auditor_version": "p9.2",
+          "created_utc": "2026-10-05T12:46:34+00:00",
+          "git": {
+            "commit": "c7607559b52bea3bf807df49d5b2e71eb4aed2db",
+            "branch": "master",
+            "dirty": false,
+            "available": true,
+            "source": "git"
+          },
+          "duration_seconds": 2.867551
+        }
+      },
+      "overwrite_weight_0.1": {
+        "schema": "zk-crown/audit-verdict/v1",
+        "record_valid": true,
+        "inputs": {
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "publication_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+          "suspect": {
+            "label": "overwrite_weight_0.1",
+            "file_sha256": null,
+            "fingerprint": {
+              "sha256": "82167ddcd75dc385b7f4f212bee52deccd12ac54ec6f8343820d6196732b4ade",
+              "version": "zk-crown/model-fingerprint/v1",
+              "tensors": 38,
+              "elements": 308848,
+              "data_bytes": 1235416
+            },
+            "state_entries": 38,
+            "loads_into_main_model": true,
+            "parameter_count": 307946,
+            "load_problem": null,
+            "arch": {
+              "width": 32
+            },
+            "runtime_model_supplied": false
+          },
+          "trusted_public_key_supplied": true
+        },
+        "record_status": {
+          "schema": "zk-crown/provenance-verdict/v1",
+          "valid": true,
+          "record_valid": true,
+          "record_well_formed": true,
+          "signature_valid": true,
+          "commitment_well_formed": true,
+          "matches_publication": true,
+          "fingerprint_matches": null,
+          "public_key_trusted": true,
+          "checks_not_run": [
+            "fingerprint_matches"
+          ],
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "owner_id": "blacktensor-zkcrown-owner",
+          "public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+          "commitment_decimal": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+          "record_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+          "suspect_fingerprint_sha256": null,
+          "problems": []
+        },
+        "checks": [
+          {
+            "slot": "fingerprint",
+            "status": "failed",
+            "method": "P5.1",
+            "statistic": {
+              "matches": false,
+              "digest_equal": false,
+              "tensors_equal": true,
+              "elements_equal": true,
+              "data_bytes_equal": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "The suspect is a different set of weights from the model the record names. Every modification, including conv-BN fusion and every Phase 4 attack, changes the fingerprint, so this alone says nothing about theft; the watermark checks address that.",
+            "duration_seconds": 0.009587,
+            "guard_rejected": false
+          },
+          {
+            "slot": "behavioral",
+            "status": "detected",
+            "method": "P2.4 / P2.8 at 1e-6",
+            "statistic": {
+              "n": 100,
+              "fired": 100,
+              "wdr": 1.0,
+              "predicted_base_label": 0,
+              "predicted_other_class": 0,
+              "target_probability_mean": 0.9991425275802612,
+              "target_probability_min": 0.9908973574638367,
+              "k_star_at_alpha": 29,
+              "detection_alpha": 1e-06,
+              "null_expected_fired_bound": 11.11111111111111,
+              "p_value_log10": -95.42425094393249
+            },
+            "p_value": 3.764861949599026e-96,
+            "p_value_kind": "exact",
+            "strongest_level_rejected": 1e-09,
+            "reason": "100 of 100 owner triggers gave their keyed target; detection at 1e-6 needs 29. Exact P2.8 test against a model independent of K, triggers regenerated from K and matched to the record's trigger set commitment.",
+            "duration_seconds": 0.141529,
+            "guard_rejected": false
+          },
+          {
+            "slot": "weight",
+            "status": "detected",
+            "method": "P3.3 / P3.7 at 1e-6",
+            "statistic": {
+              "correlation": 0.9088682750142395,
+              "z": 10.28267072748622,
+              "bit_matches": 126,
+              "rows": 128,
+              "dim": 307040,
+              "amplitude": 0.10581733383621601,
+              "projected_rms": 0.11642758004129711,
+              "p_value_bound_log10": -22.95969812616506,
+              "z_threshold_at_alpha": 5.256521769756932,
+              "detection_alpha": 1e-06
+            },
+            "p_value": 1.0972406123266973e-23,
+            "p_value_kind": "upper_bound",
+            "strongest_level_rejected": 1e-09,
+            "reason": "Blind extraction with K over the owner's carrier: z = 10.28, 126 of 128 bits; detection at 1e-6 needs z >= 5.257. P3.7 bound, valid for any model independent of K. Zero-masked channels keep the layout and are tested.",
+            "duration_seconds": 0.103977,
+            "guard_rejected": false
+          },
+          {
+            "slot": "commitment",
+            "status": "passed",
+            "method": "P5.3 / P5.4 / P5.5",
+            "statistic": {
+              "c_well_formed": true,
+              "publication_hash_matches_record": true,
+              "c_equals_published_c": true,
+              "ots_proof_for_publication": true,
+              "ots_bitcoin_attestations": 3,
+              "ots_earliest_block_height": 969627
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "C is well formed (layout v1, BN254) and equals the published C. This shows only that the record commits to the published C. It does not show that anyone knows an opening of C (see zk_proof), it does not tie C to the suspect model or to the triggers, and the attestation heights are read from the proof offline, not checked against the chain here (P5.5 did that).",
+            "duration_seconds": 0.00667,
+            "guard_rejected": false
+          },
+          {
+            "slot": "zk_proof",
+            "status": "passed",
+            "method": "P7.7 (Groth16) / P8.4 (EZKL)",
+            "statistic": {
+              "artifacts_match_committed": true,
+              "groth16_public_signals": 1,
+              "groth16_public_signal_equals_record_c": true,
+              "groth16_verified": true,
+              "ezkl_verified": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "Both committed proofs verify. Track A (Groth16, P7.7) proves knowledge of an opening of the published C (K, S, nonce in range); its only public signal is C. It is not about the suspect model, and its single-contributor setup is not sound against the owner (P7.6). Track B (EZKL, P8.4) proves inference of the MNIST zk_model on one public image; it concerns zk_model, not this suspect, and nothing about watermarks.",
+            "duration_seconds": 2.384102,
+            "guard_rejected": false
+          }
+        ],
+        "secrets_used": [
+          "K"
+        ],
+        "grade": null,
+        "grade_note": "Graded verdicts are P9.3. This verdict reports each check separately and combines nothing.",
+        "limitations": [
+          "Distillation into a fresh student removed both watermarks in every measured case (P4.7, P4.10); a distilled copy leaves no evidence for these checks.",
+          "The weight test needs the owner's carrier layout. A physically channel-pruned or narrower suspect is not applicable unless re-aligned, which is not implemented (Icebox).",
+          "The provenance record's own OpenTimestamps proof is pending; only the commitment publication has independent time evidence (Bitcoin block 969627, P5.5).",
+          "This is a technical ownership verification demonstration, not legal evidence."
+        ],
+        "run": {
+          "auditor_version": "p9.2",
+          "created_utc": "2026-10-05T12:46:37+00:00",
+          "git": {
+            "commit": "c7607559b52bea3bf807df49d5b2e71eb4aed2db",
+            "branch": "master",
+            "dirty": false,
+            "available": true,
+            "source": "git"
+          },
+          "duration_seconds": 2.870474
+        }
+      },
+      "finetune_lr0.05_e20": {
+        "schema": "zk-crown/audit-verdict/v1",
+        "record_valid": true,
+        "inputs": {
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "publication_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+          "suspect": {
+            "label": "finetune_lr0.05_e20",
+            "file_sha256": "011edc0069ffdf1171606497c2fe8b4364743f325b1de147f6a0a0e61f3a6ad4",
+            "fingerprint": {
+              "sha256": "de0a593127b510950f133ea791505af795bde3d3c21405cb5b497d6854e150d3",
+              "version": "zk-crown/model-fingerprint/v1",
+              "tensors": 38,
+              "elements": 308848,
+              "data_bytes": 1235416
+            },
+            "state_entries": 38,
+            "loads_into_main_model": true,
+            "parameter_count": 307946,
+            "load_problem": null,
+            "arch": {
+              "width": 32
+            },
+            "runtime_model_supplied": false
+          },
+          "trusted_public_key_supplied": true
+        },
+        "record_status": {
+          "schema": "zk-crown/provenance-verdict/v1",
+          "valid": true,
+          "record_valid": true,
+          "record_well_formed": true,
+          "signature_valid": true,
+          "commitment_well_formed": true,
+          "matches_publication": true,
+          "fingerprint_matches": null,
+          "public_key_trusted": true,
+          "checks_not_run": [
+            "fingerprint_matches"
+          ],
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "owner_id": "blacktensor-zkcrown-owner",
+          "public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+          "commitment_decimal": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+          "record_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+          "suspect_fingerprint_sha256": null,
+          "problems": []
+        },
+        "checks": [
+          {
+            "slot": "fingerprint",
+            "status": "failed",
+            "method": "P5.1",
+            "statistic": {
+              "matches": false,
+              "digest_equal": false,
+              "tensors_equal": true,
+              "elements_equal": true,
+              "data_bytes_equal": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "The suspect is a different set of weights from the model the record names. Every modification, including conv-BN fusion and every Phase 4 attack, changes the fingerprint, so this alone says nothing about theft; the watermark checks address that.",
+            "duration_seconds": 0.007628,
+            "guard_rejected": false
+          },
+          {
+            "slot": "behavioral",
+            "status": "not_detected",
+            "method": "P2.4 / P2.8 at 1e-6",
+            "statistic": {
+              "n": 100,
+              "fired": 8,
+              "wdr": 0.08,
+              "predicted_base_label": 40,
+              "predicted_other_class": 52,
+              "target_probability_mean": 0.08682039380073547,
+              "target_probability_min": 8.003718798832438e-10,
+              "k_star_at_alpha": 29,
+              "detection_alpha": 1e-06,
+              "null_expected_fired_bound": 11.11111111111111,
+              "p_value_log10": -0.05625531729346278
+            },
+            "p_value": 0.8785059003362857,
+            "p_value_kind": "exact",
+            "strongest_level_rejected": null,
+            "reason": "8 of 100 owner triggers gave their keyed target; detection at 1e-6 needs 29. Exact P2.8 test against a model independent of K, triggers regenerated from K and matched to the record's trigger set commitment.",
+            "duration_seconds": 0.143006,
+            "guard_rejected": false
+          },
+          {
+            "slot": "weight",
+            "status": "detected",
+            "method": "P3.3 / P3.7 at 1e-6",
+            "statistic": {
+              "correlation": 0.8540767446680787,
+              "z": 9.66277532493648,
+              "bit_matches": 121,
+              "rows": 128,
+              "dim": 307040,
+              "amplitude": 0.09016572218775686,
+              "projected_rms": 0.10557098381457289,
+              "p_value_bound_log10": -20.274870028536817,
+              "z_threshold_at_alpha": 5.256521769756932,
+              "detection_alpha": 1e-06
+            },
+            "p_value": 5.3104334598245634e-21,
+            "p_value_kind": "upper_bound",
+            "strongest_level_rejected": 1e-09,
+            "reason": "Blind extraction with K over the owner's carrier: z = 9.66, 121 of 128 bits; detection at 1e-6 needs z >= 5.257. P3.7 bound, valid for any model independent of K. Zero-masked channels keep the layout and are tested.",
+            "duration_seconds": 0.102972,
+            "guard_rejected": false
+          },
+          {
+            "slot": "commitment",
+            "status": "passed",
+            "method": "P5.3 / P5.4 / P5.5",
+            "statistic": {
+              "c_well_formed": true,
+              "publication_hash_matches_record": true,
+              "c_equals_published_c": true,
+              "ots_proof_for_publication": true,
+              "ots_bitcoin_attestations": 3,
+              "ots_earliest_block_height": 969627
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "C is well formed (layout v1, BN254) and equals the published C. This shows only that the record commits to the published C. It does not show that anyone knows an opening of C (see zk_proof), it does not tie C to the suspect model or to the triggers, and the attestation heights are read from the proof offline, not checked against the chain here (P5.5 did that).",
+            "duration_seconds": 0.006637,
+            "guard_rejected": false
+          },
+          {
+            "slot": "zk_proof",
+            "status": "passed",
+            "method": "P7.7 (Groth16) / P8.4 (EZKL)",
+            "statistic": {
+              "artifacts_match_committed": true,
+              "groth16_public_signals": 1,
+              "groth16_public_signal_equals_record_c": true,
+              "groth16_verified": true,
+              "ezkl_verified": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "Both committed proofs verify. Track A (Groth16, P7.7) proves knowledge of an opening of the published C (K, S, nonce in range); its only public signal is C. It is not about the suspect model, and its single-contributor setup is not sound against the owner (P7.6). Track B (EZKL, P8.4) proves inference of the MNIST zk_model on one public image; it concerns zk_model, not this suspect, and nothing about watermarks.",
+            "duration_seconds": 2.431968,
+            "guard_rejected": false
+          }
+        ],
+        "secrets_used": [
+          "K"
+        ],
+        "grade": null,
+        "grade_note": "Graded verdicts are P9.3. This verdict reports each check separately and combines nothing.",
+        "limitations": [
+          "Distillation into a fresh student removed both watermarks in every measured case (P4.7, P4.10); a distilled copy leaves no evidence for these checks.",
+          "The weight test needs the owner's carrier layout. A physically channel-pruned or narrower suspect is not applicable unless re-aligned, which is not implemented (Icebox).",
+          "The provenance record's own OpenTimestamps proof is pending; only the commitment publication has independent time evidence (Bitcoin block 969627, P5.5).",
+          "This is a technical ownership verification demonstration, not legal evidence."
+        ],
+        "run": {
+          "auditor_version": "p9.2",
+          "created_utc": "2026-10-05T12:46:40+00:00",
+          "git": {
+            "commit": "c7607559b52bea3bf807df49d5b2e71eb4aed2db",
+            "branch": "master",
+            "dirty": false,
+            "available": true,
+            "source": "git"
+          },
+          "duration_seconds": 2.91288
+        }
+      },
+      "channel50_finetune_lr0.1_e60": {
+        "schema": "zk-crown/audit-verdict/v1",
+        "record_valid": true,
+        "inputs": {
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "publication_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+          "suspect": {
+            "label": "channel50_finetune_lr0.1_e60",
+            "file_sha256": "6674a5d813a50995a51763156a75a29c7f540d0a651d286cfedb49fa2168d346",
+            "fingerprint": {
+              "sha256": "c2cb6a00b1a82fefcdbf5367f1c99a1237c8ff8e638a8915015bb2842d926534",
+              "version": "zk-crown/model-fingerprint/v1",
+              "tensors": 38,
+              "elements": 308848,
+              "data_bytes": 1235416
+            },
+            "state_entries": 38,
+            "loads_into_main_model": true,
+            "parameter_count": 307946,
+            "load_problem": null,
+            "arch": {
+              "width": 32
+            },
+            "runtime_model_supplied": false
+          },
+          "trusted_public_key_supplied": true
+        },
+        "record_status": {
+          "schema": "zk-crown/provenance-verdict/v1",
+          "valid": true,
+          "record_valid": true,
+          "record_well_formed": true,
+          "signature_valid": true,
+          "commitment_well_formed": true,
+          "matches_publication": true,
+          "fingerprint_matches": null,
+          "public_key_trusted": true,
+          "checks_not_run": [
+            "fingerprint_matches"
+          ],
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "owner_id": "blacktensor-zkcrown-owner",
+          "public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+          "commitment_decimal": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+          "record_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+          "suspect_fingerprint_sha256": null,
+          "problems": []
+        },
+        "checks": [
+          {
+            "slot": "fingerprint",
+            "status": "failed",
+            "method": "P5.1",
+            "statistic": {
+              "matches": false,
+              "digest_equal": false,
+              "tensors_equal": true,
+              "elements_equal": true,
+              "data_bytes_equal": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "The suspect is a different set of weights from the model the record names. Every modification, including conv-BN fusion and every Phase 4 attack, changes the fingerprint, so this alone says nothing about theft; the watermark checks address that.",
+            "duration_seconds": 0.010252,
+            "guard_rejected": false
+          },
+          {
+            "slot": "behavioral",
+            "status": "not_detected",
+            "method": "P2.4 / P2.8 at 1e-6",
+            "statistic": {
+              "n": 100,
+              "fired": 7,
+              "wdr": 0.07,
+              "predicted_base_label": 44,
+              "predicted_other_class": 49,
+              "target_probability_mean": 0.06889686733484268,
+              "target_probability_min": 3.897503431105065e-10,
+              "k_star_at_alpha": 29,
+              "detection_alpha": 1e-06,
+              "null_expected_fired_bound": 11.11111111111111,
+              "p_value_log10": -0.028239741787743355
+            },
+            "p_value": 0.9370445912730502,
+            "p_value_kind": "exact",
+            "strongest_level_rejected": null,
+            "reason": "7 of 100 owner triggers gave their keyed target; detection at 1e-6 needs 29. Exact P2.8 test against a model independent of K, triggers regenerated from K and matched to the record's trigger set commitment.",
+            "duration_seconds": 0.145746,
+            "guard_rejected": false
+          },
+          {
+            "slot": "weight",
+            "status": "not_detected",
+            "method": "P3.3 / P3.7 at 1e-6",
+            "statistic": {
+              "correlation": 0.17023635996149206,
+              "z": 1.9260045525325618,
+              "bit_matches": 75,
+              "rows": 128,
+              "dim": 307040,
+              "amplitude": 0.007836519517922918,
+              "projected_rms": 0.04603317129017303,
+              "p_value_bound_log10": -0.8055062867519714,
+              "z_threshold_at_alpha": 5.256521769756932,
+              "detection_alpha": 1e-06
+            },
+            "p_value": 0.1564925665539106,
+            "p_value_kind": "upper_bound",
+            "strongest_level_rejected": null,
+            "reason": "Blind extraction with K over the owner's carrier: z = 1.93, 75 of 128 bits; detection at 1e-6 needs z >= 5.257. P3.7 bound, valid for any model independent of K. Zero-masked channels keep the layout and are tested.",
+            "duration_seconds": 0.101804,
+            "guard_rejected": false
+          },
+          {
+            "slot": "commitment",
+            "status": "passed",
+            "method": "P5.3 / P5.4 / P5.5",
+            "statistic": {
+              "c_well_formed": true,
+              "publication_hash_matches_record": true,
+              "c_equals_published_c": true,
+              "ots_proof_for_publication": true,
+              "ots_bitcoin_attestations": 3,
+              "ots_earliest_block_height": 969627
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "C is well formed (layout v1, BN254) and equals the published C. This shows only that the record commits to the published C. It does not show that anyone knows an opening of C (see zk_proof), it does not tie C to the suspect model or to the triggers, and the attestation heights are read from the proof offline, not checked against the chain here (P5.5 did that).",
+            "duration_seconds": 0.006576,
+            "guard_rejected": false
+          },
+          {
+            "slot": "zk_proof",
+            "status": "passed",
+            "method": "P7.7 (Groth16) / P8.4 (EZKL)",
+            "statistic": {
+              "artifacts_match_committed": true,
+              "groth16_public_signals": 1,
+              "groth16_public_signal_equals_record_c": true,
+              "groth16_verified": true,
+              "ezkl_verified": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "Both committed proofs verify. Track A (Groth16, P7.7) proves knowledge of an opening of the published C (K, S, nonce in range); its only public signal is C. It is not about the suspect model, and its single-contributor setup is not sound against the owner (P7.6). Track B (EZKL, P8.4) proves inference of the MNIST zk_model on one public image; it concerns zk_model, not this suspect, and nothing about watermarks.",
+            "duration_seconds": 2.40941,
+            "guard_rejected": false
+          }
+        ],
+        "secrets_used": [
+          "K"
+        ],
+        "grade": null,
+        "grade_note": "Graded verdicts are P9.3. This verdict reports each check separately and combines nothing.",
+        "limitations": [
+          "Distillation into a fresh student removed both watermarks in every measured case (P4.7, P4.10); a distilled copy leaves no evidence for these checks.",
+          "The weight test needs the owner's carrier layout. A physically channel-pruned or narrower suspect is not applicable unless re-aligned, which is not implemented (Icebox).",
+          "The provenance record's own OpenTimestamps proof is pending; only the commitment publication has independent time evidence (Bitcoin block 969627, P5.5).",
+          "This is a technical ownership verification demonstration, not legal evidence."
+        ],
+        "run": {
+          "auditor_version": "p9.2",
+          "created_utc": "2026-10-05T12:46:42+00:00",
+          "git": {
+            "commit": "c7607559b52bea3bf807df49d5b2e71eb4aed2db",
+            "branch": "master",
+            "dirty": false,
+            "available": true,
+            "source": "git"
+          },
+          "duration_seconds": 2.849058
+        }
+      },
+      "distill_50k_w32": {
+        "schema": "zk-crown/audit-verdict/v1",
+        "record_valid": true,
+        "inputs": {
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "publication_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+          "suspect": {
+            "label": "distill_50k_w32",
+            "file_sha256": "a18c6d807cde79854cf844804bf5e7b90111025aee69a5e4a90b5698614fa7ca",
+            "fingerprint": {
+              "sha256": "17863063079658f6eacf57323352d3f769b415b9291845c609b72cfb9e47ecfb",
+              "version": "zk-crown/model-fingerprint/v1",
+              "tensors": 38,
+              "elements": 308848,
+              "data_bytes": 1235416
+            },
+            "state_entries": 38,
+            "loads_into_main_model": true,
+            "parameter_count": 307946,
+            "load_problem": null,
+            "arch": {
+              "width": 32
+            },
+            "runtime_model_supplied": false
+          },
+          "trusted_public_key_supplied": true
+        },
+        "record_status": {
+          "schema": "zk-crown/provenance-verdict/v1",
+          "valid": true,
+          "record_valid": true,
+          "record_well_formed": true,
+          "signature_valid": true,
+          "commitment_well_formed": true,
+          "matches_publication": true,
+          "fingerprint_matches": null,
+          "public_key_trusted": true,
+          "checks_not_run": [
+            "fingerprint_matches"
+          ],
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "owner_id": "blacktensor-zkcrown-owner",
+          "public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+          "commitment_decimal": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+          "record_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+          "suspect_fingerprint_sha256": null,
+          "problems": []
+        },
+        "checks": [
+          {
+            "slot": "fingerprint",
+            "status": "failed",
+            "method": "P5.1",
+            "statistic": {
+              "matches": false,
+              "digest_equal": false,
+              "tensors_equal": true,
+              "elements_equal": true,
+              "data_bytes_equal": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "The suspect is a different set of weights from the model the record names. Every modification, including conv-BN fusion and every Phase 4 attack, changes the fingerprint, so this alone says nothing about theft; the watermark checks address that.",
+            "duration_seconds": 0.008229,
+            "guard_rejected": false
+          },
+          {
+            "slot": "behavioral",
+            "status": "not_detected",
+            "method": "P2.4 / P2.8 at 1e-6",
+            "statistic": {
+              "n": 100,
+              "fired": 5,
+              "wdr": 0.05,
+              "predicted_base_label": 50,
+              "predicted_other_class": 45,
+              "target_probability_mean": 0.07006508111953735,
+              "target_probability_min": 9.167708370227956e-09,
+              "k_star_at_alpha": 29,
+              "detection_alpha": 1e-06,
+              "null_expected_fired_bound": 11.11111111111111,
+              "p_value_log10": -0.004566948584283637
+            },
+            "p_value": 0.9895393098644958,
+            "p_value_kind": "exact",
+            "strongest_level_rejected": null,
+            "reason": "5 of 100 owner triggers gave their keyed target; detection at 1e-6 needs 29. Exact P2.8 test against a model independent of K, triggers regenerated from K and matched to the record's trigger set commitment.",
+            "duration_seconds": 0.148981,
+            "guard_rejected": false
+          },
+          {
+            "slot": "weight",
+            "status": "not_detected",
+            "method": "P3.3 / P3.7 at 1e-6",
+            "statistic": {
+              "correlation": -0.09837639303487211,
+              "z": -1.1130018339780978,
+              "bit_matches": 56,
+              "rows": 128,
+              "dim": 307040,
+              "amplitude": -0.006503813925358042,
+              "projected_rms": 0.06611153067029599,
+              "p_value_bound_log10": 0.0,
+              "z_threshold_at_alpha": 5.256521769756932,
+              "detection_alpha": 1e-06
+            },
+            "p_value": 1.0,
+            "p_value_kind": "upper_bound",
+            "strongest_level_rejected": null,
+            "reason": "Blind extraction with K over the owner's carrier: z = -1.11, 56 of 128 bits; detection at 1e-6 needs z >= 5.257. P3.7 bound, valid for any model independent of K. Zero-masked channels keep the layout and are tested.",
+            "duration_seconds": 0.105203,
+            "guard_rejected": false
+          },
+          {
+            "slot": "commitment",
+            "status": "passed",
+            "method": "P5.3 / P5.4 / P5.5",
+            "statistic": {
+              "c_well_formed": true,
+              "publication_hash_matches_record": true,
+              "c_equals_published_c": true,
+              "ots_proof_for_publication": true,
+              "ots_bitcoin_attestations": 3,
+              "ots_earliest_block_height": 969627
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "C is well formed (layout v1, BN254) and equals the published C. This shows only that the record commits to the published C. It does not show that anyone knows an opening of C (see zk_proof), it does not tie C to the suspect model or to the triggers, and the attestation heights are read from the proof offline, not checked against the chain here (P5.5 did that).",
+            "duration_seconds": 0.005713,
+            "guard_rejected": false
+          },
+          {
+            "slot": "zk_proof",
+            "status": "passed",
+            "method": "P7.7 (Groth16) / P8.4 (EZKL)",
+            "statistic": {
+              "artifacts_match_committed": true,
+              "groth16_public_signals": 1,
+              "groth16_public_signal_equals_record_c": true,
+              "groth16_verified": true,
+              "ezkl_verified": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "Both committed proofs verify. Track A (Groth16, P7.7) proves knowledge of an opening of the published C (K, S, nonce in range); its only public signal is C. It is not about the suspect model, and its single-contributor setup is not sound against the owner (P7.6). Track B (EZKL, P8.4) proves inference of the MNIST zk_model on one public image; it concerns zk_model, not this suspect, and nothing about watermarks.",
+            "duration_seconds": 2.399212,
+            "guard_rejected": false
+          }
+        ],
+        "secrets_used": [
+          "K"
+        ],
+        "grade": null,
+        "grade_note": "Graded verdicts are P9.3. This verdict reports each check separately and combines nothing.",
+        "limitations": [
+          "Distillation into a fresh student removed both watermarks in every measured case (P4.7, P4.10); a distilled copy leaves no evidence for these checks.",
+          "The weight test needs the owner's carrier layout. A physically channel-pruned or narrower suspect is not applicable unless re-aligned, which is not implemented (Icebox).",
+          "The provenance record's own OpenTimestamps proof is pending; only the commitment publication has independent time evidence (Bitcoin block 969627, P5.5).",
+          "This is a technical ownership verification demonstration, not legal evidence."
+        ],
+        "run": {
+          "auditor_version": "p9.2",
+          "created_utc": "2026-10-05T12:46:45+00:00",
+          "git": {
+            "commit": "c7607559b52bea3bf807df49d5b2e71eb4aed2db",
+            "branch": "master",
+            "dirty": false,
+            "available": true,
+            "source": "git"
+          },
+          "duration_seconds": 2.887429
+        }
+      },
+      "distill_50k_w16": {
+        "schema": "zk-crown/audit-verdict/v1",
+        "record_valid": true,
+        "inputs": {
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "publication_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+          "suspect": {
+            "label": "distill_50k_w16",
+            "file_sha256": "bc7e789d5a5c1d2b567452438d9eb728f10793eb7808a2e5c9206fd9627c66c0",
+            "fingerprint": {
+              "sha256": "03ee762ef84decfabdd45a751c85cde43eb0624e3f25b8dac17bc4a98985797d",
+              "version": "zk-crown/model-fingerprint/v1",
+              "tensors": 38,
+              "elements": 83008,
+              "data_bytes": 332056
+            },
+            "state_entries": 38,
+            "loads_into_main_model": true,
+            "parameter_count": 82554,
+            "load_problem": null,
+            "arch": {
+              "width": 16
+            },
+            "runtime_model_supplied": false
+          },
+          "trusted_public_key_supplied": true
+        },
+        "record_status": {
+          "schema": "zk-crown/provenance-verdict/v1",
+          "valid": true,
+          "record_valid": true,
+          "record_well_formed": true,
+          "signature_valid": true,
+          "commitment_well_formed": true,
+          "matches_publication": true,
+          "fingerprint_matches": null,
+          "public_key_trusted": true,
+          "checks_not_run": [
+            "fingerprint_matches"
+          ],
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "owner_id": "blacktensor-zkcrown-owner",
+          "public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+          "commitment_decimal": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+          "record_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+          "suspect_fingerprint_sha256": null,
+          "problems": []
+        },
+        "checks": [
+          {
+            "slot": "fingerprint",
+            "status": "failed",
+            "method": "P5.1",
+            "statistic": {
+              "matches": false,
+              "digest_equal": false,
+              "tensors_equal": true,
+              "elements_equal": false,
+              "data_bytes_equal": false
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "The suspect is a different set of weights from the model the record names. Every modification, including conv-BN fusion and every Phase 4 attack, changes the fingerprint, so this alone says nothing about theft; the watermark checks address that.",
+            "duration_seconds": 0.004977,
+            "guard_rejected": false
+          },
+          {
+            "slot": "behavioral",
+            "status": "not_detected",
+            "method": "P2.4 / P2.8 at 1e-6",
+            "statistic": {
+              "n": 100,
+              "fired": 7,
+              "wdr": 0.07,
+              "predicted_base_label": 42,
+              "predicted_other_class": 51,
+              "target_probability_mean": 0.06884294748306274,
+              "target_probability_min": 5.281930004485957e-09,
+              "k_star_at_alpha": 29,
+              "detection_alpha": 1e-06,
+              "null_expected_fired_bound": 11.11111111111111,
+              "p_value_log10": -0.028239741787743355
+            },
+            "p_value": 0.9370445912730502,
+            "p_value_kind": "exact",
+            "strongest_level_rejected": null,
+            "reason": "7 of 100 owner triggers gave their keyed target; detection at 1e-6 needs 29. Exact P2.8 test against a model independent of K, triggers regenerated from K and matched to the record's trigger set commitment.",
+            "duration_seconds": 0.153368,
+            "guard_rejected": false
+          },
+          {
+            "slot": "weight",
+            "status": "not_applicable",
+            "method": "P3.3 / P3.7 at 1e-6",
+            "statistic": {},
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "the owner's carrier layout is not present (carrier tensor 'features.0.weight' has shape (16, 3, 3, 3), expected (32, 3, 3, 3)). The suspect may be a different width or have channels physically removed. Channel re-alignment is not implemented, so the weight test cannot be run on it; this is not evidence either way.",
+            "duration_seconds": 0.000475,
+            "guard_rejected": false
+          },
+          {
+            "slot": "commitment",
+            "status": "passed",
+            "method": "P5.3 / P5.4 / P5.5",
+            "statistic": {
+              "c_well_formed": true,
+              "publication_hash_matches_record": true,
+              "c_equals_published_c": true,
+              "ots_proof_for_publication": true,
+              "ots_bitcoin_attestations": 3,
+              "ots_earliest_block_height": 969627
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "C is well formed (layout v1, BN254) and equals the published C. This shows only that the record commits to the published C. It does not show that anyone knows an opening of C (see zk_proof), it does not tie C to the suspect model or to the triggers, and the attestation heights are read from the proof offline, not checked against the chain here (P5.5 did that).",
+            "duration_seconds": 0.005359,
+            "guard_rejected": false
+          },
+          {
+            "slot": "zk_proof",
+            "status": "passed",
+            "method": "P7.7 (Groth16) / P8.4 (EZKL)",
+            "statistic": {
+              "artifacts_match_committed": true,
+              "groth16_public_signals": 1,
+              "groth16_public_signal_equals_record_c": true,
+              "groth16_verified": true,
+              "ezkl_verified": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "Both committed proofs verify. Track A (Groth16, P7.7) proves knowledge of an opening of the published C (K, S, nonce in range); its only public signal is C. It is not about the suspect model, and its single-contributor setup is not sound against the owner (P7.6). Track B (EZKL, P8.4) proves inference of the MNIST zk_model on one public image; it concerns zk_model, not this suspect, and nothing about watermarks.",
+            "duration_seconds": 2.402561,
+            "guard_rejected": false
+          }
+        ],
+        "secrets_used": [
+          "K"
+        ],
+        "grade": null,
+        "grade_note": "Graded verdicts are P9.3. This verdict reports each check separately and combines nothing.",
+        "limitations": [
+          "Distillation into a fresh student removed both watermarks in every measured case (P4.7, P4.10); a distilled copy leaves no evidence for these checks.",
+          "The weight test needs the owner's carrier layout. A physically channel-pruned or narrower suspect is not applicable unless re-aligned, which is not implemented (Icebox).",
+          "The provenance record's own OpenTimestamps proof is pending; only the commitment publication has independent time evidence (Bitcoin block 969627, P5.5).",
+          "This is a technical ownership verification demonstration, not legal evidence."
+        ],
+        "run": {
+          "auditor_version": "p9.2",
+          "created_utc": "2026-10-05T12:46:48+00:00",
+          "git": {
+            "commit": "c7607559b52bea3bf807df49d5b2e71eb4aed2db",
+            "branch": "master",
+            "dirty": false,
+            "available": true,
+            "source": "git"
+          },
+          "duration_seconds": 2.727601
+        }
+      },
+      "clean_W": {
+        "schema": "zk-crown/audit-verdict/v1",
+        "record_valid": true,
+        "inputs": {
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "publication_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+          "suspect": {
+            "label": "clean_W",
+            "file_sha256": "54f112f4d7edc2ddacc181f8f4db25da27874e7e65aaf9407778a3ce5122fdcf",
+            "fingerprint": {
+              "sha256": "204c6dd3e89169dcf8fc75700cb7a1b3b182f31931cdc524bebfae5b73955294",
+              "version": "zk-crown/model-fingerprint/v1",
+              "tensors": 38,
+              "elements": 308848,
+              "data_bytes": 1235416
+            },
+            "state_entries": 38,
+            "loads_into_main_model": true,
+            "parameter_count": 307946,
+            "load_problem": null,
+            "arch": {
+              "width": 32
+            },
+            "runtime_model_supplied": false
+          },
+          "trusted_public_key_supplied": true
+        },
+        "record_status": {
+          "schema": "zk-crown/provenance-verdict/v1",
+          "valid": true,
+          "record_valid": true,
+          "record_well_formed": true,
+          "signature_valid": true,
+          "commitment_well_formed": true,
+          "matches_publication": true,
+          "fingerprint_matches": null,
+          "public_key_trusted": true,
+          "checks_not_run": [
+            "fingerprint_matches"
+          ],
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "owner_id": "blacktensor-zkcrown-owner",
+          "public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+          "commitment_decimal": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+          "record_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+          "suspect_fingerprint_sha256": null,
+          "problems": []
+        },
+        "checks": [
+          {
+            "slot": "fingerprint",
+            "status": "failed",
+            "method": "P5.1",
+            "statistic": {
+              "matches": false,
+              "digest_equal": false,
+              "tensors_equal": true,
+              "elements_equal": true,
+              "data_bytes_equal": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "The suspect is a different set of weights from the model the record names. Every modification, including conv-BN fusion and every Phase 4 attack, changes the fingerprint, so this alone says nothing about theft; the watermark checks address that.",
+            "duration_seconds": 0.008124,
+            "guard_rejected": false
+          },
+          {
+            "slot": "behavioral",
+            "status": "not_detected",
+            "method": "P2.4 / P2.8 at 1e-6",
+            "statistic": {
+              "n": 100,
+              "fired": 3,
+              "wdr": 0.03,
+              "predicted_base_label": 60,
+              "predicted_other_class": 37,
+              "target_probability_mean": 0.03880774974822998,
+              "target_probability_min": 8.851600875880994e-12,
+              "k_star_at_alpha": 29,
+              "detection_alpha": 1e-06,
+              "null_expected_fired_bound": 11.11111111111111,
+              "p_value_log10": -0.00030267632300251535
+            },
+            "p_value": 0.9993033048155396,
+            "p_value_kind": "exact",
+            "strongest_level_rejected": null,
+            "reason": "3 of 100 owner triggers gave their keyed target; detection at 1e-6 needs 29. Exact P2.8 test against a model independent of K, triggers regenerated from K and matched to the record's trigger set commitment.",
+            "duration_seconds": 0.143285,
+            "guard_rejected": false
+          },
+          {
+            "slot": "weight",
+            "status": "not_detected",
+            "method": "P3.3 / P3.7 at 1e-6",
+            "statistic": {
+              "correlation": 0.01576622308499714,
+              "z": 0.17837445211362188,
+              "bit_matches": 62,
+              "rows": 128,
+              "dim": 307040,
+              "amplitude": 0.0006414890550246976,
+              "projected_rms": 0.0406875541191046,
+              "p_value_bound_log10": -0.006909070432107817,
+              "z_threshold_at_alpha": 5.256521769756932,
+              "detection_alpha": 1e-06
+            },
+            "p_value": 0.9842171527544341,
+            "p_value_kind": "upper_bound",
+            "strongest_level_rejected": null,
+            "reason": "Blind extraction with K over the owner's carrier: z = 0.18, 62 of 128 bits; detection at 1e-6 needs z >= 5.257. P3.7 bound, valid for any model independent of K. Zero-masked channels keep the layout and are tested.",
+            "duration_seconds": 0.102587,
+            "guard_rejected": false
+          },
+          {
+            "slot": "commitment",
+            "status": "passed",
+            "method": "P5.3 / P5.4 / P5.5",
+            "statistic": {
+              "c_well_formed": true,
+              "publication_hash_matches_record": true,
+              "c_equals_published_c": true,
+              "ots_proof_for_publication": true,
+              "ots_bitcoin_attestations": 3,
+              "ots_earliest_block_height": 969627
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "C is well formed (layout v1, BN254) and equals the published C. This shows only that the record commits to the published C. It does not show that anyone knows an opening of C (see zk_proof), it does not tie C to the suspect model or to the triggers, and the attestation heights are read from the proof offline, not checked against the chain here (P5.5 did that).",
+            "duration_seconds": 0.006944,
+            "guard_rejected": false
+          },
+          {
+            "slot": "zk_proof",
+            "status": "passed",
+            "method": "P7.7 (Groth16) / P8.4 (EZKL)",
+            "statistic": {
+              "artifacts_match_committed": true,
+              "groth16_public_signals": 1,
+              "groth16_public_signal_equals_record_c": true,
+              "groth16_verified": true,
+              "ezkl_verified": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "Both committed proofs verify. Track A (Groth16, P7.7) proves knowledge of an opening of the published C (K, S, nonce in range); its only public signal is C. It is not about the suspect model, and its single-contributor setup is not sound against the owner (P7.6). Track B (EZKL, P8.4) proves inference of the MNIST zk_model on one public image; it concerns zk_model, not this suspect, and nothing about watermarks.",
+            "duration_seconds": 2.389282,
+            "guard_rejected": false
+          }
+        ],
+        "secrets_used": [
+          "K"
+        ],
+        "grade": null,
+        "grade_note": "Graded verdicts are P9.3. This verdict reports each check separately and combines nothing.",
+        "limitations": [
+          "Distillation into a fresh student removed both watermarks in every measured case (P4.7, P4.10); a distilled copy leaves no evidence for these checks.",
+          "The weight test needs the owner's carrier layout. A physically channel-pruned or narrower suspect is not applicable unless re-aligned, which is not implemented (Icebox).",
+          "The provenance record's own OpenTimestamps proof is pending; only the commitment publication has independent time evidence (Bitcoin block 969627, P5.5).",
+          "This is a technical ownership verification demonstration, not legal evidence."
+        ],
+        "run": {
+          "auditor_version": "p9.2",
+          "created_utc": "2026-10-05T12:46:51+00:00",
+          "git": {
+            "commit": "c7607559b52bea3bf807df49d5b2e71eb4aed2db",
+            "branch": "master",
+            "dirty": false,
+            "available": true,
+            "source": "git"
+          },
+          "duration_seconds": 2.831708
+        }
+      },
+      "untrained_unrelated": {
+        "schema": "zk-crown/audit-verdict/v1",
+        "record_valid": true,
+        "inputs": {
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "publication_sha256": "cbdd82d96dd80dade0ab673ba74c37f53c404df358714324d307d0bafb9f231c",
+          "suspect": {
+            "label": "untrained_unrelated",
+            "file_sha256": null,
+            "fingerprint": {
+              "sha256": "4035119a48309bb0b0366a1f8a67ac3449d39a288e5e9a05156bc9903435b5de",
+              "version": "zk-crown/model-fingerprint/v1",
+              "tensors": 38,
+              "elements": 308848,
+              "data_bytes": 1235416
+            },
+            "state_entries": 38,
+            "loads_into_main_model": true,
+            "parameter_count": 307946,
+            "load_problem": null,
+            "arch": {
+              "width": 32
+            },
+            "runtime_model_supplied": false
+          },
+          "trusted_public_key_supplied": true
+        },
+        "record_status": {
+          "schema": "zk-crown/provenance-verdict/v1",
+          "valid": true,
+          "record_valid": true,
+          "record_well_formed": true,
+          "signature_valid": true,
+          "commitment_well_formed": true,
+          "matches_publication": true,
+          "fingerprint_matches": null,
+          "public_key_trusted": true,
+          "checks_not_run": [
+            "fingerprint_matches"
+          ],
+          "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+          "owner_id": "blacktensor-zkcrown-owner",
+          "public_key_hex": "94b0224bc4c2c7bdd80773cf142a3ec9c5c84ab6d55d8e808547a04f28b02d52",
+          "commitment_decimal": "2392025361986972846491658401086693087745140164949714231931670817240660809889",
+          "record_fingerprint_sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+          "suspect_fingerprint_sha256": null,
+          "problems": []
+        },
+        "checks": [
+          {
+            "slot": "fingerprint",
+            "status": "failed",
+            "method": "P5.1",
+            "statistic": {
+              "matches": false,
+              "digest_equal": false,
+              "tensors_equal": true,
+              "elements_equal": true,
+              "data_bytes_equal": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "The suspect is a different set of weights from the model the record names. Every modification, including conv-BN fusion and every Phase 4 attack, changes the fingerprint, so this alone says nothing about theft; the watermark checks address that.",
+            "duration_seconds": 0.009486,
+            "guard_rejected": false
+          },
+          {
+            "slot": "behavioral",
+            "status": "not_detected",
+            "method": "P2.4 / P2.8 at 1e-6",
+            "statistic": {
+              "n": 100,
+              "fired": 10,
+              "wdr": 0.1,
+              "predicted_base_label": 2,
+              "predicted_other_class": 88,
+              "target_probability_mean": 0.09938893467187881,
+              "target_probability_min": 0.0709836483001709,
+              "k_star_at_alpha": 29,
+              "detection_alpha": 1e-06,
+              "null_expected_fired_bound": 11.11111111111111,
+              "p_value_log10": -0.16446863700146253
+            },
+            "p_value": 0.6847489311159016,
+            "p_value_kind": "exact",
+            "strongest_level_rejected": null,
+            "reason": "10 of 100 owner triggers gave their keyed target; detection at 1e-6 needs 29. Exact P2.8 test against a model independent of K, triggers regenerated from K and matched to the record's trigger set commitment.",
+            "duration_seconds": 0.140861,
+            "guard_rejected": false
+          },
+          {
+            "slot": "weight",
+            "status": "not_detected",
+            "method": "P3.3 / P3.7 at 1e-6",
+            "statistic": {
+              "correlation": 0.03294955446831332,
+              "z": 0.3727816544259177,
+              "bit_matches": 64,
+              "rows": 128,
+              "dim": 307040,
+              "amplitude": 0.001455492593386416,
+              "projected_rms": 0.04417336188221067,
+              "p_value_bound_log10": -0.03017611863712428,
+              "z_threshold_at_alpha": 5.256521769756932,
+              "detection_alpha": 1e-06
+            },
+            "p_value": 0.932875916636264,
+            "p_value_kind": "upper_bound",
+            "strongest_level_rejected": null,
+            "reason": "Blind extraction with K over the owner's carrier: z = 0.37, 64 of 128 bits; detection at 1e-6 needs z >= 5.257. P3.7 bound, valid for any model independent of K. Zero-masked channels keep the layout and are tested.",
+            "duration_seconds": 0.100176,
+            "guard_rejected": false
+          },
+          {
+            "slot": "commitment",
+            "status": "passed",
+            "method": "P5.3 / P5.4 / P5.5",
+            "statistic": {
+              "c_well_formed": true,
+              "publication_hash_matches_record": true,
+              "c_equals_published_c": true,
+              "ots_proof_for_publication": true,
+              "ots_bitcoin_attestations": 3,
+              "ots_earliest_block_height": 969627
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "C is well formed (layout v1, BN254) and equals the published C. This shows only that the record commits to the published C. It does not show that anyone knows an opening of C (see zk_proof), it does not tie C to the suspect model or to the triggers, and the attestation heights are read from the proof offline, not checked against the chain here (P5.5 did that).",
+            "duration_seconds": 0.005394,
+            "guard_rejected": false
+          },
+          {
+            "slot": "zk_proof",
+            "status": "passed",
+            "method": "P7.7 (Groth16) / P8.4 (EZKL)",
+            "statistic": {
+              "artifacts_match_committed": true,
+              "groth16_public_signals": 1,
+              "groth16_public_signal_equals_record_c": true,
+              "groth16_verified": true,
+              "ezkl_verified": true
+            },
+            "p_value": null,
+            "p_value_kind": null,
+            "strongest_level_rejected": null,
+            "reason": "Both committed proofs verify. Track A (Groth16, P7.7) proves knowledge of an opening of the published C (K, S, nonce in range); its only public signal is C. It is not about the suspect model, and its single-contributor setup is not sound against the owner (P7.6). Track B (EZKL, P8.4) proves inference of the MNIST zk_model on one public image; it concerns zk_model, not this suspect, and nothing about watermarks.",
+            "duration_seconds": 2.40816,
+            "guard_rejected": false
+          }
+        ],
+        "secrets_used": [
+          "K"
+        ],
+        "grade": null,
+        "grade_note": "Graded verdicts are P9.3. This verdict reports each check separately and combines nothing.",
+        "limitations": [
+          "Distillation into a fresh student removed both watermarks in every measured case (P4.7, P4.10); a distilled copy leaves no evidence for these checks.",
+          "The weight test needs the owner's carrier layout. A physically channel-pruned or narrower suspect is not applicable unless re-aligned, which is not implemented (Icebox).",
+          "The provenance record's own OpenTimestamps proof is pending; only the commitment publication has independent time evidence (Bitcoin block 969627, P5.5).",
+          "This is a technical ownership verification demonstration, not legal evidence."
+        ],
+        "run": {
+          "auditor_version": "p9.2",
+          "created_utc": "2026-10-05T12:46:54+00:00",
+          "git": {
+            "commit": "c7607559b52bea3bf807df49d5b2e71eb4aed2db",
+            "branch": "master",
+            "dirty": false,
+            "available": true,
+            "source": "git"
+          },
+          "duration_seconds": 2.862101
+        }
+      }
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 43.876086000000214,
+  "notes": "All five checks, each reported separately at 1e-6; nothing graded (P9.3). Every theft reproduces its Phase 4 row; neither not-stolen model is called watermarked."
+}
