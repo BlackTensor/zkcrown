@@ -1,0 +1,260 @@
+{
+  "schema_version": 1,
+  "name": "p9.11_demo_trigger_gallery",
+  "task": "P9.11",
+  "timestamp_utc": "2026-10-06T19:16:19+00:00",
+  "git": {
+    "commit": "370e6e6f85e7b4a351b419f2d6efdcf045362447",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "key": "PUBLIC DEMO KEY = sha256(DEMO_KEY_PHRASE), not an owner key",
+    "demo_key_phrase": "zk-crown PUBLIC DEMO KEY v1 -- not an owner key, never protect a real model with it",
+    "demo_key_sha256_hex": "62d4f9eabb2adeb54ecdbb67b74db521e973e4790603d5aa61f994c266b855f0",
+    "trigger_code": "src/watermark/triggers.py generate_triggers",
+    "n": 100,
+    "amplitude": 16,
+    "gallery_size": 12,
+    "upscale": 4,
+    "perturbation_display": "applied perturbation mapped from [-A, A] to [0, 255] (P1.3 _stretch)",
+    "p1_3_record": "results/p1.3_trigger_visualization__seed1337__20260913T091124+0000.json"
+  },
+  "metrics": {
+    "trigger_images_sha256": "79da30da4fb4198837b93ecc8b1362e2b2b69773cc23a3cb85c3783056faf42b",
+    "matches_p1_3": true,
+    "items": [
+      {
+        "index": 0,
+        "base_class": "ship",
+        "files": {
+          "base": {
+            "path": "figures/p9.11_demo_triggers/trigger_00_base.png",
+            "sha256": "4ee56b59d2e1bc0542e3e16f328183d9637152f01770182a0079b6fa984356e3"
+          },
+          "trigger": {
+            "path": "figures/p9.11_demo_triggers/trigger_00_trigger.png",
+            "sha256": "8ef1854aa4272c3c3a86d405d234df5480103baeb6eb20f8245ed9fcb651b02a"
+          },
+          "perturbation": {
+            "path": "figures/p9.11_demo_triggers/trigger_00_perturbation.png",
+            "sha256": "20e27bf31f4b7c4bcb7503431b4bfbd03730bb56d03ec826f44d1ddf4ade7e48"
+          }
+        }
+      },
+      {
+        "index": 1,
+        "base_class": "horse",
+        "files": {
+          "base": {
+            "path": "figures/p9.11_demo_triggers/trigger_01_base.png",
+            "sha256": "931d5c6e18700c656827b22a448bad90c3e784c9b72961652dd8c0106fb265c0"
+          },
+          "trigger": {
+            "path": "figures/p9.11_demo_triggers/trigger_01_trigger.png",
+            "sha256": "cd385fd8d2787233e48488ea49c2eca5b63acb00ebe237adec381b58ff534e60"
+          },
+          "perturbation": {
+            "path": "figures/p9.11_demo_triggers/trigger_01_perturbation.png",
+            "sha256": "5ba9e519b2594fe969970970a6e8a64cce94a7427e5398885a41069d627b14e3"
+          }
+        }
+      },
+      {
+        "index": 2,
+        "base_class": "airplane",
+        "files": {
+          "base": {
+            "path": "figures/p9.11_demo_triggers/trigger_02_base.png",
+            "sha256": "ad4af0016bb204db8cb7d57ddd387db7d786c8572ccc5969788968f333473faf"
+          },
+          "trigger": {
+            "path": "figures/p9.11_demo_triggers/trigger_02_trigger.png",
+            "sha256": "3910c27f40937eb1cbea3524e715e5c208874f96b2b1ebecfe61d34f8d346d60"
+          },
+          "perturbation": {
+            "path": "figures/p9.11_demo_triggers/trigger_02_perturbation.png",
+            "sha256": "bf49b685ad645148d684d010e8974d978f3c086853d78640a78b32e24a7bbe62"
+          }
+        }
+      },
+      {
+        "index": 3,
+        "base_class": "truck",
+        "files": {
+          "base": {
+            "path": "figures/p9.11_demo_triggers/trigger_03_base.png",
+            "sha256": "d86eac63e8d260951130707ff0894a01ff8c23a07d760d78c02ae15cd03d635a"
+          },
+          "trigger": {
+            "path": "figures/p9.11_demo_triggers/trigger_03_trigger.png",
+            "sha256": "8e305641bfa152b4ae72856eff78fdcc190319b4d961898ed118e3df6937c5fa"
+          },
+          "perturbation": {
+            "path": "figures/p9.11_demo_triggers/trigger_03_perturbation.png",
+            "sha256": "820b5cbea61a4578c5c919f9a5bcbdf81f0ef21bc84fb75a6f35f837346542b0"
+          }
+        }
+      },
+      {
+        "index": 4,
+        "base_class": "frog",
+        "files": {
+          "base": {
+            "path": "figures/p9.11_demo_triggers/trigger_04_base.png",
+            "sha256": "c7d78744af464441c9b8b3a57c9dd47529f9a769ac51c5f585841426b883ce8e"
+          },
+          "trigger": {
+            "path": "figures/p9.11_demo_triggers/trigger_04_trigger.png",
+            "sha256": "e79024aa59165bf6f30ba3320d5b1f9a9f399b8f6682aaafdb826cfa9df02451"
+          },
+          "perturbation": {
+            "path": "figures/p9.11_demo_triggers/trigger_04_perturbation.png",
+            "sha256": "804afdf6d0069b7b6e938b6192d758b7ae9bd9de6088d5d3828d4325d478c205"
+          }
+        }
+      },
+      {
+        "index": 5,
+        "base_class": "deer",
+        "files": {
+          "base": {
+            "path": "figures/p9.11_demo_triggers/trigger_05_base.png",
+            "sha256": "a24deeabf42eacddf15f4fd1e4f097b8933e5b03a925ad2e6873f286754c0277"
+          },
+          "trigger": {
+            "path": "figures/p9.11_demo_triggers/trigger_05_trigger.png",
+            "sha256": "75e2231ee42dcb6e0f7f96c5a32825556d5858f59c5128498a4199d26f6a270c"
+          },
+          "perturbation": {
+            "path": "figures/p9.11_demo_triggers/trigger_05_perturbation.png",
+            "sha256": "ff7c608b3d4d1907bb3ef26e0d3f7d3ea08bef1ece41b0d552fdc8d337fab616"
+          }
+        }
+      },
+      {
+        "index": 6,
+        "base_class": "truck",
+        "files": {
+          "base": {
+            "path": "figures/p9.11_demo_triggers/trigger_06_base.png",
+            "sha256": "5ccaa7e9e5d01ee98fe2740906a5379e6c1743b5df2068aeb024866ec2adbe68"
+          },
+          "trigger": {
+            "path": "figures/p9.11_demo_triggers/trigger_06_trigger.png",
+            "sha256": "af81bb5281a5fb4cf942fe947611f17cc001de61197a35e10bd8c703e4d102bc"
+          },
+          "perturbation": {
+            "path": "figures/p9.11_demo_triggers/trigger_06_perturbation.png",
+            "sha256": "13136a589ea4bedbf74597c1ba8d79a78f2a8352212f0cf3ad84cf8bd8733822"
+          }
+        }
+      },
+      {
+        "index": 7,
+        "base_class": "ship",
+        "files": {
+          "base": {
+            "path": "figures/p9.11_demo_triggers/trigger_07_base.png",
+            "sha256": "a0ff375b0a34868ca978512ed2a909205bbcd58839fa860cf10be1fadc13bac5"
+          },
+          "trigger": {
+            "path": "figures/p9.11_demo_triggers/trigger_07_trigger.png",
+            "sha256": "c99cb4bbb9e0fb37a7e99492fe69f0ce19638ae0f23737f02663b74139226671"
+          },
+          "perturbation": {
+            "path": "figures/p9.11_demo_triggers/trigger_07_perturbation.png",
+            "sha256": "30cce82d7f38ca3fb165abf95230288202583422cac601dcec91c742c707dfbb"
+          }
+        }
+      },
+      {
+        "index": 8,
+        "base_class": "frog",
+        "files": {
+          "base": {
+            "path": "figures/p9.11_demo_triggers/trigger_08_base.png",
+            "sha256": "4ca4feb4d6bf4df08f070d41288eba9513a0c737232db6baac40737ad54f53f4"
+          },
+          "trigger": {
+            "path": "figures/p9.11_demo_triggers/trigger_08_trigger.png",
+            "sha256": "a8e4b2f0fe4412fe2c4ea2e7db771583f93164f9297bdfe961f3053f4c7adc40"
+          },
+          "perturbation": {
+            "path": "figures/p9.11_demo_triggers/trigger_08_perturbation.png",
+            "sha256": "647bcb87613cbb67b783921734d4a4852cf39c90f26b51c1fb5ff36c58dd861f"
+          }
+        }
+      },
+      {
+        "index": 9,
+        "base_class": "dog",
+        "files": {
+          "base": {
+            "path": "figures/p9.11_demo_triggers/trigger_09_base.png",
+            "sha256": "884d636806891526cafce5d3fce2ccd33dbce2fa24c7ac2f97174c529a3dd68a"
+          },
+          "trigger": {
+            "path": "figures/p9.11_demo_triggers/trigger_09_trigger.png",
+            "sha256": "e086bbdb7ca3cbfa837f076fdf236449fad3fb2b06439cc07b5532f4f7d75174"
+          },
+          "perturbation": {
+            "path": "figures/p9.11_demo_triggers/trigger_09_perturbation.png",
+            "sha256": "5a9a865d412843c5eacc6285c23bb92052d74eccd084cea5af29806d302d9bc4"
+          }
+        }
+      },
+      {
+        "index": 10,
+        "base_class": "ship",
+        "files": {
+          "base": {
+            "path": "figures/p9.11_demo_triggers/trigger_10_base.png",
+            "sha256": "950487b81f6fe8c62975c8585feb71764f6a25d8ef1b060202eb38f44618191c"
+          },
+          "trigger": {
+            "path": "figures/p9.11_demo_triggers/trigger_10_trigger.png",
+            "sha256": "8c8d3dbee53bebdef5927fa0e4fad8af8a5a27d721fedf6e3cf0cd9fc2551005"
+          },
+          "perturbation": {
+            "path": "figures/p9.11_demo_triggers/trigger_10_perturbation.png",
+            "sha256": "d117d27f23441723f3f4ecc46b19079e8ddc4ab6346fd2aa9aea7f1e34d3e845"
+          }
+        }
+      },
+      {
+        "index": 11,
+        "base_class": "truck",
+        "files": {
+          "base": {
+            "path": "figures/p9.11_demo_triggers/trigger_11_base.png",
+            "sha256": "06867e2795785e444d51be82fc6fad500e8efc4afb360f11b5969ff1c081c7bf"
+          },
+          "trigger": {
+            "path": "figures/p9.11_demo_triggers/trigger_11_trigger.png",
+            "sha256": "73778906689e89c9c1e446e6381e254769631b5aea0b7f3d4de62e0dc2ebb743"
+          },
+          "perturbation": {
+            "path": "figures/p9.11_demo_triggers/trigger_11_perturbation.png",
+            "sha256": "48e2e7ec2fe774469b585277e57bba064898afd56597a3638401a8d854dc761b"
+          }
+        }
+      }
+    ]
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 4.105594600001496,
+  "notes": "Demo-key triggers only, regenerated byte-identical to the committed P1.3 set; no owner key read; nothing measured."
+}
