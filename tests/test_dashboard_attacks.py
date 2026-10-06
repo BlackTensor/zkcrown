@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections import Counter
 
 import pytest
@@ -105,3 +106,21 @@ def test_one_click_neither_filter(app_test, lab):
     assert len(table) == lab.outcomes["neither detected"]
     assert set(table["Behavioral test"]) == {"not detected"}
     assert "stolen" not in " ".join(h.proto.body for h in at.get("html")).lower()
+
+
+def test_channel_caveat_sits_next_to_the_rows(app_test, lab):
+    at = app_test.run()
+    at.switch_page("views/attacks.py").run()
+    assert not at.exception
+    table = at.dataframe[0].value
+    channel = table["Family"].isin({r.family_title for r in lab.rows if r.channel_pruned})
+    assert set(table.loc[channel, "Weight caveat"]) == {lab_logic.CAVEAT_SHORT}
+    assert set(table.loc[~channel, "Weight caveat"]) == {""}
+    specs = [json.dumps(json.loads(c.proto.spec), ensure_ascii=False) for c in at.get("vega_lite_chart")]
+    scatter = next(s for s in specs if '"shape"' in s)
+    assert lab_logic.CAVEAT_SHORT in scatter
+    from app.attacks_page import heatmap_cells
+
+    flagged = [c for c in heatmap_cells(lab.rows) if c["metric"] == "Weight z" and c["text"].endswith("⚠")]
+    assert len(flagged) == sum(r.channel_pruned for r in lab.rows) > 0
+    assert any("Triangles are channel-pruning settings" in c.value for c in at.caption)

@@ -60,7 +60,8 @@ def _filters(lab: lab_logic.AttackLab) -> list[lab_logic.Row]:
     return lab_logic.filter_rows(lab.rows, families, chosen, settings)
 
 
-def _heatmap(rows: list[lab_logic.Row]) -> None:
+def heatmap_cells(rows: list[lab_logic.Row]) -> list[dict]:
+    """One cell per row and metric, with its shade, its text and whether that watermark was lost."""
     acc_hi = max(r.test_accuracy for r in rows)
     z_hi = max([r.weight_z for r in rows if r.weight_applicable] or [None]) or None
     cells = []
@@ -73,9 +74,15 @@ def _heatmap(rows: list[lab_logic.Row]) -> None:
              "text": f"{r.fired} / {r.n_triggers}", "lost": not r.behavioral_detected},
             {"row": label, "metric": "Weight z",
              "shade": max(r.weight_z, 0) / z_hi if r.weight_applicable and z_hi else None,
-             "text": f"{r.weight_z:.2f}" if r.weight_applicable else "not applicable",
+             "text": (f"{r.weight_z:.2f}" if r.weight_applicable else "not applicable")
+             + (" ⚠" if r.channel_pruned else ""),
              "lost": not r.weight_detected},
         ]
+    return cells
+
+
+def _heatmap(rows: list[lab_logic.Row]) -> None:
+    cells = heatmap_cells(rows)
     spec = {
         "height": len(rows) * STYLE["row_height"],
         "data": {"values": cells},
@@ -99,7 +106,8 @@ def _heatmap(rows: list[lab_logic.Row]) -> None:
     st.vega_lite_chart(spec, width="stretch", theme="streamlit")
     st.caption("Each row is one setting. Shading is relative within each column of the rows shown. An orange frame "
                "and orange text mark a watermark that its own test did not detect at the auditor's level; "
-               "“not applicable” means the weight test could not be run because the owner's layout is absent.")
+               "“not applicable” means the weight test could not be run because the owner's layout is absent. "
+               "⚠ marks channel-pruning rows, whose weight figure assumes a re-alignment step that was never built.")
 
 
 def _table(rows: list[lab_logic.Row]) -> None:
@@ -107,6 +115,7 @@ def _table(rows: list[lab_logic.Row]) -> None:
         [{"Family": r.family_title, "Setting": r.setting, "Test accuracy": r.test_accuracy,
           "Accuracy cost (pp)": r.drop_pp, "Triggers fired": r.fired, "Behavioral test": r.behavioral_status,
           "Weight test": r.weight_status, "Weight z": r.weight_z if r.weight_applicable else None,
+          "Weight caveat": r.weight_caveat,
           "Evidence tier": r.tier, "Combined p": r.combined_p, "Note": r.note or "", "Task": r.task}
          for r in rows],
         hide_index=True, width="stretch",
@@ -133,7 +142,8 @@ def _scatter(rows: list[lab_logic.Row]) -> None:
     grading = repo_code.grading()
     tiers = [name for _, name in grading.TIERS] + [grading.NONE]
     points = [{"cost": r.drop_pp, "p": r.combined_p, "tier": r.tier, "setting": f"{r.family_title} · {r.setting}",
-               "outcome": OUTCOME_LABELS.get(r.outcome, r.outcome), "accuracy": f"{r.test_accuracy:.2%}"}
+               "outcome": OUTCOME_LABELS.get(r.outcome, r.outcome), "accuracy": f"{r.test_accuracy:.2%}",
+               "caveat": r.weight_caveat or lab_logic.NO_CAVEAT}
               for r in rows if r.combined_p is not None]
     spec = {
         "height": STYLE["scatter_height"],
@@ -149,16 +159,21 @@ def _scatter(rows: list[lab_logic.Row]) -> None:
             "yOffset": {"field": "jitter", "type": "quantitative", "scale": {"domain": [0, 1]}},
             "color": {"field": "tier", "type": "nominal", "scale": {"domain": tiers, "range": STYLE["tier_colors"]},
                       "legend": None},
+            "shape": {"field": "caveat", "type": "nominal", "title": None,
+                      "scale": {"domain": [lab_logic.CAVEAT_SHORT, lab_logic.NO_CAVEAT],
+                                "range": STYLE["caveat_shapes"]},
+                      "legend": {"orient": "top", "labelLimit": STYLE["legend_label_limit"]}},
             "tooltip": [{"field": "setting"}, {"field": "accuracy", "title": "test accuracy"},
                         {"field": "cost", "title": "cost (pp)", "format": ".2f"},
                         {"field": "p", "title": "combined p", "format": ".1e"}, {"field": "tier"},
-                        {"field": "outcome"}]},
+                        {"field": "outcome"}, {"field": "caveat", "title": "note"}]},
     }
     st.vega_lite_chart(spec, width="stretch", theme="streamlit")
     st.caption(
         "Each dot is one attack setting: how much test accuracy it cost, and how strong the evidence left behind "
         "is (one band per tier, strongest at the top; dots are spread within a band so they do not hide each "
-        "other, and the tooltip gives the exact combined p-value). An attacker wants a dot at the bottom left: "
+        "other, and the tooltip gives the exact combined p-value). Triangles are channel-pruning settings: their "
+        "weight figure assumes a re-alignment step that was never built. An attacker wants a dot at the bottom left: "
         f"little cost, no evidence. **Conclude:** {_cheapest(rows, grading.NONE)} **Not shown:** run-to-run variation "
         "(each setting was run once), attacks outside this deliberately chosen grid, or attackers with more data. "
         "The cloud is not a rate or a frontier.")
@@ -200,7 +215,8 @@ def render_attacks(spec) -> None:
     with table:
         _table(rows)
         st.caption("Click a column header to sort. “Accuracy cost” is the drop against the unattacked model, so the "
-                   "control row is zero. The Note column carries P4.9's family notes.")
+                   "control row is zero. The Weight caveat column marks the channel-pruning rows, whose weight figure "
+                   "assumes a re-alignment step that was never built; the Note column carries P4.9's family notes.")
 
     st.html('<h2 class="zk-section">The attacker\'s trade-off</h2>')
     if attack_rows:

@@ -43,5 +43,9 @@
     "#9aa7b8"
   ],
   "scatter_height": 360,
-  "band_padding": 0.35
+  "band_padding": 0.35,
+  "caveat_shapes": [
+    "triangle-up",
+    "circle"
+  ]
 }

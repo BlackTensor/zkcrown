@@ -27,6 +27,9 @@ NEVER_BUILT = ("The weight figure assumes the removed channels are re-aligned to
                "alignment step was never built, so against a model with the channels physically deleted the "
                "weight test could not be run at all.")
 
+CAVEAT_SHORT = "⚠ weight figure assumes channel re-alignment, which was never built"
+NO_CAVEAT = "other settings"
+
 
 @dataclass(frozen=True)
 class Row:
@@ -63,6 +66,10 @@ class Row:
     @property
     def channel_pruned(self) -> bool:
         return self.note is not None and "re-alignment" in self.note
+
+    @property
+    def weight_caveat(self) -> str:
+        return CAVEAT_SHORT if self.channel_pruned else ""
 
 
 @dataclass(frozen=True)
