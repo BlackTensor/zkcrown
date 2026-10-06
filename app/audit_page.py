@@ -15,7 +15,7 @@ import streamlit as st
 
 from app import audit_logic as al
 from app import ui
-from app.data import DataIntegrityError
+from app.data import ALLOWED_ROOTS, DataIntegrityError
 
 OUTCOME = {
     "detected": ("Detected", "green"),
@@ -156,6 +156,47 @@ def _owner_evidence(grade: dict) -> None:
             f'{rows}<p class="zk-oe-note">{html.escape(o["statement"])}</p></section>')
 
 
+def _private_data(store, sources: al.AuditSources, name: str) -> None:
+    try:
+        facts = al.privacy_facts(store, sources, name)
+    except DataIntegrityError as error:
+        ui.data_error(error)
+        return
+    used = ", ".join(facts.secrets_used) or "none recorded"
+    st.html('<h2 class="zk-section">Private data revealed</h2>')
+    st.markdown(f"**Owner secrets the checks used: {used}.** The recorded run gave them to the behavioral and "
+                f"weight checks on the owner's machine (`secrets_used` in the verdict, {sources.p9_2_path}). "
+                "Those checks are replayed here.", help=al.GUARD_LIMIT)
+    st.markdown("**This hosted app read no secrets.** Its data layer can only read committed files under "
+                f"{', '.join(r + '/' for r in ALLOWED_ROOTS)}, each checked against its recorded SHA-256; the files "
+                "this page read are listed below.")
+    items = "".join(f"<li>{html.escape(line)}</li>" for line in al.VERDICT_EXCLUDES)
+    st.html(f'<div class="zk-grade-sub">What the verdict is built to exclude</div><ul class="zk-grade-list">{items}'
+            '</ul>')
+    cards = (
+        ("This audit", f"used {used}", al.short_name(sources.p9_2_path),
+         "The key stays with the owner; the published verdict holds aggregate statistics only, checked by the "
+         "no-secrets guard. A verifier can re-grade it but cannot rerun the watermark checks without the key."),
+        ("Opening the commitment", f"{facts.opening_bytes} secret bytes", f"{al.short_name(facts.p5_6_path)}",
+         "A plain opening hands the verifier the key, its signature and the nonce. From the key they can derive "
+         "every trigger and the projection, so the key is burned. The recorded opening was "
+         + ("shown to someone." if facts.opening_disclosed else "an owner self-check, shown to no one.")),
+        ("Zero-knowledge proof", f"{facts.proof_public_signals} public signal", f"{al.short_name(facts.p7_7_path)}",
+         ("Its only public signal is the commitment C. " if facts.proof_public_signals_exactly_c else
+          "Its public signals are not exactly C. ")
+         + f"The proof is {facts.proof_bytes:,} bytes. That it reveals none of the opening rests on the zero-"
+         "knowledge property of the proof system, not on a measurement, and its setup had a single contributor."),
+    )
+    st.html('<div class="zk-priv">' + "".join(
+        f'<article class="zk-priv-card"><div class="zk-tile-label">{html.escape(title)}</div>'
+        f'<div class="zk-priv-value">{html.escape(value)}</div><div class="zk-tile-source">{html.escape(src)}</div>'
+        f'<p class="zk-tile-detail">{html.escape(text)}</p></article>'
+        for title, value, src, text in cards) + '</div>')
+    with st.expander("Files this page read", icon=":material/description:"):
+        st.dataframe([{"Committed file": f, "SHA-256 (verified on read)": store.recorded_sha256(f)}
+                      for f in facts.files_read], hide_index=True, width="stretch")
+
+
 def render_audit(spec) -> None:
     ui.header(spec)
     store = ui.store()
@@ -208,3 +249,4 @@ def render_audit(spec) -> None:
     st.html('<h2 class="zk-section">Verdict</h2>')
     _grade_card(grade, al.matches_committed(sources, name, grade), sources)
     _owner_evidence(grade)
+    _private_data(store, sources, name)

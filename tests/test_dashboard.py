@@ -1,7 +1,9 @@
 """P9.5: the dashboard skeleton's rules, checked.
 
-- No app file contains the word "secrets" (the key directory, or Streamlit's
-  ``st.secrets``), and no Streamlit secrets file exists.
+- No app file refers to the secrets directory as a path (``secrets/``, ``secrets\``,
+  a ``"secrets"`` path component, the key files), to Streamlit's ``st.secrets``, or
+  to a ``secrets.toml``; and no Streamlit secrets file exists. Since P9.8 the word
+  itself may appear (the verdict field ``secrets_used``, "read no secrets").
 - No measured number is typed into app code: string literals in app modules may
   contain digits only through `DIGIT_ALLOWLIST`, and numeric literals must be in
   `NUMBER_ALLOWLIST`. The scanner is shown to catch planted violations.
@@ -38,6 +40,7 @@ DIGIT_ALLOWLIST = (
     (r"SHA-256", "the hash function's name"),
     (r"/v\d+\b", "schema version suffixes such as zk-crown/dashboard-manifest/v1"),
     (r"\butf-8\b", "the text encoding name"),
+    (r"\bbase64\b", "the encoding name"),
     (r"\bsha256\b", "the manifest's field name for a SHA-256 digest"),
     (r"</?h[1-6]\b", "HTML heading tags"),
     (r"\bp\d+\.\d+_", "task prefixes of committed result file names, e.g. results/p4.9_master_table__"),
@@ -113,23 +116,45 @@ def literal_violations(source: str, name: str, scan_numbers: bool = True) -> lis
 # --- secrets ------------------------------------------------------------------------
 
 
-def test_no_app_file_mentions_the_secrets_directory():
-    roots = [APP, repo_root() / ".streamlit"]
+SECRETS_REFERENCE = re.compile(
+    r"secrets\s*[/\\]"                 # secrets/ or secrets\ in a path
+    r"|['\"]secrets['\"]"              # "secrets" as a path component, e.g. REPO / "secrets"
+    r"|\bst\.secrets\b"                # Streamlit's secrets store
+    r"|secrets\.toml"
+    r"|\bK\.bin\b|commitment_nonce|provenance_signing_key",  # the key files themselves
+    re.IGNORECASE)
+
+
+def test_no_app_file_refers_to_the_secrets_directory():
     hits = []
-    for root in roots:
+    for root in (APP, repo_root() / ".streamlit"):
         for path in root.rglob("*"):
             if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc":
                 text = path.read_text(encoding="utf-8", errors="replace")
-                if re.search(r"secrets", text, re.IGNORECASE):
-                    hits.append(str(path.relative_to(repo_root())))
+                hits += [f"{path.relative_to(repo_root())}: {m.group(0)!r}" for m in SECRETS_REFERENCE.finditer(text)]
     assert hits == [], f"app files refer to secrets: {hits}"
     assert not (repo_root() / ".streamlit" / "secrets.toml").exists()
 
 
-def test_secrets_scan_catches_a_planted_reference(tmp_path):
-    planted = 'KEY = open("../secrets/K.bin", "rb").read()\n'
-    assert re.search(r"secrets", planted, re.IGNORECASE)
-    assert re.search(r"secrets", "token = st.secrets['k']", re.IGNORECASE)
+@pytest.mark.parametrize("planted", [
+    'KEY = open("../secrets/K.bin", "rb").read()',
+    'path = REPO_ROOT / "secrets" / "x"',
+    "token = st.secrets['k']",
+    'cfg = Path(".streamlit/secrets.toml")',
+    'nonce = Path("x") / "commitment_nonce.bin"',
+    r'p = "C:\\repo\\secrets\\K.bin"',
+])
+def test_secrets_scan_catches_planted_references(planted):
+    assert SECRETS_REFERENCE.search(planted)
+
+
+@pytest.mark.parametrize("allowed", [
+    'used = verdict["secrets_used"]',
+    'st.write("The hosted app read no secrets.")',
+    'st.write("owner secret key")',
+])
+def test_secrets_scan_allows_the_word_in_prose_and_field_names(allowed):
+    assert not SECRETS_REFERENCE.search(allowed)
 
 
 def test_data_layer_refuses_secret_and_escaping_paths(tmp_path):

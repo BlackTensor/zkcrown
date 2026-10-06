@@ -174,3 +174,16 @@
 .zk-oe-row { display: flex; justify-content: space-between; padding: .45rem 0; border-bottom: 1px solid var(--zk-border); font-size: .9rem; color: var(--zk-ink-2); }
 .zk-oe-v { font-weight: 600; color: var(--zk-ink); text-transform: capitalize; }
 .zk-oe-note { font-size: .8rem; color: var(--zk-ink-3); margin: .7rem 0 0; }
+
+/* --- Private data revealed (P9.8) ----------------------------------------------------- */
+.zk-priv { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: .6rem 0 1rem; }
+.zk-priv-card {
+  display: flex; flex-direction: column; gap: .35rem; padding: 1.05rem 1.2rem;
+  background: var(--zk-surface); border: 1px solid var(--zk-border); border-radius: 14px;
+}
+.zk-priv-card:nth-child(2) { border-top: 3px solid #e3a14f; }
+.zk-priv-card:nth-child(1), .zk-priv-card:nth-child(3) { border-top: 3px solid var(--zk-accent); }
+.zk-priv-value { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--zk-ink); }
+.zk-priv-card .zk-tile-source { border-top: none; padding-top: 0; margin-top: 0; }
+.zk-priv-card .zk-tile-source::before { content: "source · "; }
+@media (max-width: 1100px) { .zk-priv { grid-template-columns: 1fr; } }

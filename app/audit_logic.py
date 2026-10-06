@@ -167,3 +167,54 @@ def short_name(path: str) -> str:
 
 def why_replayed(slot: str) -> str | None:
     return WHY_REPLAYED.get(slot)
+
+
+# --- Private data revealed (P9.8) -----------------------------------------------------
+
+P5_6 = "results/p5.6_opening_verifier__"
+P7_7 = "results/p7.7_groth16_proof__"
+GUARD_LIMIT = (
+    "Known limit of the no-secrets guard (P9.1): it rejects arrays, byte strings, long hexadecimal strings and very "
+    "large integers in check output, and searches for the owner's key, its halves, the signature and the nonce in "
+    "hex, decimal and base64. It cannot catch a single small secret value, such as one target class or one bit of "
+    "the signature S, and it does not catch fragments of a secret in encodings it does not search.")
+VERDICT_EXCLUDES = (
+    "Check outputs are flat maps of scalar statistics: no trigger images, target lists, projection matrices or "
+    "weight arrays.",
+    "No byte strings, long hexadecimal strings or very large integers, which is how a key or nonce would appear.",
+    "Every output, and then the finished verdict as a whole, was searched for the key, its halves, the signature "
+    "and the nonce in hex, decimal and base64 before it was written.",
+)
+
+
+@dataclass(frozen=True)
+class PrivacyFacts:
+    secrets_used: tuple[str, ...]
+    """From the recorded verdict of this suspect."""
+    files_read: tuple[str, ...]
+    """Every file this page reads, all through the data layer."""
+    p5_6_path: str
+    opening_bytes: int
+    opening_disclosed: bool
+    p7_7_path: str
+    proof_public_signals: int
+    proof_public_signals_exactly_c: bool
+    proof_bytes: int
+
+
+def privacy_facts(store: DataStore, sources: AuditSources, name: str) -> PrivacyFacts:
+    p5_6_path, p7_7_path = store.latest(P5_6), store.latest(P7_7)
+    opening = store.read_json(p5_6_path)["metrics"]
+    proof = store.read_json(p7_7_path)["metrics"]
+    files = (sources.p9_2_path, sources.p9_3_path, RECORD, PUBLICATION, p5_6_path, p7_7_path)
+    return PrivacyFacts(
+        secrets_used=tuple(sources.verdicts[name]["secrets_used"]),
+        files_read=files,
+        p5_6_path=p5_6_path,
+        opening_bytes=opening["secret_bytes_revealed_by_an_opening"],
+        opening_disclosed=opening["opening_disclosed_to_anyone"],
+        p7_7_path=p7_7_path,
+        proof_public_signals=len(proof["public_signals"]),
+        proof_public_signals_exactly_c=proof["public_signals_exactly_C"],
+        proof_bytes=proof["proof_json_bytes"],
+    )
