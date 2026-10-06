@@ -1397,7 +1397,7 @@ Replanned 2026-10-05 at the owner's request: the single dashboard task became th
   - Weight: the proven bound `exp(-z²/2)`, N(0, 1) as a reference, and the committed P3.7 aggregates and figure. The 1,000 per-key z values are **not** committed, so the panel says it draws the bound, not those samples.
   - The suspect's own statistic is marked on each.
   - **Done.** `app/evidence_page.py` and `app/evidence_logic.py`, with charts drawn by Streamlit's built-in Vega-Lite (`st.vega_lite_chart`). No new packages. Checked in headless Edge.
-  - **Correction to the plan text above:** P3.7 did commit a binned (0.25-wide) histogram and an empirical survival curve of its 1,000 z values per model, not only aggregates; only the per-key values are absent. As instructed, the weight panel draws only the proven bound. Showing the binned data next to it is left for the owner to decide.
+  - **Correction to the plan text above:** P3.7 did commit a binned (0.25-wide) histogram and an empirical survival curve of its 1,000 z values per model, not only aggregates; only the per-key values are absent. The owner then asked for the binned data beside the bound; see the follow-up below.
   - **Suspect picker:** shared with Live audit (`app/suspect_picker.py`). The last choice is kept in session state, and switching pages in one session keeps it (checked both ways in Edge).
   - **Behavioral panel:**
     - Bars: the real wrong-key fire counts from P2.8's `fired_histogram`, 1,000 keys each on the behavioral-watermarked model and clean `W` (largest 16 and 14).
@@ -1413,6 +1413,14 @@ Replanned 2026-10-05 at the owner's request: the single dashboard task became th
   - **Allowlist:** gained the bound's formula `exp(−t²/2)`, with a planted case.
   - **Confirmed at the start of this task:** the narrowed secrets test still fails on planted references to the folder path, `st.secrets`, `secrets.toml` and a key file name.
   - No new committed files; the manifest is unchanged. 15 new tests, 1,377 in total, all pass.
+  - **Follow-up (owner request, 2026-10-07): measured wrong-key z data added beside the bound.** The weight panel now has two charts, with the two kinds of data labelled separately.
+    - Left: P3.7's binned z values for the watermarked model ("measured, 1,000 wrong keys", 25 non-empty 0.25-wide bins summing to 1,000), with the thresholds and the suspect.
+    - Right: the "proven bound" against the measured exceedance rate P̂(z ≥ t) from P3.7's survival curve, on a log scale.
+    - The yellow box now says two different things are drawn: a proven mathematical limit (not data), and values measured with 1,000 non-owner keys, committed only in binned form.
+    - Captions:
+      - left: the exceedances at each proven threshold (8 at 0.05 against a bound of 50; 4 at 0.01 against 10; 0 at stricter levels);
+      - right: the measured rate stays below the bound (computed, not asserted), and with 1,000 keys only the levels near 0.05 and 0.01 are checked by measurement, while stricter thresholds rest on the proof alone. These levels are derived from the record: those whose bound allows more than one exceedance.
+    - All read from the P3.7 record through the data layer. Allowlist gained Vega-Lite's `x2`/`y2` channel names (whole string only). 3 new tests, 1,380 in total, all pass.
 - [ ] **P9.10** Attack-lab explorer: the P4.9 heatmap made interactive from the committed P4.9 rows. Filters by attack family and setting, the accuracy cost shown beside each result, both detection tests, and the P9.3 tier per row.
 - [ ] **P9.11** Trigger gallery: the **public demo-key** triggers next to their clean base images, from the committed P1.3 figures and statistics (PSNR, amplitude sweep). Labelled as demo-key triggers; the real triggers are never shown.
 - [ ] **P9.12** Provenance and theft-timeline panel.
@@ -3314,3 +3322,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-06: P9.7. Live audit page: 7 suspects, animated step-by-step checks, each titled live or replayed from p9.2_audit_suspects. Commitment re-checked live from the provenance files. Grade recomputed live with src/auditor/grading.py loaded by path; equal to committed P9.3 for all 7, and P9.4 for the 6 it audited. Owner evidence separate; no-exoneration caveat on none grades. 1,346 tests pass. P9.8 not started.
 - 2026-10-06: P9.8. Private data section on the live audit: secrets used (K, from the verdict) with the guard-limit tooltip; the hosted app read no secrets (files listed); what the verdict excludes; this audit vs an opening (79 secret bytes, P5.6) vs the Groth16 proof (1 public signal, C; P7.7). Secrets test narrowed to path references. 1,362 tests pass. P9.9 not started.
 - 2026-10-07: Confirmed the narrowed secrets test fails on each planted path reference. P9.9: evidence-strength page. Behavioral: P2.8's 1,000 wrong-key counts per null model against the binomial bound, plus the exact tail p on a log scale, thresholds marked, suspect placed. Weight: the proven bound with thresholds and floor, labelled not-measured. Shared suspect picker. Repo stats code via app/repo_code.py. Flagged that P3.7 did commit binned z histograms. 1,377 tests pass. P9.10 not started.
+- 2026-10-07: P9.9 follow-up (owner request): weight panel adds P3.7's binned measured wrong-key z values and measured exceedance rate beside the proven bound, labelled separately; yellow box and captions updated (only 0.05 and 0.01 checked by 1,000 keys; stricter levels rest on the proof). 1,380 tests pass. P9.10 not started.

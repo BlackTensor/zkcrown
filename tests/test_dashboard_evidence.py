@@ -111,12 +111,16 @@ def test_page_renders_each_suspect_with_honest_labels(app_test, suspect):
     at.run()
     at.switch_page("views/evidence.py").run()
     assert not at.exception and not at.error, [e.value for e in at.error]
-    assert len(at.get("vega_lite_chart")) == 3
+    assert len(at.get("vega_lite_chart")) == 4
+    null = ev.measured_null(DataStore())
     warning = " ".join(w.value for w in at.warning)
-    assert "proven upper limit, not measured data" in warning and "not a histogram of measured values" in warning
+    assert "**proven bound**" in warning and f"**measured, {null.count:,} wrong keys**" in warning
+    assert "mathematical upper limit, not data" in warning and "binned form" in warning
     captions = [c.value for c in at.caption]
     assert sum("**Conclude:**" in c for c in captions) == 2
-    assert sum("**Not shown:**" in c for c in captions) == 3
+    assert sum("**Not shown:**" in c for c in captions) == 4
+    assert any("only the levels near 0.05 and 0.01 are checked by measurement" in c
+               and "rests on the proof alone" in c for c in captions)
 
 
 def test_picker_is_shared_with_live_audit(app_test):
@@ -132,3 +136,27 @@ def test_picker_is_shared_with_live_audit(app_test):
     sources = al.load_sources(store)
     assert fired.value == f"{ev.suspect_statistics(sources, sources.names['clean_W']).fired} / " \
                           f"{ev.suspect_statistics(sources, sources.names['clean_W']).n}"
+
+
+def test_measured_null_is_the_committed_binned_data(store):
+    null = ev.measured_null(store)
+    record = store.read_json(null.path)["metrics"]["null"][ev.MEASURED_MODEL[0]]
+    edges, counts = record["histogram"]["edges"], record["histogram"]["counts"]
+    assert null.histogram == [{"z_low": lo, "z_high": hi, "count": c}
+                              for lo, hi, c in zip(edges, edges[1:], counts) if c]
+    assert sum(b["count"] for b in null.histogram) == record["count"] == null.count
+    survival = record["survival"]
+    assert null.exceedance == [{"z": t, "rate": f} for t, f in zip(survival["t"], survival["fraction_at_or_above"])
+                               if f > 0]
+    for e in null.exceedances:
+        committed = record["exceedances_at_proven_thresholds"][e["alpha"]]
+        assert (e["observed"], e["bound"], e["z"]) == (committed["exceedances"], committed["bound"],
+                                                       committed["z_threshold"])
+        assert e["observed"] <= e["bound"] or e["bound"] < 1
+
+
+def test_only_loose_levels_are_checked_by_measurement(store):
+    null = ev.measured_null(store)
+    checked = [e["alpha"] for e in null.exceedances if e["bound"] > 1]
+    assert checked == ["0.05", "0.01"]
+    assert ev.measured_below_bound(null)

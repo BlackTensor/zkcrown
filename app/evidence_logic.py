@@ -125,7 +125,41 @@ def suspect_statistics(sources: AuditSources, name: str) -> SuspectStatistics:
         weight_reason=w.get("reason"))
 
 
-def null_summary(store: DataStore) -> dict:
-    """P3.7's measured wrong-key check on the dual model, as aggregates (the per-key values were not committed)."""
-    null = store.read_json(store.latest(P3_7))["metrics"]["null"]["W_dual"]
-    return {"count": null["count"], "sd": null["z_sd"], "max": null["z_max"]}
+MEASURED_MODEL = ("W_dual", "watermarked model")
+"""P3.7's null model shown on the page: the dual-watermarked model, scored with keys that are not the owner's."""
+
+
+@dataclass(frozen=True)
+class MeasuredNull:
+    path: str
+    model: str
+    count: int
+    sd: float
+    max: float
+    histogram: list[dict]
+    """{z_low, z_high, count} for every non-empty bin of P3.7's binned z values."""
+    exceedance: list[dict]
+    """{z, rate}: P3.7's measured fraction of wrong keys with z at or above each z, where non-zero."""
+    exceedances: list[dict]
+    """{alpha, z, observed, bound}: wrong keys at or above each proven threshold, and the bound on that count."""
+
+
+def measured_null(store: DataStore) -> MeasuredNull:
+    """P3.7's measured wrong-key check, as committed: binned counts and the exceedance curve (no per-key values)."""
+    path = store.latest(P3_7)
+    null = store.read_json(path)["metrics"]["null"][MEASURED_MODEL[0]]
+    edges, counts = null["histogram"]["edges"], null["histogram"]["counts"]
+    survival = null["survival"]
+    return MeasuredNull(
+        path=path, model=MEASURED_MODEL[-1], count=null["count"], sd=null["z_sd"], max=null["z_max"],
+        histogram=[{"z_low": lo, "z_high": hi, "count": c} for lo, hi, c in zip(edges, edges[1:], counts) if c],
+        exceedance=[{"z": t, "rate": f} for t, f in zip(survival["t"], survival["fraction_at_or_above"]) if f > 0],
+        exceedances=[{"alpha": alpha, "z": e["z_threshold"], "observed": e["exceedances"], "bound": e["bound"]}
+                     for alpha, e in null["exceedances_at_proven_thresholds"].items()],
+    )
+
+
+def measured_below_bound(null: MeasuredNull) -> bool:
+    """Whether every measured exceedance rate is at or below the proven bound at the same z."""
+    ws = repo_code.weight_significance()
+    return all(r["rate"] <= ws.p_value_bound(r["z"]) for r in null.exceedance)

@@ -123,39 +123,80 @@ def _behavioral(b: ev.BehavioralEvidence, s: ev.SuspectStatistics) -> None:
             "**Not shown:** the probability that the suspect is the owner's model. A p-value is not that.")
 
 
-def _weight(w: ev.WeightEvidence, s: ev.SuspectStatistics, null: dict) -> None:
+def _weight(w: ev.WeightEvidence, s: ev.SuspectStatistics, null: ev.MeasuredNull) -> None:
     if s.z is None:
         st.info(f"The weight test was not run on this suspect: {s.weight_reason}", icon=":material/info:")
         return
+    bound_label, measured_label = "proven bound", f"measured, {null.count:,} wrong keys"
     curve = ev.bound_curve(w, s.z)
     thresholds = [dict(t, label=f"{t['z']:.2f} · {t['alpha']}") for t in w.thresholds]
-    low = min(curve[0]["z"], s.z)
+    low = min(curve[0]["z"], s.z, null.histogram[0]["z_low"])
     x = {"field": "z", "type": "quantitative", "scale": {"domain": [low, w.cap], "nice": False},
          "title": f"weight-watermark statistic z (at most √{w.rows} = {w.cap:.2f})"}
-    point = {"z": s.z, "bound": s.weight_p}
-    spec = {
+    series = {"field": "series", "type": "nominal", "title": None,
+              "scale": {"domain": [bound_label, measured_label],
+                        "range": [STYLE["bound_color"], STYLE["null_colors"][0]]},
+              "legend": {"orient": "top", "labelLimit": STYLE["legend_label_limit"]}}
+    point = {"z": s.z, "value": s.weight_p}
+    y_rate = {"field": "value", "type": "quantitative", "scale": {"type": "log"},
+              "title": "chance of z at least this large (log scale)"}
+    rate_chart = {
         "layer": [
-            {"data": {"values": curve},
-             "mark": {"type": "line", "color": STYLE["bound_color"], "strokeWidth": STYLE["line_width"]},
-             "encoding": {"x": x, "y": {"field": "bound", "type": "quantitative", "scale": {"type": "log"},
-                                        "title": "upper limit on p (log scale)"}}},
+            {"data": {"values": [{"z": r["z"], "value": r["bound"], "series": bound_label} for r in curve]},
+             "mark": {"type": "line", "strokeWidth": STYLE["line_width"]},
+             "encoding": {"x": x, "y": y_rate, "color": series}},
+            {"data": {"values": [{"z": r["z"], "value": r["rate"], "series": measured_label}
+                                 for r in null.exceedance]},
+             "mark": {"type": "line", "strokeWidth": STYLE["suspect_rule_width"], "interpolate": "step-after"},
+             "encoding": {"x": x, "y": y_rate, "color": series}},
             {"data": {"values": [{"floor": w.floor}]},
              "mark": {"type": "rule", "color": STYLE["floor_color"], "strokeDash": STYLE["dash"]},
              "encoding": {"y": {"field": "floor", "type": "quantitative"}}},
             *_rules(thresholds, "z", STYLE),
-            *_suspect_layers(point, "z", "bound", f"suspect: z = {s.z:.2f}", STYLE, (low, w.cap)),
+            *_suspect_layers(point, "z", "value", f"suspect: z = {s.z:.2f}", STYLE, (low, w.cap)),
         ]}
-    st.warning("**This curve is a proven upper limit, not measured data.** It is the bound P(z ≥ t) ≤ exp(−t²/2), "
-               "proven in P3.7 for every model independent of the owner's key. It is not a histogram of measured "
-               "values, and no measured null values are drawn here.", icon=":material/functions:")
-    _chart(spec)
-    st.caption(
-        f"The suspect's z is {s.z:.2f}, so its p-value is at most {_p(s.weight_p)}. Dashed vertical lines are the "
-        f"proven thresholds z*, labelled with their level. The orange line is the floor {_p(w.floor)}: z cannot "
-        f"exceed √{w.rows}, so no weight test can report less. For comparison, P3.7's measured check of "
-        f"{null['count']:,} wrong keys on the watermarked model had spread {null['sd']:.2f} and largest z "
-        f"{null['max']:.2f}. **Conclude:** the further right of the thresholds, the stronger the evidence. "
-        "**Not shown:** the measured distribution itself, or suspects without the owner's weight layout.")
+    histogram = {
+        "layer": [
+            {"data": {"values": [dict(b, series=measured_label) for b in null.histogram]},
+             "mark": {"type": "bar", "opacity": STYLE["bar_opacity"]},
+             "encoding": {"x": dict(x, field="z_low"), "x2": {"field": "z_high"},
+                          "color": dict(series, scale={"domain": [measured_label],
+                                                       "range": [STYLE["null_colors"][0]]}),
+                          "y": {"field": "count", "type": "quantitative", "title": "wrong keys per bin"},
+                          "y2": {"datum": 0}}},
+            *_rules(thresholds, "z", STYLE),
+            *_suspect_layers(point, "z", None, f"suspect: z = {s.z:.2f}", STYLE, (low, w.cap)),
+        ]}
+
+    st.warning(
+        f"**Two different things are drawn here, labelled separately.** The **{bound_label}** is the limit "
+        "P(z ≥ t) ≤ exp(−t²/2), proven in P3.7 for every model independent of the owner's key: it is a "
+        f"mathematical upper limit, not data. The **{measured_label}** are values P3.7 measured on the "
+        f"{null.model}, scored with {null.count:,} keys that are not the owner's, committed only in binned form.",
+        icon=":material/functions:")
+    left, right = st.columns([1, 1])
+    with left:
+        st.markdown(f"**Measured: {null.count:,} wrong keys, binned**")
+        _chart(histogram)
+        exceed = "; ".join(f"{e['observed']} at {e['alpha']} (bound {e['bound']:g})" for e in null.exceedances)
+        st.caption(
+            f"Bars: how many of the {null.count:,} wrong keys gave each z on the {null.model}, in P3.7's bins. "
+            f"Spread {null.sd:.2f}, largest {null.max:.2f}. Wrong keys at or above each proven threshold: {exceed}. "
+            "**Not shown:** the individual values, which were not committed.")
+    with right:
+        st.markdown("**Proven bound against the measured rate**")
+        _chart(rate_chart)
+        checked = [e["alpha"] for e in null.exceedances if e["bound"] > 1]
+        below = ev.measured_below_bound(null)
+        st.caption(
+            f"The {measured_label} line is the fraction of wrong keys with z at least that large; it stops where "
+            f"no key reached further. It {'stays below' if below else 'does not stay below'} the {bound_label} "
+            "everywhere it is defined. With "
+            f"{null.count:,} keys, only the levels near {' and '.join(checked)} are checked by measurement: a "
+            "stricter threshold allows at most one exceedance in that many keys, so it rests on the proof alone. "
+            f"The orange line is the floor {_p(w.floor)}: z cannot exceed √{w.rows}. **Conclude:** the suspect's "
+            f"z of {s.z:.2f} gives a p-value of at most {_p(s.weight_p)}. **Not shown:** suspects without the "
+            "owner's weight layout.")
 
 
 def render_evidence(spec) -> None:
@@ -165,7 +206,7 @@ def render_evidence(spec) -> None:
         return
     try:
         sources = al.load_sources(store)
-        behavioral, weight, null = ev.behavioral(store), ev.weight(store), ev.null_summary(store)
+        behavioral, weight, null = ev.behavioral(store), ev.weight(store), ev.measured_null(store)
     except DataIntegrityError as error:
         ui.data_error(error)
         return
@@ -195,5 +236,5 @@ def render_evidence(spec) -> None:
         st.dataframe([{"Used for": use, "Committed file": path, "SHA-256 (verified on read)": store.recorded_sha256(path)}
                       for use, path in (("suspect statistics", sources.p9_2_path),
                                         ("wrong-key counts, thresholds", behavioral.path),
-                                        ("weight thresholds, measured null aggregates", weight.path))],
+                                        ("weight thresholds, binned measured wrong-key z values", weight.path))],
                      hide_index=True, width="stretch")
