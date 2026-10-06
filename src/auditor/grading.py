@@ -165,8 +165,8 @@ def grade(checks: Mapping[str, Mapping[str, Any]], record_status: Mapping[str, A
             statement += f" The {missing[0]} test finds no evidence; the grade rests on one test."
     if not marks["weight"]["assessed"] and marks["weight"]["status"] == "not_applicable":
         caveats.append("Lower confidence: the weight test could not be run because the suspect lacks the owner's "
-                       "carrier layout (a different width or physically removed channels). That is not a negative "
-                       "result; only the behavioral test was assessed.")
+                       "carrier layout (a different architecture or width, or physically removed channels). That is "
+                       "not a negative result; only the behavioral test was assessed.")
     elif len(assessed) < 2:
         caveats.append("Lower confidence: only one of the two watermark tests was assessed.")
     if not record_status.get("record_valid"):

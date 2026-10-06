@@ -16,8 +16,8 @@ throughout Phase 4. The checks are reported separately; grading is P9.3.
   ``not_applicable``.
 - `WeightCheck` (P3.3, P3.7): needs `K` (`S` is derived from it). Blind
   extraction and the P3.7 bound. ``not_applicable`` when the suspect does not
-  carry the owner's carrier layout (a different width, or channels physically
-  removed); channel re-alignment is not implemented.
+  carry the owner's carrier layout (a different architecture or width, or
+  channels physically removed); channel re-alignment is not implemented.
 - `CommitmentCheck`: `C` in the record is well formed and is the `C` of the
   publication the record names. Reports what the OpenTimestamps proof says,
   read offline.
@@ -221,9 +221,9 @@ class WeightCheck:
             material.layout.check(state)
         except (KeyError, ValueError, TypeError) as error:
             return CheckOutcome("not_applicable", reason=(
-                f"the owner's carrier layout is not present ({error}). The suspect may be a different width or "
-                "have channels physically removed. Channel re-alignment is not implemented, so the weight test "
-                "cannot be run on it; this is not evidence either way."))
+                f"the owner's carrier layout is not present ({error}). The suspect may be a different architecture "
+                "or width, or have channels physically removed. Channel re-alignment is not implemented, so the "
+                "weight test cannot be run on it; this is not evidence either way."))
         extraction = extract_weight_watermark(state, material.layout, material.projection, material.signature)
         test = WeightDetectionTest(extraction.correlation)
         statistic = {"correlation": extraction.correlation, "z": test.z, "bit_matches": extraction.bit_matches,
