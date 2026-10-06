@@ -53,3 +53,73 @@
 }
 .zk-footer-mark { font-weight: 700; color: var(--zk-ink-2); }
 [data-testid="stSidebarNavSeparator"] { display: none; }
+
+/* --- Landing page (P9.6) --------------------------------------------------------------- */
+.zk-hero { padding: .5rem 0 1.25rem; max-width: 60rem; }
+.zk-hero-title {
+  font-size: 2.65rem; font-weight: 700; line-height: 1.12; letter-spacing: -0.03em;
+  color: var(--zk-ink); margin: .2rem 0 1rem;
+}
+.zk-hero-lede { font-size: 1.12rem; line-height: 1.65; color: var(--zk-ink-2); max-width: 48rem; margin: 0; }
+
+.zk-section {
+  font-size: .78rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--zk-ink-3); margin: 2.6rem 0 .9rem; padding: 0;
+}
+.zk-section-lede { color: var(--zk-ink-2); font-size: .95rem; line-height: 1.6; max-width: 48rem; margin: -.3rem 0 1.1rem; }
+
+.zk-pipeline { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1.6rem; counter-reset: stage; }
+.zk-stage {
+  position: relative; display: flex; flex-direction: column; gap: .45rem;
+  padding: 1.05rem 1.1rem 1rem; border-radius: 14px; text-decoration: none !important;
+  background: linear-gradient(180deg, var(--zk-surface-2), var(--zk-surface));
+  border: 1px solid var(--zk-border); transition: border-color .15s ease, transform .15s ease;
+  counter-increment: stage;
+}
+.zk-stage::before {
+  content: counter(stage, decimal-leading-zero);
+  font: 600 .72rem/1 "JetBrains Mono", monospace; color: var(--zk-accent); letter-spacing: .06em;
+}
+.zk-stage:not(:last-child)::after {
+  content: "→"; position: absolute; right: -1.3rem; top: 50%; transform: translateY(-50%);
+  color: var(--zk-ink-3); font-size: 1.1rem;
+}
+.zk-stage:hover { border-color: var(--zk-accent); transform: translateY(-2px); }
+.zk-stage-name { font-size: 1.15rem; font-weight: 700; color: var(--zk-ink); letter-spacing: -0.01em; }
+.zk-stage-text { font-size: .85rem; line-height: 1.5; color: var(--zk-ink-2); flex: 1; }
+.zk-stage-go { font-size: .78rem; font-weight: 600; color: var(--zk-accent); opacity: .75; }
+.zk-stage:hover .zk-stage-go { opacity: 1; }
+
+.zk-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.zk-tile {
+  display: flex; flex-direction: column; gap: .35rem; padding: 1.15rem 1.25rem 1rem;
+  background: var(--zk-surface); border: 1px solid var(--zk-border); border-radius: 14px;
+  border-top: 3px solid var(--zk-accent);
+}
+.zk-tile-limit { border-top-color: #e3a14f; }
+.zk-tile-label { font-size: .78rem; font-weight: 600; letter-spacing: .04em; color: var(--zk-ink-2); }
+.zk-tile-value {
+  font-size: 2.1rem; font-weight: 700; letter-spacing: -0.02em; color: var(--zk-ink);
+  font-variant-numeric: tabular-nums; line-height: 1.15;
+}
+.zk-tile-limit .zk-tile-value { color: #f0bd7e; }
+.zk-tile-detail { font-size: .84rem; line-height: 1.5; color: var(--zk-ink-2); margin: 0; flex: 1; }
+.zk-tile-source {
+  font: .72rem/1.4 "JetBrains Mono", monospace; color: var(--zk-ink-3);
+  border-top: 1px solid var(--zk-border); padding-top: .55rem; margin-top: .3rem;
+}
+.zk-tile-source::before { content: "source · "; }
+
+@media (max-width: 1100px) {
+  .zk-pipeline { grid-template-columns: 1fr; gap: .9rem; }
+  .zk-stage:not(:last-child)::after { content: "↓"; right: auto; left: 1.2rem; top: auto; bottom: -1.05rem; transform: none; }
+  .zk-tiles { grid-template-columns: 1fr; }
+  .zk-hero-title { font-size: 2rem; }
+}
+.st-key-zk_cta { gap: .75rem; margin-top: .4rem; }
+.st-key-zk_cta [data-testid="stPageLink"] a {
+  padding: .55rem 1rem; border-radius: 10px; border: 1px solid var(--zk-border); background: var(--zk-surface);
+}
+.st-key-zk_cta a[href$="audit"] { background: var(--zk-accent); border-color: var(--zk-accent); }
+.st-key-zk_cta a[href$="audit"] * { color: #0b0f15 !important; font-weight: 600; }
+.st-key-zk_cta [data-testid="stPageLink"] a:hover { border-color: var(--zk-accent); }

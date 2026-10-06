@@ -1,5 +1,7 @@
 """What every page draws around its panel (P9.5): the header, then the panel or its placeholder.
 
+The overview (P9.6) draws its own hero instead of the standard header.
+
 The not-legal-evidence footer is drawn by the entry point after the page runs,
 so no page can leave it out.
 """
@@ -12,6 +14,11 @@ from app.pages import PAGES
 
 def render_page(slug: str) -> None:
     spec = next(p for p in PAGES if p.slug == slug)
+    if slug == "overview":
+        from app.overview import render_overview
+
+        render_overview(spec)
+        return
     ui.header(spec)
     if slug == "integrity":
         from app.integrity import render_integrity

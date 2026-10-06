@@ -120,6 +120,17 @@ class DataStore:
         except (UnicodeDecodeError, ValueError) as error:
             raise DataIntegrityError(path, f"verified, but not valid JSON ({type(error).__name__})") from error
 
+    def latest(self, prefix: str) -> str:
+        """The last manifest path, in sorted order, that starts with `prefix`.
+
+        Result files are named ``<task>__seed<seed>__<UTC timestamp>.json``, so for one
+        task prefix the sorted order is the time order and this is the newest record.
+        """
+        names = sorted(name for name in self.files if name.startswith(prefix))
+        if not names:
+            raise DataIntegrityError(prefix, "no file with this prefix is listed in app/manifest.json")
+        return names[-1]
+
     def recorded_sha256(self, path: str) -> str:
         name = check_path(path)
         if name not in self.files:

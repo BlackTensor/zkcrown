@@ -40,8 +40,13 @@ DIGIT_ALLOWLIST = (
     (r"\butf-8\b", "the text encoding name"),
     (r"\bsha256\b", "the manifest's field name for a SHA-256 digest"),
     (r"</?h[1-6]\b", "HTML heading tags"),
+    (r"\bp\d+\.\d+_", "task prefixes of committed result file names, e.g. results/p4.9_master_table__"),
+    (r"\bCIFAR-10\b", "the dataset's name"),
 )
 """Digit patterns allowed inside app string literals. Everything else with a digit fails."""
+FORMAT_SPEC = r"[+,]?\.\d+[fFeEg%]"
+"""A string that is only a format specification (e.g. ``.2f``, ``+.2f``, ``.2%``) is allowed: it sets how a
+computed number is shown, not a number."""
 NUMBER_ALLOWLIST = {0, 1}
 """Numeric literals allowed in app code: indexing and the 'plus one' column for a metric row."""
 NOT_SCANNED_FOR_NUMBERS = {"build_manifest.py"}
@@ -78,6 +83,8 @@ def literal_violations(source: str, name: str, scan_numbers: bool = True) -> lis
             continue
         value = node.value
         if isinstance(value, str):
+            if re.fullmatch(FORMAT_SPEC, value):
+                continue
             stripped = value
             for pattern, _ in DIGIT_ALLOWLIST:
                 stripped = re.sub(pattern, "", stripped)
@@ -141,6 +148,10 @@ def test_no_measured_numbers_typed_into_app_code():
     'TEXT = "Bitcoin block 969627"\n',
     'st.html("<h2>Fired: 100</h2>")\n',
     'st.write("sha256 of 7 files")\n',
+    'st.write(f"accuracy {acc:.2f} on 10000 images")\n',
+    'LABEL = "90.85%"\n',
+    'NAME = "results/p4.9_master_table__seed1337__20261002T171216+0000.json"\n',
+    'st.write("CIFAR-10 test accuracy 94.37")\n',
 ])
 def test_scanner_catches_planted_numbers(source):
     assert literal_violations(source, "planted.py")
@@ -152,6 +163,9 @@ def test_scanner_catches_planted_numbers(source):
     'note = "checked against their recorded SHA-256"\n',
     'SCHEMA = "zk-crown/dashboard-manifest/v1"\n',
     'last = items[-1]\nfirst = items[0]\n',
+    'st.write(f"accuracy {acc:.2%}, drop {d:+.2f} pp")\n',
+    'PREFIX = "results/p4.9_master_table__"\n',
+    'st.write("third-party CIFAR-10 models")\n',
 ])
 def test_scanner_allows_the_documented_exceptions(source):
     assert literal_violations(source, "ok.py") == []
@@ -271,7 +285,8 @@ def test_every_page_renders_with_the_footer():
         assert not at.exception, spec.slug
         bodies = _html(at)
         assert any(NOT_LEGAL in b and "zk-footer" in b for b in bodies), spec.slug
-        assert any(f">{spec.title}</h1>" in b for b in bodies), spec.slug
+        title = "zk-hero-title" if spec.slug == "overview" else f">{spec.title}</h1>"
+        assert any(title in b for b in bodies), spec.slug
         assert not at.error, f"{spec.slug}: {[e.value for e in at.error]}"
 
 
