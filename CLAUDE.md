@@ -1257,7 +1257,43 @@ Each attack task must report, in one table row: attack strength, resulting clean
     - P4.3 channels 80%: weight p 9.4e-4 near 1e-3; combined 1.9e-3 weak.
     - The rest are tests near 0.05 or 0.01 whose suspect grade comes from the other test.
   - Changes elsewhere: the verdict's `grade` is now computed (it was `None` in P9.1 and P9.2). The P9.1 test and the P9.1 script now expect "not assessed" when no check runs. 22 new tests, 1,272 in total, all pass.
-- [ ] **P9.4** Test the auditor against three model classes: our `W*`, our attacked variants, and genuinely unrelated third party models. The unrelated-model test proves the auditor is not a rubber stamp, so it is mandatory.
+- [x] **P9.4** Test the auditor against three model classes: our `W*`, our attacked variants, and genuinely unrelated third party models. The unrelated-model test proves the auditor is not a rubber stamp, so it is mandatory.
+  - **Passed. Every unrelated model, 41 in all, graded "none", each with the no-exoneration caveat. The dual `W*` graded very strong and exact copy. All 85 Phase 4 rows reproduced their committed statistics and P9.3 grades.**
+  - `experiments/p9_4_auditor_model_classes.py`, CPU, 5,639 s, clean tree at `886f485`, result `results/p9.4_auditor_model_classes__seed1337__20261006T170342+0000.json`. It reads `K` and the nonce for the watermark checks and the guard. The default P9.2 checks were used, at 1e-6, with the P6.2 trusted key. The script searched the result file for the secrets and found none.
+  - **Models, fixed before the run:**
+    - The dual `W*`, which is the P4.1 control row.
+    - The 84 attacked variants. The 37 that had run locally were re-run through the harness without the key. The 48 Colab rows were loaded by the hashes in their apply records.
+    - Clean `W`.
+    - 20 untrained `main_model` inits, seeds 20261006 to 20261025.
+    - `zk_model`.
+    - The 19 non-ViT CIFAR-10 models of `chenyaofo/pytorch-cifar-models` (owner-approved; no other downloads).
+  - **Third-party models** (`src/models/third_party.py`):
+    - Loaded through `torch.hub`, pinned to commit `786c1625…7a497a`. License BSD-3-Clause, confirmed with the owner before download. 19 files, 496,539,109 bytes in all.
+    - The weights are in `data/torch_hub/` (gitignored, not committed). Each file's source URL, license and SHA-256 are in the result. The size and the SHA-256 prefix in the file name were checked for every file.
+    - Each model sits behind an `InputAdapter` (`src/models/adapters.py`) that converts this project's normalisation to its own (mean 0.4914/0.4822/0.4465, std 0.2023/0.1994/0.2010, from `chenyaofo/image-classification-codebase` `conf/cifar10.conf`).
+    - Gate, fixed before the run: test top-1 within 1.0 pp of the published figure. **All 19 passed, none excluded:** −0.01 to +0.52 pp, 8 of them exactly equal. Measured 90.65% (shufflenetv2_x0_5) to 95.27% (repvgg_a2).
+  - **`zk_model` adapter:** this project's normalisation undone, BT.601 luma, bilinear antialiased resize to 28 x 28, MNIST normalisation.
+  - **Grades:**
+
+    | Class | Models | Grade | Fired /100 | Behavioral p | Weight test |
+    |---|---|---|---|---|---|
+    | dual `W*` | 1 | very strong, exact copy (combined 7.5e-96) | 100 | 3.8e-96 | z 10.29 |
+    | attacked variants | 84 | 69 very strong, 4 strong, 2 moderate, 1 weak, 8 none (equal to P9.3) | 1–100 | | as Phase 4 |
+    | clean `W` | 1 | none | 3 | 0.999 | z 0.18 |
+    | fresh inits | 20 | none (all 20) | 5–14 | ≥ 0.218 | z −2.25 to 1.99 |
+    | `zk_model` | 1 | none | 12 | 0.435 | not applicable |
+    | third-party | 19 | none (all 19) | 0–9 | ≥ 0.793 | not applicable |
+
+    - The smallest combined p among unrelated models is 0.275. The smallest behavioral p is 0.218 (14 fired, an untrained init).
+    - Accurate third-party models put 38–91 triggers on the base label, so their fired counts sit far below the 11.1 bound.
+    - One borderline flag among the unrelated models: init 20261011's weight z 1.99 (p ≤ 0.14) is within a factor of 3.2 of 0.05. It is still graded none.
+  - **Weight test on the third-party models and `zk_model`: not applicable.** They lack the owner's carrier layout, so their grade rests on the behavioral test alone and carries the lower-confidence caveat. The weight test's false-positive evidence rests on four things:
+    - the P3.7 proof that P(z ≥ t) ≤ exp(−t²/2) for any model independent of `K`;
+    - the P3.7 1,000-key null;
+    - clean `W` (z 0.18);
+    - the 20 fresh inits here, all inside the 1e-6 threshold and none rejecting at 0.05.
+  - **Changed:** the not-applicable wording in `checks.py` and `grading.py` now says "a different architecture or width" rather than only "a different width". `conftest.py` ignores `data/`, because the hub checkout ships its own tests. 9 new tests, 1,281 in total, all pass.
+  - Limits: one key, one run. The behavioral null is checked on these 41 models, not proved by them. "None" is not exoneration (P4.6, P4.7).
 
 ### Dashboard (P9.5 to P9.16)
 
@@ -3183,3 +3219,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-05: P9.2. Wired the five checks in `src/auditor/checks.py`: fingerprint, behavioral and weight at 1e-6 (both need `K`), commitment, and zk_proof (Groth16 plus EZKL; exceptions count as rejections; public signal compared by value). The weight check is `not_applicable` without the carrier layout; re-alignment was not built. Ran on the P6.4 suspects plus a width-16 student and an untrained model, from a clean tree. Every theft reproduced Phase 4. Clean `W` and the untrained model were not called watermarked. Only the verbatim copy passed the fingerprint check. Commitment and ZK checks passed throughout. 23 new tests, 1,250 in total. P9.3 not started.
 - 2026-10-05: P9.3. Graded verdicts in `src/auditor/grading.py`: a per-watermark tier from its own p-value (exact levels 0.05 to 1e-9), and a suspect grade by Bonferroni over the two tests, not pooled. Owner evidence sits in its own section and never changes the suspect grade. Fingerprint means exact copy or not. The no-evidence caveat and the not-applicable lower-confidence caveat are attached. Borderline flags use half a decade, or one trigger of k*. P9.2 suspects: clean `W` and the untrained model grade none; the copy, INT8, pruning and overwrite grade very strong; fine-tuning grades very strong on one test; channel plus fine-tuning and distillation grade none. Phase 4 survey: 13 borderline rows reported. First run on the grading tests found that 30 fired against k* 29 was not flagged, so the count rule was added. 22 new tests, 1,272 in total. P9.4 not started.
 - 2026-10-05: Phase 9 dashboard replanned at the owner's request (CLAUDE.md only, no code). P9.5 became twelve tasks, P9.5 to P9.16: foundation and data layer, landing, live audit (replayed on the host), private-data line, evidence-strength view, attack-lab explorer, trigger gallery, provenance and timeline, ZK panel, honest limits, deploy, GIF. Dashboard rules added: committed files only, no secrets hosted, `secrets_used` with the guard's limit, free hosting, Section 7 wording, no new experiments. The upload-a-suspect idea went to the Icebox.
+- 2026-10-06: P9.4. The owner approved 19 third-party models from `chenyaofo/pytorch-cifar-models` (BSD-3, no ViT), loaded by pinned `torch.hub`; weights not committed. Each sits behind an input adapter and reached its published accuracy within 1.0 pp (all 19 included). The run audited the dual `W*`, the 84 attacked variants, clean `W`, 20 fresh inits, `zk_model` and the 19 third-party models from a clean tree at `886f485`. The 85 Phase 4 rows reproduced their statistics and P9.3 grades. All 41 unrelated models graded none, with the no-exoneration caveat. The weight test was not applicable on third-party models and `zk_model`. My first smoke attempt failed on a relative path and a missing `map_location`, scratch only. P9.5 not started.
