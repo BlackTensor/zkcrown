@@ -1,0 +1,5 @@
+# Dashboard dependencies only (P9.5), for Streamlit Community Cloud, which
+# reads the requirements file next to the entry point (app/streamlit_app.py).
+# Everything here installs from PyPI on the free tier; the training, ZK and
+# crypto stack in the root requirements.txt is not needed to serve the app.
+streamlit==1.65.0

@@ -1309,11 +1309,37 @@ Replanned 2026-10-05 at the owner's request: the single dashboard task became th
 - **No new experiments.** No dashboard task trains, attacks, proves or measures anything new. If a panel needs data that is not committed, it shows what is committed and says what is missing, or the gap goes to the Icebox.
 - Visual polish is the goal (a portfolio piece), but it never takes precedence over the rules above.
 
-- [ ] **P9.5** App foundation: the Streamlit skeleton in `app/`, page navigation, a shared visual theme, and the data layer.
+- [x] **P9.5** App foundation: the Streamlit skeleton in `app/`, page navigation, a shared visual theme, and the data layer.
   - `app/data.py` reads only committed `results/` and `figures/` files listed in a manifest with their SHA-256, and refuses any other path.
   - The not-legal-evidence footer appears on every page.
   - Tests check four things: the app imports nothing from `secrets/`; no path under `secrets/` is reachable; the manifest hashes match; no UI module contains measured values as literals.
   - Added by Claude as groundwork, so that each later panel is one small task.
+  - **Done.** Run locally with `streamlit run app/streamlit_app.py` (Streamlit 1.65.0) and checked page by page in headless Edge. Each of the 9 pages renders with the footer, and the integrity page verifies 213 of 213 files.
+  - **Layout:**
+    - `app/streamlit_app.py` holds the navigation, theme and footer. The footer is drawn after every page runs, so no page can leave it out.
+    - `app/pages.py` is the page registry. `app/views/<slug>.py` has one file per page, each a placeholder naming the task that fills it.
+    - Theme: `app/theme.css` and `.streamlit/config.toml` (dark, Inter, blue accent).
+  - **Pages:** Overview (P9.6); Live audit (P9.7, P9.8); Evidence strength (P9.9); Attack lab (P9.10); Trigger gallery (P9.11); Provenance (P9.12); Zero-knowledge (P9.13); Honest limits (P9.14).
+    - Added beyond the task: **Data integrity**, which re-hashes every manifest file and lists failures. It shows the data layer working, and is the only page with content.
+  - **Data layer** (`app/data.py`):
+    - It reads only paths listed in `app/manifest.json`. Each path must be relative, canonical and under `results/`, `figures/` or `provenance/`.
+    - Every read re-hashes the bytes against the recorded SHA-256. A missing, changed or unlisted file raises `DataIntegrityError`.
+    - The UI shows that as a red error naming the file and both hashes, with no substitute value. Checked live by appending one byte to a committed file: the integrity page showed the error and counted 212 of 213. The file was then restored from git.
+  - **Manifest:** `app/build_manifest.py` (local tool) hashes the 213 git-tracked files under those roots. It refuses unless each file's bytes on disk equal its committed blob.
+  - **Line endings, changed here:** `.gitattributes` now marks `results/**` and `figures/**` `-text`, like `provenance/` and `results/zk/` before. 128 working copies on this Windows checkout had been converted to CRLF while their committed blobs are LF, so a hash recorded here would not match on a Linux host.
+    - Those 128 files were re-checked out with their committed bytes. No content changed, and the full test suite still passes.
+  - **Hosting:** `app/requirements.txt` holds only `streamlit==1.65.0`. A test checks that app modules import only the standard library, Streamlit and `app`.
+  - **Tests** (`tests/test_dashboard.py`, 30). They include:
+    - no app or `.streamlit` file contains "secrets" (the key directory or `st.secrets`), and no `secrets.toml` exists;
+    - the data layer refuses `secrets/…`, `..`, absolute, backslash and non-canonical paths;
+    - an AST scan of `app/` for numbers: string literals may contain digits only via the documented allowlist (task IDs, "SHA-256", `/vN` schema suffixes, `utf-8`, the `sha256` field name, HTML heading tags); numeric literals only 0 and 1; docstrings not scanned; the manifest tool exempt from the numeric check, and tested not to be imported by the app. The scan catches 8 planted violations and lets 5 documented exceptions through;
+    - tampered, missing and unlisted files raise, and malformed manifests are refused;
+    - the committed manifest lists only tracked files, all of which match;
+    - every page renders with the footer and no error (AppTest);
+    - a tampered file shows as a visible error on the integrity page;
+    - the footer text equals the auditor's `NOT_LEGAL`.
+  - 1,311 tests in total, all pass. Playwright was used only for the screenshots, installed into the scratchpad and not added to the project.
+  - Not done here (later tasks): no panel content, no deployment (P9.15). `app/manifest.json` must be regenerated when a later task commits files the dashboard reads.
 - [ ] **P9.6** Landing page: a hero section, a one-line pitch, and a pipeline diagram (watermark → attack → commit → prove → audit). Each stage links to its panel. The headline figures shown are read from committed results.
 - [ ] **P9.7** Live audit: the visitor picks a suspect (verbatim copy, INT8, pruned, fine-tuned, distilled, clean `W`, untrained model). The five checks then run one by one with step-by-step progress, ending in the P9.3 grade with its caveats and the separate owner-evidence section.
   - Hosted, the behavioral and weight checks are **replayed** from the committed P9.2 verdicts (they need `K`), and each step is labelled "replayed from <result file>".
@@ -3220,3 +3246,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-05: P9.3. Graded verdicts in `src/auditor/grading.py`: a per-watermark tier from its own p-value (exact levels 0.05 to 1e-9), and a suspect grade by Bonferroni over the two tests, not pooled. Owner evidence sits in its own section and never changes the suspect grade. Fingerprint means exact copy or not. The no-evidence caveat and the not-applicable lower-confidence caveat are attached. Borderline flags use half a decade, or one trigger of k*. P9.2 suspects: clean `W` and the untrained model grade none; the copy, INT8, pruning and overwrite grade very strong; fine-tuning grades very strong on one test; channel plus fine-tuning and distillation grade none. Phase 4 survey: 13 borderline rows reported. First run on the grading tests found that 30 fired against k* 29 was not flagged, so the count rule was added. 22 new tests, 1,272 in total. P9.4 not started.
 - 2026-10-05: Phase 9 dashboard replanned at the owner's request (CLAUDE.md only, no code). P9.5 became twelve tasks, P9.5 to P9.16: foundation and data layer, landing, live audit (replayed on the host), private-data line, evidence-strength view, attack-lab explorer, trigger gallery, provenance and timeline, ZK panel, honest limits, deploy, GIF. Dashboard rules added: committed files only, no secrets hosted, `secrets_used` with the guard's limit, free hosting, Section 7 wording, no new experiments. The upload-a-suspect idea went to the Icebox.
 - 2026-10-06: P9.4. The owner approved 19 third-party models from `chenyaofo/pytorch-cifar-models` (BSD-3, no ViT), loaded by pinned `torch.hub`; weights not committed. Each sits behind an input adapter and reached its published accuracy within 1.0 pp (all 19 included). The run audited the dual `W*`, the 84 attacked variants, clean `W`, 20 fresh inits, `zk_model` and the 19 third-party models from a clean tree at `886f485`. The 85 Phase 4 rows reproduced their statistics and P9.3 grades. All 41 unrelated models graded none, with the no-exoneration caveat. The weight test was not applicable on third-party models and `zk_model`. My first smoke attempt failed on a relative path and a missing `map_location`, scratch only. P9.5 not started.
+- 2026-10-06: P9.5. Streamlit skeleton in `app/`: 9 pages (8 placeholders plus Data integrity), dark theme, not-legal-evidence footer on every page. Data layer reads only manifest-listed committed files under results/, figures/, provenance/, re-hashing each read; failures show as visible errors. `results/**` and `figures/**` marked `-text` so hashes hold on Linux hosts; 128 CRLF working copies restored to committed bytes. `app/requirements.txt` holds only `streamlit==1.65.0`. 30 new tests (secrets references, numeric-literal scan with allowlist, data layer, pages, hosting imports), 1,311 in total. Ran locally; screenshots via scratch Playwright. P9.6 not started.

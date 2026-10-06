@@ -3,3 +3,8 @@
 provenance/** -text
 # Committed ZK keys and proofs (P7.3 onward) are hash-checked byte for byte.
 results/zk/** -text
+# Committed results and figures are read by the dashboard (P9.5) only after a
+# SHA-256 check against app/manifest.json, so their bytes must be the same on
+# every checkout (Windows here, Linux on Streamlit Community Cloud).
+results/** -text
+figures/** -text

@@ -1,0 +1,55 @@
+/* zk-Crown dashboard theme (P9.5). Colours and fonts are set in .streamlit/config.toml;
+   this file only shapes the custom elements and trims Streamlit chrome. */
+
+:root {
+  --zk-surface: #121821;
+  --zk-surface-2: #18202b;
+  --zk-border: #243041;
+  --zk-ink: #e8ecf1;
+  --zk-ink-2: #9aa7b8;
+  --zk-ink-3: #6b7889;
+  --zk-accent: #6da7ec;
+  --zk-accent-soft: rgba(109, 167, 236, 0.12);
+}
+
+.block-container { padding-top: 4rem; padding-bottom: 1rem; max-width: 1180px; }
+[data-testid="stHeader"] { background: transparent; }
+
+/* Brand above the page list: the sidebar's own content normally follows the navigation. */
+[data-testid="stSidebarContent"] { display: flex; flex-direction: column; }
+[data-testid="stSidebarHeader"] { order: -2; }
+[data-testid="stSidebarUserContent"] { order: -1; padding-bottom: 0; }
+[data-testid="stToolbar"] [data-testid="stAppDeployButton"] { display: none; }
+
+.zk-brand { display: flex; flex-direction: column; gap: .25rem; padding: .25rem 0 .75rem; }
+.zk-brand-name { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; color: var(--zk-ink); }
+.zk-brand-sub { font-size: .78rem; line-height: 1.35; color: var(--zk-ink-3); }
+
+.zk-kicker {
+  font-size: .72rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--zk-accent); margin-bottom: .35rem;
+}
+.zk-title { font-size: 2.3rem; font-weight: 700; letter-spacing: -0.025em; line-height: 1.1; margin: 0 0 .6rem; color: var(--zk-ink); }
+.zk-lede { font-size: 1.05rem; line-height: 1.6; color: var(--zk-ink-2); max-width: 46rem; margin: 0 0 1.5rem; }
+
+.zk-card {
+  background: var(--zk-surface); border: 1px solid var(--zk-border); border-radius: 14px;
+  padding: 1.4rem 1.6rem; max-width: 46rem;
+}
+.zk-placeholder { border-style: dashed; }
+.zk-card-title { font-size: 1.05rem; font-weight: 600; color: var(--zk-ink); margin: .6rem 0 .5rem; }
+.zk-chip {
+  display: inline-block; font-size: .72rem; font-weight: 600; letter-spacing: .04em;
+  color: var(--zk-accent); background: var(--zk-accent-soft); border: 1px solid rgba(109, 167, 236, 0.3);
+  border-radius: 999px; padding: .18rem .65rem;
+}
+.zk-list { margin: 0 0 .9rem 1.1rem; padding: 0; color: var(--zk-ink-2); line-height: 1.7; font-size: .95rem; }
+.zk-note { font-size: .82rem; color: var(--zk-ink-3); border-top: 1px solid var(--zk-border); padding-top: .75rem; }
+
+.zk-footer {
+  display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
+  margin-top: 3rem; padding: 1rem 0 .5rem; border-top: 1px solid var(--zk-border);
+  font-size: .82rem; color: var(--zk-ink-3);
+}
+.zk-footer-mark { font-weight: 700; color: var(--zk-ink-2); }
+[data-testid="stSidebarNavSeparator"] { display: none; }

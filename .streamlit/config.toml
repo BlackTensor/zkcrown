@@ -1,0 +1,29 @@
+# zk-Crown dashboard (P9.5). Read by `streamlit run app/streamlit_app.py` from
+# the repo root and by Streamlit Community Cloud. Dark theme only.
+
+[theme]
+base = "dark"
+primaryColor = "#6da7ec"
+backgroundColor = "#0b0f15"
+secondaryBackgroundColor = "#121821"
+textColor = "#e8ecf1"
+linkColor = "#8bbcf3"
+borderColor = "#243041"
+showSidebarBorder = true
+baseRadius = "10px"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap, sans-serif"
+codeFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap, monospace"
+headingFontWeights = [700, 650, 600]
+
+[theme.sidebar]
+backgroundColor = "#0e131a"
+secondaryBackgroundColor = "#151c26"
+
+[client]
+toolbarMode = "viewer"
+
+[browser]
+gatherUsageStats = false
+
+[server]
+headless = true
