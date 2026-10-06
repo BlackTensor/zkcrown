@@ -19,6 +19,11 @@ def render_page(slug: str) -> None:
 
         render_overview(spec)
         return
+    if slug == "audit":
+        from app.audit_page import render_audit
+
+        render_audit(spec)
+        return
     ui.header(spec)
     if slug == "integrity":
         from app.integrity import render_integrity

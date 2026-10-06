@@ -42,13 +42,16 @@ DIGIT_ALLOWLIST = (
     (r"</?h[1-6]\b", "HTML heading tags"),
     (r"\bp\d+\.\d+_", "task prefixes of committed result file names, e.g. results/p4.9_master_table__"),
     (r"\bCIFAR-10\b", "the dataset's name"),
+    (r"\b[Gg]roth16", "the proof system's name, also in record field names such as groth16_verified"),
+    (r"\bBN254\b", "the elliptic curve's name"),
 )
 """Digit patterns allowed inside app string literals. Everything else with a digit fails."""
 FORMAT_SPEC = r"[+,]?\.\d+[fFeEg%]"
 """A string that is only a format specification (e.g. ``.2f``, ``+.2f``, ``.2%``) is allowed: it sets how a
 computed number is shown, not a number."""
 NUMBER_ALLOWLIST = {0, 1}
-"""Numeric literals allowed in app code: indexing and the 'plus one' column for a metric row."""
+"""Numeric literals allowed in app code: indexing and 'plus one'. Literal arguments of ``time.sleep``
+(animation pauses, never displayed) are also allowed; nothing else."""
 NOT_SCANNED_FOR_NUMBERS = {"build_manifest.py"}
 """Local tool that writes the manifest (indent, exit codes); never imported by the running app (tested)."""
 
@@ -74,9 +77,20 @@ def docstring_nodes(tree: ast.AST) -> set[int]:
     return ids
 
 
+def sleep_arguments(tree: ast.AST) -> set[int]:
+    """Numeric literals passed to ``time.sleep``: animation timing, never displayed."""
+    ids = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and (
+                (isinstance(node.func, ast.Attribute) and node.func.attr == "sleep")
+                or (isinstance(node.func, ast.Name) and node.func.id == "sleep")):
+            ids |= {id(a) for a in node.args if isinstance(a, ast.Constant)}
+    return ids
+
+
 def literal_violations(source: str, name: str, scan_numbers: bool = True) -> list[str]:
     tree = ast.parse(source)
-    skip = docstring_nodes(tree)
+    skip = docstring_nodes(tree) | sleep_arguments(tree)
     problems = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Constant) or id(node) in skip:
@@ -152,6 +166,8 @@ def test_no_measured_numbers_typed_into_app_code():
     'LABEL = "90.85%"\n',
     'NAME = "results/p4.9_master_table__seed1337__20261002T171216+0000.json"\n',
     'st.write("CIFAR-10 test accuracy 94.37")\n',
+    'st.write("Groth16 proof of 806 bytes")\n',
+    'time.sleep(0.5)\nst.progress(0.5)\n',
 ])
 def test_scanner_catches_planted_numbers(source):
     assert literal_violations(source, "planted.py")
@@ -166,6 +182,7 @@ def test_scanner_catches_planted_numbers(source):
     'st.write(f"accuracy {acc:.2%}, drop {d:+.2f} pp")\n',
     'PREFIX = "results/p4.9_master_table__"\n',
     'st.write("third-party CIFAR-10 models")\n',
+    'time.sleep(0.6)\nflag = stat["groth16_verified"]\n',
 ])
 def test_scanner_allows_the_documented_exceptions(source):
     assert literal_violations(source, "ok.py") == []
