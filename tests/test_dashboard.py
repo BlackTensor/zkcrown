@@ -47,6 +47,7 @@ DIGIT_ALLOWLIST = (
     (r"\bCIFAR-10\b", "the dataset's name"),
     (r"\b[Gg]roth16", "the proof system's name, also in record field names such as groth16_verified"),
     (r"\bBN254\b", "the elliptic curve's name"),
+    (r"exp\(−t²/2\)", "the formula of the P3.7 weight bound, P(z ≥ t) ≤ exp(−t²/2)"),
 )
 """Digit patterns allowed inside app string literals. Everything else with a digit fails."""
 FORMAT_SPEC = r"[+,]?\.\d+[fFeEg%]"
@@ -193,6 +194,7 @@ def test_no_measured_numbers_typed_into_app_code():
     'st.write("CIFAR-10 test accuracy 94.37")\n',
     'st.write("Groth16 proof of 806 bytes")\n',
     'time.sleep(0.5)\nst.progress(0.5)\n',
+    'st.write("bound exp(−t²/2) at z = 10.29")\n',
 ])
 def test_scanner_catches_planted_numbers(source):
     assert literal_violations(source, "planted.py")

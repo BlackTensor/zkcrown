@@ -22,20 +22,18 @@ Everything comes through the data layer, so each file is hash-checked first.
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 from dataclasses import dataclass
-from functools import lru_cache
-from pathlib import Path
 from types import ModuleType
 from typing import Any
 
-from app.data import REPO_ROOT, DataIntegrityError, DataStore
+from app import repo_code
+from app.data import DataIntegrityError, DataStore
+from app.repo_code import GRADING_SOURCE
 
 P9_2 = "results/p9.2_audit_suspects__"
 P9_3 = "results/p9.3_graded_verdicts__"
 RECORD = "provenance/record.json"
 PUBLICATION = "provenance/commitment.json"
-GRADING_SOURCE = "src/auditor/grading.py"
 SLOTS = ("fingerprint", "behavioral", "weight", "commitment", "zk_proof")
 REPLAYED_SLOTS = ("fingerprint", "behavioral", "weight", "zk_proof")
 
@@ -76,13 +74,9 @@ WHY_REPLAYED = {
 }
 
 
-@lru_cache(maxsize=None)
 def grading_module() -> ModuleType:
     """`src/auditor/grading.py`, loaded on its own (the package import would pull in torch)."""
-    spec = importlib.util.spec_from_file_location("zk_crown_auditor_grading", REPO_ROOT / GRADING_SOURCE)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return repo_code.grading()
 
 
 def resolve(table: list[dict], verdicts: dict, prefix: str) -> str:

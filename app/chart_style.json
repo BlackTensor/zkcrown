@@ -1,0 +1,29 @@
+{
+  "_note": "Chart styling for the dashboard (P9.9): sizes, opacities and colours only. No measured values live here.",
+  "height": 300,
+  "bar_opacity": 0.75,
+  "line_width": 2,
+  "rule_width": 1,
+  "suspect_rule_width": 2.5,
+  "dash": [
+    4,
+    4
+  ],
+  "point_size": 110,
+  "label_font_size": 11,
+  "label_dx": 4,
+  "label_dy_top": 10,
+  "label_dy_second": 24,
+  "null_colors": [
+    "#6da7ec",
+    "#9aa7b8"
+  ],
+  "bound_color": "#e8ecf1",
+  "threshold_color": "#6b7889",
+  "suspect_color": "#f0bd7e",
+  "floor_color": "#e3a14f",
+  "label_angle": 270,
+  "label_offset": 3,
+  "label_top": 4,
+  "legend_label_limit": 320
+}

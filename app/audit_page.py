@@ -15,6 +15,7 @@ import streamlit as st
 
 from app import audit_logic as al
 from app import ui
+from app.suspect_picker import pick
 from app.data import ALLOWED_ROOTS, DataIntegrityError
 
 OUTCOME = {
@@ -213,8 +214,7 @@ def render_audit(spec) -> None:
             icon=":material/history:")
 
     by_prefix = {s.prefix: s for s in al.SUSPECTS}
-    choice = st.pills("Suspect", [s.prefix for s in al.SUSPECTS], format_func=lambda p: by_prefix[p].title,
-                      default=al.SUSPECTS[0].prefix, key="zk_suspect")
+    choice = pick("zk_suspect")
     if choice is None:
         st.caption("Pick a suspect to audit.")
         return

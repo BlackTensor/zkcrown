@@ -1392,10 +1392,27 @@ Replanned 2026-10-05 at the owner's request: the single dashboard task became th
   - No "0 bytes" or "nothing revealed" wording; a test checks the page text for it.
   - **Secrets test narrowed:** the P9.5 secrets test now bans path references (`secrets/`, a `"secrets"` path component, `st.secrets`, `secrets.toml`, key file names) rather than the word. Planted cases cover each, plus three allowed prose and field-name cases. "base64" was added to the digit allowlist as an encoding name.
   - P5.6 and P7.7 records were already in the manifest; it is unchanged. 16 new tests, 1,362 in total, all pass.
-- [ ] **P9.9** Evidence-strength view: each p-value drawn against its null, so a visitor can see why 100 of 100 triggers is not chance.
+- [x] **P9.9** Evidence-strength view: each p-value drawn against its null, so a visitor can see why 100 of 100 triggers is not chance.
   - Behavioral: the `Binomial(100, 1/9)` bound (computed with `significance.py`), the committed P2.8 fired-count histograms over 1,000 wrong keys, and k\* at each level.
   - Weight: the proven bound `exp(-z²/2)`, N(0, 1) as a reference, and the committed P3.7 aggregates and figure. The 1,000 per-key z values are **not** committed, so the panel says it draws the bound, not those samples.
   - The suspect's own statistic is marked on each.
+  - **Done.** `app/evidence_page.py` and `app/evidence_logic.py`, with charts drawn by Streamlit's built-in Vega-Lite (`st.vega_lite_chart`). No new packages. Checked in headless Edge.
+  - **Correction to the plan text above:** P3.7 did commit a binned (0.25-wide) histogram and an empirical survival curve of its 1,000 z values per model, not only aggregates; only the per-key values are absent. As instructed, the weight panel draws only the proven bound. Showing the binned data next to it is left for the owner to decide.
+  - **Suspect picker:** shared with Live audit (`app/suspect_picker.py`). The last choice is kept in session state, and switching pages in one session keeps it (checked both ways in Edge).
+  - **Behavioral panel:**
+    - Bars: the real wrong-key fire counts from P2.8's `fired_histogram`, 1,000 keys each on the behavioral-watermarked model and clean `W` (largest 16 and 14).
+    - Dashed line: the expected counts under the Binomial(100, 1/9) bound, from `significance.detection_p_value`.
+    - Second chart: the exact tail p-value on a log scale.
+    - Both charts mark the P2.8 thresholds 17 / 20 / 23 / 29 / 35 with their levels, and place the suspect.
+  - **Weight panel:**
+    - A warning box says the curve is a proven upper limit, P(z ≥ t) ≤ exp(−t²/2), for any model independent of `K`, not a histogram of measured values.
+    - The chart shows the bound (from `weight_significance.p_value_bound`), the P3.7 thresholds z*, the floor at z = √128, and the suspect's z.
+    - The caption cites P3.7's measured aggregates (spread 1.01, largest z 3.22). P3.7 was not re-run.
+  - Each chart has a caption saying what to conclude and what it does not show.
+  - **`app/repo_code.py`:** the only module that loads repo code: the grading file by path, `significance` and `weight_significance` by import (numpy, no torch; tested in a subprocess). Chart styling lives in `app/chart_style.json`.
+  - **Allowlist:** gained the bound's formula `exp(−t²/2)`, with a planted case.
+  - **Confirmed at the start of this task:** the narrowed secrets test still fails on planted references to the folder path, `st.secrets`, `secrets.toml` and a key file name.
+  - No new committed files; the manifest is unchanged. 15 new tests, 1,377 in total, all pass.
 - [ ] **P9.10** Attack-lab explorer: the P4.9 heatmap made interactive from the committed P4.9 rows. Filters by attack family and setting, the accuracy cost shown beside each result, both detection tests, and the P9.3 tier per row.
 - [ ] **P9.11** Trigger gallery: the **public demo-key** triggers next to their clean base images, from the committed P1.3 figures and statistics (PSNR, amplitude sweep). Labelled as demo-key triggers; the real triggers are never shown.
 - [ ] **P9.12** Provenance and theft-timeline panel.
@@ -3296,3 +3313,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-06: P9.6. Landing page: hero with a one-line pitch and two buttons, a five-stage pipeline whose cards open their pages (click-checked), and six headline figures. All six are computed from the committed P4.9, P9.4 and P5.5 records through the data layer, each tile naming its source; two are honest limits (11 of 84 with neither watermark detected; distillation keeps 90.67% accuracy with no evidence). A tampered source drops only its own figures and shows the error. Added `DataStore.latest`, plus scan allowlist entries for file-name task prefixes, CIFAR-10 and format specs. 1,327 tests pass. P9.7 not started.
 - 2026-10-06: P9.7. Live audit page: 7 suspects, animated step-by-step checks, each titled live or replayed from p9.2_audit_suspects. Commitment re-checked live from the provenance files. Grade recomputed live with src/auditor/grading.py loaded by path; equal to committed P9.3 for all 7, and P9.4 for the 6 it audited. Owner evidence separate; no-exoneration caveat on none grades. 1,346 tests pass. P9.8 not started.
 - 2026-10-06: P9.8. Private data section on the live audit: secrets used (K, from the verdict) with the guard-limit tooltip; the hosted app read no secrets (files listed); what the verdict excludes; this audit vs an opening (79 secret bytes, P5.6) vs the Groth16 proof (1 public signal, C; P7.7). Secrets test narrowed to path references. 1,362 tests pass. P9.9 not started.
+- 2026-10-07: Confirmed the narrowed secrets test fails on each planted path reference. P9.9: evidence-strength page. Behavioral: P2.8's 1,000 wrong-key counts per null model against the binomial bound, plus the exact tail p on a log scale, thresholds marked, suspect placed. Weight: the proven bound with thresholds and floor, labelled not-measured. Shared suspect picker. Repo stats code via app/repo_code.py. Flagged that P3.7 did commit binned z histograms. 1,377 tests pass. P9.10 not started.
