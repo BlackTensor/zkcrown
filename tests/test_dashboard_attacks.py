@@ -116,6 +116,8 @@ def test_channel_caveat_sits_next_to_the_rows(app_test, lab):
     channel = table["Family"].isin({r.family_title for r in lab.rows if r.channel_pruned})
     assert set(table.loc[channel, "Weight caveat"]) == {lab_logic.CAVEAT_SHORT}
     assert set(table.loc[~channel, "Weight caveat"]) == {""}
+    assert table.loc[channel, "Setting"].str.startswith("⚠").all()
+    assert not table.loc[~channel, "Setting"].str.contains("⚠").any()
     specs = [json.dumps(json.loads(c.proto.spec), ensure_ascii=False) for c in at.get("vega_lite_chart")]
     scatter = next(s for s in specs if '"shape"' in s)
     assert lab_logic.CAVEAT_SHORT in scatter

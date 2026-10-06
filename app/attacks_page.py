@@ -112,7 +112,8 @@ def _heatmap(rows: list[lab_logic.Row]) -> None:
 
 def _table(rows: list[lab_logic.Row]) -> None:
     st.dataframe(
-        [{"Family": r.family_title, "Setting": r.setting, "Test accuracy": r.test_accuracy,
+        [{"Family": r.family_title, "Setting": ("⚠ " if r.channel_pruned else "") + r.setting,
+          "Test accuracy": r.test_accuracy,
           "Accuracy cost (pp)": r.drop_pp, "Triggers fired": r.fired, "Behavioral test": r.behavioral_status,
           "Weight test": r.weight_status, "Weight z": r.weight_z if r.weight_applicable else None,
           "Weight caveat": r.weight_caveat,
@@ -120,6 +121,10 @@ def _table(rows: list[lab_logic.Row]) -> None:
          for r in rows],
         hide_index=True, width="stretch",
         column_config={
+            "Family": st.column_config.TextColumn(pinned=True),
+            "Setting": st.column_config.TextColumn(
+                pinned=True, help="⚠ marks channel-pruning rows: their weight figure assumes a re-alignment step "
+                                  "that was never built."),
             "Test accuracy": st.column_config.NumberColumn(format="percent"),
             "Accuracy cost (pp)": st.column_config.NumberColumn(
                 format="%.2f", help="Drop in test accuracy against the unattacked dual W*, in percentage points."),

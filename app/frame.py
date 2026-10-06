@@ -19,6 +19,11 @@ def render_page(slug: str) -> None:
 
         render_overview(spec)
         return
+    if slug == "triggers":
+        from app.triggers_page import render_triggers
+
+        render_triggers(spec)
+        return
     if slug == "attacks":
         from app.attacks_page import render_attacks
 
