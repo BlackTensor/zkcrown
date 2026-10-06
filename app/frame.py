@@ -19,6 +19,11 @@ def render_page(slug: str) -> None:
 
         render_overview(spec)
         return
+    if slug == "attacks":
+        from app.attacks_page import render_attacks
+
+        render_attacks(spec)
+        return
     if slug == "evidence":
         from app.evidence_page import render_evidence
 

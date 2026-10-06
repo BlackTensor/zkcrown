@@ -25,5 +25,23 @@
   "label_angle": 270,
   "label_offset": 3,
   "label_top": 4,
-  "legend_label_limit": 320
+  "legend_label_limit": 320,
+  "row_height": 26,
+  "row_label_limit": 440,
+  "cell_stroke": "#0b0f15",
+  "heat_range": [
+    "#141c27",
+    "#1d3f6e",
+    "#2f6fc4"
+  ],
+  "tier_colors": [
+    "#5fd39a",
+    "#7cc7a0",
+    "#8bbcf3",
+    "#e3c36a",
+    "#e3a14f",
+    "#9aa7b8"
+  ],
+  "scatter_height": 360,
+  "band_padding": 0.35
 }

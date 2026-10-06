@@ -1421,7 +1421,22 @@ Replanned 2026-10-05 at the owner's request: the single dashboard task became th
       - left: the exceedances at each proven threshold (8 at 0.05 against a bound of 50; 4 at 0.01 against 10; 0 at stricter levels);
       - right: the measured rate stays below the bound (computed, not asserted), and with 1,000 keys only the levels near 0.05 and 0.01 are checked by measurement, while stricter thresholds rest on the proof alone. These levels are derived from the record: those whose bound allows more than one exceedance.
     - All read from the P3.7 record through the data layer. Allowlist gained Vega-Lite's `x2`/`y2` channel names (whole string only). 3 new tests, 1,380 in total, all pass.
-- [ ] **P9.10** Attack-lab explorer: the P4.9 heatmap made interactive from the committed P4.9 rows. Filters by attack family and setting, the accuracy cost shown beside each result, both detection tests, and the P9.3 tier per row.
+- [x] **P9.10** Attack-lab explorer: the P4.9 heatmap made interactive from the committed P4.9 rows. Filters by attack family and setting, the accuracy cost shown beside each result, both detection tests, and the P9.3 tier per row.
+  - **Done.** `app/attacks_page.py` and `app/attacks_logic.py`, with Vega-Lite charts and `st.dataframe`. No new packages. Checked in headless Edge.
+  - **Outcome tiles:** both detected 34, only the weight watermark 39, only the trigger watermark 0, neither 11, each "of 84 attack settings run". The caption says these are counts over the chosen settings, not rates.
+  - **Live tiers:** each row's tier is recomputed with the repo's grading code from its P4.9 p-values (k* from P2.8). All 85 equal the committed P9.4 grades, matched by result file, and the counts equal P9.3's survey. A mismatch would show an error.
+  - **Filters:**
+    - a one-click outcome control ("Neither watermark detected" shows the 11 rows);
+    - family and setting multiselects;
+    - a live count of what is shown.
+    - When channel-pruning rows are in view, a warning says the weight figure assumes a re-alignment step that was never built. The P4.9 family note is also in the table's Note column.
+  - **Heatmap tab:** one row per setting, with test accuracy, triggers fired and weight z. A watermark its own test did not detect gets an orange frame and text; the weight cell reads "not applicable" where the layout is absent.
+  - **Table tab:** sortable. Columns: family, setting, test accuracy, accuracy cost (pp), fired, behavioral test, weight test, weight z, evidence tier, combined p, note, task.
+  - **Scatter:** accuracy cost against the P9.3 tier, one band per tier with the dots spread inside it; the tooltip gives the exact combined p.
+    - The caption is computed from the data: 8 of the settings shown leave no evidence, the cheapest being the 50,000-image width-32 distillation student at +0.18 pp.
+    - It says what the chart does not show: one run per setting, a deliberately chosen grid, attackers with more data, and that the cloud is not a rate or a frontier.
+  - **Allowlist:** gained printf-style format specs (`%.2f`) as whole strings, and the `phase4_*` record field names, each with planted cases.
+  - No new committed files; the manifest is unchanged. 11 new tests, 1,392 in total, all pass.
 - [ ] **P9.11** Trigger gallery: the **public demo-key** triggers next to their clean base images, from the committed P1.3 figures and statistics (PSNR, amplitude sweep). Labelled as demo-key triggers; the real triggers are never shown.
 - [ ] **P9.12** Provenance and theft-timeline panel.
   - Provenance: commitment `C`, the model fingerprint, Bitcoin block 969627 (from the committed P5.5 chain check), and the record signature and GPG tag status.
@@ -3323,3 +3338,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-06: P9.8. Private data section on the live audit: secrets used (K, from the verdict) with the guard-limit tooltip; the hosted app read no secrets (files listed); what the verdict excludes; this audit vs an opening (79 secret bytes, P5.6) vs the Groth16 proof (1 public signal, C; P7.7). Secrets test narrowed to path references. 1,362 tests pass. P9.9 not started.
 - 2026-10-07: Confirmed the narrowed secrets test fails on each planted path reference. P9.9: evidence-strength page. Behavioral: P2.8's 1,000 wrong-key counts per null model against the binomial bound, plus the exact tail p on a log scale, thresholds marked, suspect placed. Weight: the proven bound with thresholds and floor, labelled not-measured. Shared suspect picker. Repo stats code via app/repo_code.py. Flagged that P3.7 did commit binned z histograms. 1,377 tests pass. P9.10 not started.
 - 2026-10-07: P9.9 follow-up (owner request): weight panel adds P3.7's binned measured wrong-key z values and measured exceedance rate beside the proven bound, labelled separately; yellow box and captions updated (only 0.05 and 0.01 checked by 1,000 keys; stricter levels rest on the proof). 1,380 tests pass. P9.10 not started.
+- 2026-10-07: P9.10. Attack-lab explorer: outcome tiles (34 / 39 / 0 / 11 of 84 settings run), one-click 'neither detected' filter, family and setting filters, heatmap and sortable table with 'not applicable' stated, channel-pruning note that re-alignment was never built, scatter of accuracy cost against P9.3 tier. Tiers recomputed live; all 85 equal the committed P9.4 grades. 1,392 tests pass. P9.11 not started.

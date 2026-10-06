@@ -49,10 +49,11 @@ DIGIT_ALLOWLIST = (
     (r"\bBN254\b", "the elliptic curve's name"),
     (r"exp\(−t²/2\)", "the formula of the P3.7 weight bound, P(z ≥ t) ≤ exp(−t²/2)"),
     (r"^[xy]2$", "Vega-Lite's x2 / y2 encoding channels, as a whole string"),
+    (r"\bphase4_\w+", "record field names such as phase4_result_file (P9.4)"),
 )
 """Digit patterns allowed inside app string literals. Everything else with a digit fails."""
-FORMAT_SPEC = r"[+,]?\.\d+[fFeEg%]"
-"""A string that is only a format specification (e.g. ``.2f``, ``+.2f``, ``.2%``) is allowed: it sets how a
+FORMAT_SPEC = r"%?[+,]?\.\d+[fFeEg%]"
+"""A string that is only a format specification (e.g. ``.2f``, ``+.2f``, ``.2%``, printf-style ``%.2f``) is allowed: it sets how a
 computed number is shown, not a number."""
 NUMBER_ALLOWLIST = {0, 1}
 """Numeric literals allowed in app code: indexing and 'plus one'. Literal arguments of ``time.sleep``
@@ -197,6 +198,8 @@ def test_no_measured_numbers_typed_into_app_code():
     'time.sleep(0.5)\nst.progress(0.5)\n',
     'st.write("bound exp(−t²/2) at z = 10.29")\n',
     'st.write("x2 of 1000 keys")\n',
+    'FMT = "%.2f%% of 100"\n',
+    'st.write("phase4 grade 70 of 85")\n',
 ])
 def test_scanner_catches_planted_numbers(source):
     assert literal_violations(source, "planted.py")
@@ -211,6 +214,8 @@ def test_scanner_catches_planted_numbers(source):
     'st.write(f"accuracy {acc:.2%}, drop {d:+.2f} pp")\n',
     'PREFIX = "results/p4.9_master_table__"\n',
     'st.write("third-party CIFAR-10 models")\n',
+    'col = st.column_config.NumberColumn(format="%.2f")\n',
+    'row = audited["phase4_result_file"]\n',
     'time.sleep(0.6)\nflag = stat["groth16_verified"]\n',
 ])
 def test_scanner_allows_the_documented_exceptions(source):
