@@ -1444,9 +1444,27 @@ Replanned 2026-10-05 at the owner's request: the single dashboard task became th
   - **Tests:** the real bundle and `K` cannot be loaded (data layer refuses), no bundle in the manifest, page source references none, demo-key identity checked, PNG encoding deterministic, page renders 38 images with record-derived metrics.
   - **P9.10 follow-up in the same session:** the channel-pruning re-alignment caveat now sits beside the rows (⚠ at the start of the Setting cell, a pinned Setting column, a Weight caveat column, a heatmap marker, triangles plus tooltip in the scatter).
   - Dashboard tests (122) pass; the full suite was not re-run at the end of this session because the usage limit was reached.
-- [ ] **P9.12** Provenance and theft-timeline panel.
+- [x] **P9.12** Provenance and theft-timeline panel.
   - Provenance: commitment `C`, the model fingerprint, Bitcoin block 969627 (from the committed P5.5 chain check), and the record signature and GPG tag status.
   - Timeline: the P6.4 timeline, including the thief's backdated counter-claim and what is and is not symmetric between the two claims.
+  - **Done.** `app/provenance_page.py` (page) and `app/provenance_logic.py` (stdlib-only logic). Checked in headless Edge at 1,440 px and 420 px.
+  - **Sources:** `provenance/commitment.json`, `record.json` and both `.ots` proofs, plus the newest P5.5, P5.5 status, P6.2, P6.3 and P6.4 records. Everything is read through the data layer and listed with its SHA-256 in an expander. These files were already in the manifest, so it is unchanged.
+  - **Open points box at the top**, each read from the records:
+    - The record's own Bitcoin proof is still pending: 3 calendar promises, 0 attestations. A live check confirms the committed `record.json.ots` is the proof the status record describes.
+    - The signed tag holds the older, pending proof (`proof_in_tag_is_current` false), and the tag has not been pushed.
+    - The "trusted" key in the recorded runs came from this repository (P6.3's recorded source string). It tests the mechanism, not independent trust. A live check confirms P6.2, P6.3, P6.4 and the record all name the same key.
+  - **Sections:**
+    - **Commitment:** `C` in decimal and hex, the scheme and inputs, the model label, the fingerprint, the owner id, the self-asserted date and the publication SHA-256.
+    - **Six live consistency checks:** the record names the publication's hash; the record's `C` equals the published `C`; the decimal and hex forms agree; the fingerprints match; the Bitcoin-checked hash is this file; the committed proof file is the one P5.5 checked.
+    - **Bitcoin:** tiles for blocks 969,627 and 969,632, each with header time, hash, calendars and both explorers, plus the "loose by hours, not a full node" caveat.
+    - **Signatures:** the Ed25519 record card and the GPG tag card, both labelled replayed, because the hosted app has neither library. Tamper counts from P6.2 and P6.3.
+    - **Timeline:** the P6.4 events in clock order, tagged Bitcoin-attested, self-asserted or simulation clock. The thief's backdated claim sorts first.
+    - **Two claims:** six rows with a Symmetric column. Three differ: independent time; the weight watermark on the model the owner published before the hand-over (owner z 10.29 against the thief's 0.45); and acceptance under the owner's key, flagged as circular on its own.
+    - **The owner's audit:** a P6.4 suspect table with neutral labels.
+  - **Wording:** P6.4's accuracy field name contains a banned word, so it is looked up by prefix. Labels come from the attack name; nothing renders "stolen".
+  - **Numeric scan:** the allowlist gained field names ending in `_sha256`, with planted and allowed cases.
+  - 15 new tests (`tests/test_dashboard_provenance.py`). They cover: the live checks pass, and fail on a changed `C`, fingerprint or publication hash; the open points; the block from the chain check; the timeline order; the asymmetric rows; the audit rows equal to the record; no file access outside the data layer; and the page rendering with its committed values and no banned wording.
+  - App tests: 137 pass. The full suite was not run, by owner decision: it runs once before the GitHub push.
 - [ ] **P9.13** ZK panel: Track A (Circom/Groth16) and Track B (EZKL) stats from P7.5 to P7.8 and P8.3 to P8.6: sizes, times on this machine (not Colab), and the tampered proofs that were rejected (206 / 0 and 42 / 0). Each track says what it proves and what it does not (from `docs/ZK_STATEMENT.md` and `docs/ZKML_STATEMENT.md`).
 - [ ] **P9.14** Honest-limits tab. It covers distillation removing both watermarks (P4.7, P4.10), channel pruning plus fine-tuning, the single-contributor Groth16 setup, P7.9 blocked (with its constraint count), the unfinished Hermez verify, and the record's pending timestamp. It ends with the not-legal-evidence line.
 - [ ] **P9.15** Deploy free on Streamlit Community Cloud with a bundled demo model, so a reviewer can click through without setup (the old P9.7).
@@ -3346,3 +3364,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-07: P9.9 follow-up (owner request): weight panel adds P3.7's binned measured wrong-key z values and measured exceedance rate beside the proven bound, labelled separately; yellow box and captions updated (only 0.05 and 0.01 checked by 1,000 keys; stricter levels rest on the proof). 1,380 tests pass. P9.10 not started.
 - 2026-10-07: P9.10. Attack-lab explorer: outcome tiles (34 / 39 / 0 / 11 of 84 settings run), one-click 'neither detected' filter, family and setting filters, heatmap and sortable table with 'not applicable' stated, channel-pruning note that re-alignment was never built, scatter of accuracy cost against P9.3 tier. Tiers recomputed live; all 85 equal the committed P9.4 grades. 1,392 tests pass. P9.11 not started.
 - 2026-10-07: P9.10 follow-up (channel caveat beside rows in table, heatmap, scatter). P9.11: demo-key trigger gallery, 12 triplets regenerated byte-identical to P1.3, metrics from the P1.3 record, real bundle unreachable (tested). Dashboard tests pass; full suite not re-run (usage limit). P9.12 not started.
+- 2026-10-07: Dashboard tests only (122 pass); full suite stopped by owner decision, to run once before the GitHub push. P9.12: provenance and theft-timeline page. Commitment, fingerprint, Bitcoin blocks 969627 and 969632, record and tag signatures (replayed), P6.4 timeline in clock order with the backdated claim first, two-claims table with the three asymmetries, audit table. Open points stated at the top: record proof pending, tag holds the older proof, trusted key from this repo. Six live consistency checks. 15 new tests; 137 app tests pass; manifest unchanged. P9.13 not started.

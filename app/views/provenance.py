@@ -1,4 +1,4 @@
-"""Provenance page. Placeholder until P9.12 builds the panel."""
+"""Provenance page. Built by P9.12 (app/provenance_page.py)."""
 
 from app.frame import render_page
 

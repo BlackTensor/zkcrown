@@ -191,3 +191,54 @@
 /* --- Attack lab (P9.10) --------------------------------------------------------------- */
 .zk-tiles-four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 @media (max-width: 1100px) { .zk-tiles-four { grid-template-columns: 1fr 1fr; } }
+
+/* --- Provenance and theft timeline (P9.12) -------------------------------------------- */
+.zk-mono { font-family: "JetBrains Mono", monospace; }
+.zk-wrap { word-break: break-all; }
+.zk-pv-card {
+  background: var(--zk-surface); border: 1px solid var(--zk-border); border-radius: 14px;
+  padding: 1.05rem 1.25rem; height: 100%;
+}
+.zk-pv-head { display: flex; justify-content: space-between; align-items: center; gap: .6rem; margin-bottom: .55rem; }
+.zk-pv-title { font-weight: 700; color: var(--zk-ink); }
+.zk-pv-field { padding: .5rem 0; border-top: 1px solid var(--zk-border); }
+.zk-pv-label { font-size: .72rem; font-weight: 600; letter-spacing: .04em; color: var(--zk-ink-3); margin-bottom: .2rem; }
+.zk-pv-value { font-size: .86rem; color: var(--zk-ink); overflow-wrap: anywhere; line-height: 1.45; }
+.zk-pv-value.zk-mono { font-size: .78rem; }
+.zk-pv-note { font-size: .78rem; color: var(--zk-ink-2); margin-top: .2rem; line-height: 1.45; }
+.zk-pv-checks { margin: .9rem 0 .4rem; padding: .8rem 1.1rem; border-radius: 12px; background: var(--zk-surface-2); border: 1px solid var(--zk-border); }
+.zk-pv-checks ul { list-style: none; margin: .3rem 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: .35rem 1.4rem; }
+.zk-pv-checks li { display: flex; flex-direction: column; font-size: .84rem; }
+.zk-pv-checks li span { font: .72rem/1.4 "JetBrains Mono", monospace; color: var(--zk-ink-3); word-break: break-all; }
+.zk-pv-checks .zk-ok b { color: #7fd6a4; font-weight: 600; }
+.zk-pv-checks .zk-bad b { color: #f08a8a; }
+.zk-tiles-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.zk-tile-muted { border-top-color: var(--zk-border); }
+.zk-tile-muted .zk-tile-value { color: var(--zk-ink-2); }
+.zk-tl { list-style: none; margin: .4rem 0 .5rem; padding: 0 0 0 1.2rem; border-left: 2px solid var(--zk-border); }
+.zk-tl li { position: relative; display: grid; grid-template-columns: 11.5rem 1fr; gap: 1rem; padding: .6rem 0; }
+.zk-tl li::before {
+  content: ""; position: absolute; left: -1.62rem; top: .95rem; width: .75rem; height: .75rem; border-radius: 50%;
+  background: var(--zk-ink-3); border: 2px solid #0b0f15;
+}
+.zk-tl li.zk-tl-bitcoin::before { background: #5cc489; }
+.zk-tl li.zk-tl-party-thief::before { background: #e3a14f; }
+.zk-tl-time { font: .82rem/1.5 "JetBrains Mono", monospace; color: var(--zk-ink-2); padding-top: .1rem; }
+.zk-tl-text { font-weight: 600; color: var(--zk-ink); }
+.zk-tl-party-thief .zk-tl-text { color: #f0bd7e; }
+.zk-tl-tags { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .25rem; }
+.zk-tl-tag { font-size: .7rem; font-weight: 600; padding: .1rem .5rem; border-radius: 999px; border: 1px solid var(--zk-border); color: var(--zk-ink-2); }
+.zk-tl-bitcoin .zk-tl-kind { color: #7fd6a4; border-color: rgba(92, 196, 137, .45); background: rgba(92, 196, 137, .1); }
+.zk-tl-self .zk-tl-kind { color: #f0bd7e; border-color: rgba(227, 161, 79, .45); }
+.zk-tl-ev { font-size: .76rem; color: var(--zk-ink-3); }
+.zk-claims-wrap { overflow-x: auto; }
+.zk-claims { width: 100%; min-width: 44rem; border-collapse: collapse; font-size: .86rem; margin: .3rem 0 .6rem; }
+.zk-claims th { text-align: left; font-size: .72rem; letter-spacing: .04em; color: var(--zk-ink-3); padding: .45rem .6rem; border-bottom: 1px solid var(--zk-border); }
+.zk-claims td { padding: .55rem .6rem; border-bottom: 1px solid var(--zk-border); color: var(--zk-ink); vertical-align: top; }
+.zk-claims tr.zk-asym td { background: rgba(109, 167, 236, 0.07); }
+.zk-claims tr.zk-asym td:nth-child(4) b { color: var(--zk-accent); }
+.zk-claim-note { color: var(--zk-ink-2) !important; font-size: .8rem; }
+@media (max-width: 1100px) {
+  .zk-tiles-two, .zk-pv-checks ul { grid-template-columns: 1fr; }
+  .zk-tl li { grid-template-columns: 1fr; gap: .2rem; }
+}

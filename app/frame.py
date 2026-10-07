@@ -34,6 +34,11 @@ def render_page(slug: str) -> None:
 
         render_evidence(spec)
         return
+    if slug == "provenance":
+        from app.provenance_page import render_provenance
+
+        render_provenance(spec)
+        return
     if slug == "audit":
         from app.audit_page import render_audit
 
