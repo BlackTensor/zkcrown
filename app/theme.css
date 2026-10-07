@@ -263,3 +263,10 @@
   background: rgba(227, 161, 79, .08); color: var(--zk-ink); font-weight: 600; text-align: center;
 }
 .zk-pv-gap { margin-top: 1rem; }
+
+/* --- Live / replayed line (P9.15) ----------------------------------------------------- */
+.zk-mode { display: flex; gap: .6rem; align-items: baseline; flex-wrap: wrap; font-size: .82rem; color: var(--zk-ink-2); margin: .55rem 0 .2rem; }
+.zk-mode-tag {
+  font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #7fd6a4;
+  border: 1px solid rgba(92, 196, 137, .45); border-radius: 999px; padding: .08rem .55rem; white-space: nowrap;
+}

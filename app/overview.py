@@ -103,6 +103,7 @@ def _sources(records: dict, headlines: list) -> None:
 
 def render_overview(spec: PageSpec) -> None:
     _hero()
+    st.html(ui.mode_line(spec))
     _pipeline()
     records = _load_records()
     headlines = _headlines(records)

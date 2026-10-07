@@ -20,6 +20,9 @@ class PageSpec:
     summary: str
     plan: tuple[str, ...]
     default: bool = False
+    mode: str = ""
+    """What runs live on the host and what is replayed or read from committed results (P9.15). Shown under
+    every page's title; the pre-deploy check requires it on every page."""
 
 
 PAGES: tuple[PageSpec, ...] = (
@@ -30,7 +33,8 @@ PAGES: tuple[PageSpec, ...] = (
         ("The pipeline at a glance: watermark, attack, commit, prove, audit.",
          "Each stage links to its own page.",
          "Headline figures read from the committed results."),
-        default=True),
+        default=True,
+        mode='Reads committed results only; the headline figures are computed live from them.'),
     PageSpec(
         "audit", "Live audit", "Audit", ":material/policy:", "P9.7, P9.8",
         "Pick a suspect model and follow the five checks one by one, ending in a graded verdict.",
@@ -38,6 +42,7 @@ PAGES: tuple[PageSpec, ...] = (
          "Watermark checks are replayed from the recorded audit, and every step says whether it is live or replayed.",
          "The grade is recomputed from the verdict shown, with its caveats and the separate owner evidence.",
          "What private data the audit used, taken from the verdict itself."),
+        mode="Replayed from the recorded audit, except the commitment check, the grade and the verbatim copy's fingerprint, which run live.",
     ),
     PageSpec(
         "evidence", "Evidence strength", "Audit", ":material/query_stats:", "P9.9",
@@ -46,6 +51,7 @@ PAGES: tuple[PageSpec, ...] = (
         ("Behavioral test: the binomial bound, the wrong-key histograms and the detection thresholds.",
          "Weight test: the proven tail bound and the recorded null aggregates.",
          "The suspect's own statistic marked on each."),
+        mode="Test statistics replayed from the recorded runs; the null curves and bounds are computed live with the repo's own code.",
     ),
     PageSpec(
         "attacks", "Attack lab", "Experiments", ":material/swords:", "P9.10",
@@ -53,18 +59,21 @@ PAGES: tuple[PageSpec, ...] = (
         ("Filter by attack family and setting.",
          "Accuracy cost beside each outcome.",
          "The evidence tier for every row."),
+        mode='Attack results read from committed records; each evidence tier is recomputed live.',
     ),
     PageSpec(
         "triggers", "Trigger gallery", "Experiments", ":material/grid_view:", "P9.11",
         "Public demo-key triggers next to their clean base images. The real triggers are never shown.",
         ("Demo-key trigger set and per-image detail.",
          "Image statistics and the amplitude sweep."),
+        mode='Committed demo-key images and records only; nothing runs live here.',
     ),
     PageSpec(
         "provenance", "Provenance", "Cryptography", ":material/verified:", "P9.12",
         "The published commitment, its independent Bitcoin timestamp, the signed record, and the theft timeline.",
         ("Commitment, model fingerprint, block attestation, record signature and tag status.",
          "The simulated theft, the thief's backdated counter-claim, and what is not symmetric between the two."),
+        mode='Signatures and the chain checks are replayed from the recorded runs; the consistency checks run live.',
     ),
     PageSpec(
         "zk", "Zero-knowledge", "Cryptography", ":material/lock:", "P9.13",
@@ -72,6 +81,7 @@ PAGES: tuple[PageSpec, ...] = (
         ("Track A: knowledge of an opening of the published commitment (Circom).",
          "Track B: inference of the small MNIST model (EZKL).",
          "The tampered proofs that were rejected."),
+        mode='Proof checks are replayed from the recorded runs; proof sizes and the public signal are measured live from the committed files.',
     ),
     PageSpec(
         "limits", "Honest limits", "Cryptography", ":material/report:", "P9.14",
@@ -79,11 +89,13 @@ PAGES: tuple[PageSpec, ...] = (
         ("Distillation, and channel pruning followed by fine-tuning.",
          "The single-contributor setup, the blocked trigger circuit, the unfinished ceremony check, the record's "
          "later timestamp."),
+        mode='Read from committed records; each fact is computed live from them, nothing is re-measured.',
     ),
     PageSpec(
         "integrity", "Data integrity", "About", ":material/fact_check:", "P9.5",
         "Every file this dashboard may read, checked against the SHA-256 recorded when it was committed.",
         (),
+        mode='Live: every listed file is re-hashed now against its recorded SHA-256.',
     ),
 )
 

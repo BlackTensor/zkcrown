@@ -373,20 +373,37 @@ def test_page_files_match_the_registry():
 # --- hosting -------------------------------------------------------------------------
 
 
-def test_app_imports_only_stdlib_streamlit_and_itself():
-    allowed_third_party = {"streamlit"}
-    stdlib = set(sys.stdlib_module_names)
+NUMPY_ALLOWED_IN = {"fingerprint_live.py"}
+"""The one app module allowed to import numpy (P9.15): the live fingerprint of the bundled model.
+numpy is a dependency of Streamlit, so the host's requirements do not change."""
+
+
+def _imports(path) -> set[str]:
     found = set()
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        if isinstance(node, ast.Import):
+            found |= {a.name.split(".")[0] for a in node.names}
+        elif isinstance(node, ast.ImportFrom) and node.level == 0:
+            found.add(node.module.split(".")[0])
+    return found
+
+
+def test_app_imports_only_stdlib_streamlit_and_itself():
+    stdlib = set(sys.stdlib_module_names)
+    outside = {}
     for path in app_python_files():
         if path.name == "build_manifest.py":
             continue
-        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-            if isinstance(node, ast.Import):
-                found |= {a.name.split(".")[0] for a in node.names}
-            elif isinstance(node, ast.ImportFrom) and node.level == 0:
-                found.add(node.module.split(".")[0])
-    outside = {m for m in found if m not in stdlib and m not in allowed_third_party and m != "app"}
-    assert outside == set(), outside
+        allowed = {"streamlit"} | ({"numpy"} if path.name in NUMPY_ALLOWED_IN else set())
+        extra = {m for m in _imports(path) if m not in stdlib and m not in allowed and m != "app"}
+        if extra:
+            outside[path.name] = extra
+    assert outside == {}, outside
+
+
+def test_numpy_is_imported_by_the_live_fingerprint_module_only():
+    users = {p.name for p in app_python_files() if p.name != "build_manifest.py" and "numpy" in _imports(p)}
+    assert users == NUMPY_ALLOWED_IN
 
 
 def test_app_requirements_are_pinned_and_minimal():

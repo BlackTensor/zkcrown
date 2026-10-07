@@ -932,6 +932,14 @@
       "bytes": 10138,
       "sha256": "413366c8805fa4b18d3b9ea277b836f974958cd6d74cbb31143ca00271c233d0"
     },
+    "results/p9.15_dual_W_star.npz": {
+      "bytes": 1245090,
+      "sha256": "2b65a7918a5c913a8ed08b9ede71124defd7cf458d98c71e6635d17565d94010"
+    },
+    "results/p9.15_dual_w_star_bundle__seed1337__20261007T132215+0000.json": {
+      "bytes": 1928,
+      "sha256": "edba37f92ae49748e88fea5b9df361817adda6b4b6c3870e9a43eab41360795c"
+    },
     "results/p9.1_audit_engine__seed1337__20261005T122819+0000.json": {
       "bytes": 11122,
       "sha256": "e68c9a8970bffbd64d66f00fb0d7f7faa9cdcf3d3b5ae96a45ba631d0f224934"

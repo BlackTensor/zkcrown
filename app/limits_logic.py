@@ -24,6 +24,7 @@ from app.attacks_logic import NEVER_BUILT
 P4_9 = "results/p4.9_master_table__"
 P9_2 = "results/p9.2_audit_suspects__"
 P5_6 = "results/p5.6_opening_verifier__"
+BUNDLE_RECORD = "results/p9.15_dual_w_star_bundle__"
 NOT_LEGAL_MARK = "not legal evidence"
 
 
@@ -160,7 +161,8 @@ def provenance_limits(store) -> list[Limit]:
 
 
 def audit_limits(store) -> list[Limit]:
-    path, opening = store.latest(P9_2), store.latest(P5_6)
+    path, opening, bundle_path = store.latest(P9_2), store.latest(P5_6), store.latest(BUNDLE_RECORD)
+    bundle_record = store.read_json(bundle_path)
     record, p5_6 = store.read_json(path), store.read_json(opening)
     verdicts = record["metrics"]["verdicts"]
     with_key = sum("K" in v["secrets_used"] for v in verdicts.values())
@@ -178,10 +180,12 @@ def audit_limits(store) -> list[Limit]:
               "or reveals the key, after which anyone can aim at the triggers.", (path, opening), "audit", "Live audit"),
         Limit("replayed", "This demo", "Most checks on this site are replayed",
               f"{len(replayed)} of {len(audit_logic.SLOTS)} audit checks are replayed from the recorded run "
-              f"({', '.join(replayed).lower()}); {', '.join(live).lower()} and the grade are recomputed live.",
-              "The hosted app holds no key, no suspect weights and no proving tools. The signature checks on the "
-              "Provenance page are replayed too. Every replayed step names its source file.",
-              (path,), "audit", "Live audit"),
+              f"({', '.join(replayed).lower()}); {', '.join(live).lower()} and the grade are recomputed live. "
+              f"For the verbatim copy only, the {audit_logic.STEP_TITLES['fingerprint'].lower()} is computed live "
+              f"from the one bundled model ({bundle_record['metrics']['bundle_bytes']:,} bytes).",
+              "The hosted app holds no key, no proving tools, and no model except the owner's own. The signature "
+              "checks on the Provenance page are replayed too. Every replayed step names its source file.",
+              (path, bundle_path), "audit", "Live audit"),
         Limit("not_legal", "This demo", "Not legal evidence",
               not_legal[0] if len(not_legal) == 1 else "; ".join(not_legal),
               "Every grade is technical evidence strength from the measured tests. It is not a finding of ownership, "

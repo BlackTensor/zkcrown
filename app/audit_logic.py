@@ -2,10 +2,13 @@
 
 What runs where, stated on the page for every step:
 
-- **fingerprint, behavioral, weight, zk_proof: replayed** from the committed P9.2
-  verdicts. The watermark checks need the owner's key, which is never on this
-  host; the fingerprint needs the suspect's weights, which are not bundled; the
+- **behavioral, weight, zk_proof: replayed** from the committed P9.2 verdicts.
+  The watermark checks need the owner's key, which is never on this host; the
   proof checks need snarkjs and ezkl, which are not installed here.
+- **fingerprint: live for the verbatim copy, replayed for the others** (P9.15).
+  The one bundled model is the owner's dual W*, which is the verbatim-copy
+  suspect, so its fingerprint is computed now from the bundled weights
+  (`app.fingerprint_live`). The other suspects' weights are not bundled.
 - **commitment: live.** Re-computed from ``provenance/record.json`` and
   ``provenance/commitment.json``: the record's ``C`` equals the published ``C``
   (decimal and hex agree), and the publication file's SHA-256 equals the hash
@@ -36,6 +39,9 @@ RECORD = "provenance/record.json"
 PUBLICATION = "provenance/commitment.json"
 SLOTS = ("fingerprint", "behavioral", "weight", "commitment", "zk_proof")
 REPLAYED_SLOTS = ("fingerprint", "behavioral", "weight", "zk_proof")
+"""Slots replayed from the recorded audit, except where `is_live` says otherwise."""
+LIVE_FINGERPRINT_SUSPECT = "verbatim"
+"""The suspect whose weights are bundled (the owner's dual W*), so its fingerprint runs live (P9.15)."""
 
 
 @dataclass(frozen=True)
@@ -67,7 +73,7 @@ STEP_TITLES = {
     "zk_proof": "Zero-knowledge proofs",
 }
 WHY_REPLAYED = {
-    "fingerprint": "the suspect's weights are not bundled with this demo",
+    "fingerprint": "only the owner's own model is bundled with this demo, not this suspect's weights",
     "behavioral": "it needs the owner's secret key, which is never on this host",
     "weight": "it needs the owner's secret key, which is never on this host",
     "zk_proof": "snarkjs and ezkl are not installed on this host",
@@ -148,9 +154,26 @@ def matches_committed(sources: AuditSources, name: str, grade: dict) -> bool:
     return sources.committed_grades.get(name) == grade
 
 
-def label_for(slot: str, sources: AuditSources) -> str:
+def is_live(slot: str, sources: AuditSources, name: str | None = None) -> bool:
+    """Whether this step runs live on the host for this suspect."""
+    if slot == "commitment":
+        return True
+    return slot == "fingerprint" and name is not None and name == sources.names.get(LIVE_FINGERPRINT_SUSPECT)
+
+
+def audited_fingerprint(sources: AuditSources, name: str) -> str | None:
+    """The suspect fingerprint the recorded audit measured, if it recorded one."""
+    recorded = (sources.verdicts[name].get("inputs") or {}).get("suspect", {}).get("fingerprint") or {}
+    return recorded.get("sha256")
+
+
+def label_for(slot: str, sources: AuditSources, name: str | None = None) -> str:
     if slot == "commitment":
         return f"live · recomputed from {RECORD} and {PUBLICATION}"
+    if is_live(slot, sources, name):
+        from app.fingerprint_live import BUNDLE
+
+        return f"live · computed from the bundled weights {BUNDLE}"
     return f"replayed from {sources.p9_2_path}"
 
 

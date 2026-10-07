@@ -138,7 +138,9 @@ def test_page_runs_every_suspect(app_test, suspect, sources):
     assert len(labels) == len(al.SLOTS) + 1
     short = al.short_name(sources.p9_2_path)
     for slot, label in zip(al.SLOTS, labels):
-        assert label.endswith("· live" if slot == "commitment" else f"· replayed from {short}"), label
+        live = al.is_live(slot, sources, sources.names[suspect])
+        assert label.endswith("· live" if live else f"· replayed from {short}"), label
+        assert live == (slot == "commitment" or (slot == "fingerprint" and suspect == al.LIVE_FINGERPRINT_SUSPECT))
     assert labels[-1].endswith("· live")
     body = " ".join(h.proto.body for h in at.get("html"))
     grade = sources.committed_grades[sources.names[suspect]]["suspect"]
@@ -146,3 +148,37 @@ def test_page_runs_every_suspect(app_test, suspect, sources):
     assert (NO_EVIDENCE in body) == (grade["technical_evidence_strength"] == "none")
     assert any("identical to the committed grade" in s.value for s in at.success)
     assert "stolen" not in body.lower()
+
+
+def test_live_fingerprint_of_the_bundle_equals_the_record_and_the_audit(sources):
+    from app.fingerprint_live import live_fingerprint
+
+    name = sources.names[al.LIVE_FINGERPRINT_SUSPECT]
+    live = live_fingerprint(DataStore(), sources.record, al.audited_fingerprint(sources, name))
+    assert live.status == "passed" and live.matches_record and live.matches_audit
+    assert live.fingerprint == sources.record["model"]["fingerprint"]["sha256"]
+    assert not al.is_live("fingerprint", sources, sources.names["clean_W"])
+
+
+def test_a_bundle_that_fails_its_hash_check_is_an_error_not_a_pass(app_test, monkeypatch):
+    import app.ui as ui
+    from app.data import DataIntegrityError
+    from app.fingerprint_live import BUNDLE
+
+    class Broken(DataStore):
+        def read_bytes(self, path):
+            if path == BUNDLE:
+                raise DataIntegrityError(path, "SHA-256 does not match the recorded value (test)")
+            return super().read_bytes(path)
+
+    monkeypatch.setattr(ui, "_cached_store", lambda: Broken())
+    at = app_test
+    at.session_state["zk_suspect"] = al.LIVE_FINGERPRINT_SUSPECT
+    at.run()
+    at.switch_page("views/audit.py").run()
+    at.button(key=f"zk_run_{al.LIVE_FINGERPRINT_SUSPECT}").click().run()
+    assert not at.exception, [e.value for e in at.exception]
+    errors = " ".join(e.value for e in at.error)
+    assert BUNDLE in errors
+    labels = [x.label for x in at.main if type(x).__name__ == "Status"]
+    assert labels[0].startswith("Model fingerprint") and "Passed" not in labels[0]

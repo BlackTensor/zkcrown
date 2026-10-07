@@ -57,7 +57,13 @@ def header(spec: PageSpec) -> None:
         f'<div class="zk-kicker">{html.escape(spec.section)}</div>'
         f'<h1 class="zk-title">{html.escape(spec.title)}</h1>'
         f'<p class="zk-lede">{html.escape(spec.summary)}</p>'
+        + mode_line(spec)
     )
+
+
+def mode_line(spec: PageSpec) -> str:
+    """The page's live / replayed statement (P9.15), as HTML."""
+    return f'<p class="zk-mode"><span class="zk-mode-tag">On this page</span>{html.escape(spec.mode)}</p>'
 
 
 def placeholder(spec: PageSpec) -> None:

@@ -83,16 +83,46 @@ def _details(slot: str, check: dict, sources: al.AuditSources) -> None:
             st.write(check["reason"])
 
 
-def _step(slot: str, check: dict, sources: al.AuditSources, animate: bool, progress, index: int) -> None:
+def _live_fingerprint(store, sources: al.AuditSources, name: str):
+    """The live fingerprint result, or None after showing why it could not run."""
+    from app.fingerprint_live import live_fingerprint
+
+    try:
+        return live_fingerprint(store, sources.record, al.audited_fingerprint(sources, name))
+    except DataIntegrityError as error:
+        ui.data_error(error)
+        return None
+
+
+def _fingerprint_details(live) -> None:
+    st.markdown(
+        f"- Fingerprint of the bundled weights, computed now: `{live.fingerprint}`\n"
+        f"- Fingerprint the provenance record names: `{live.record_fingerprint}` · "
+        f"**{'equal' if live.matches_record else 'DIFFERENT'}**\n"
+        f"- Fingerprint the recorded audit measured for this suspect: "
+        f"**{'equal' if live.matches_audit else 'different or not recorded'}**")
+    st.caption(f"Bundled file {live.bundle} (SHA-256 {live.bundle_sha256}, checked on read), {live.tensors} "
+               "tensors, loaded without pickle. It is the owner's own model, the only model this demo bundles.")
+
+
+def _step(slot: str, check: dict, sources: al.AuditSources, animate: bool, progress, index: int,
+          store=None, name: str | None = None) -> None:
     title = al.STEP_TITLES[slot]
-    status = al.live_commitment(sources)["status"] if slot == "commitment" else check["status"]
+    live = al.is_live(slot, sources, name)
+    fingerprint = _live_fingerprint(store, sources, name) if live and slot == "fingerprint" else None
+    if slot == "commitment":
+        status = al.live_commitment(sources)["status"]
+    elif live:
+        status = fingerprint.status if fingerprint is not None else "error"
+    else:
+        status = check["status"]
     text, color = OUTCOME.get(status, (status, "gray"))
-    live = slot == "commitment"
     mode = "live" if live else f"replayed from {al.short_name(sources.p9_2_path)}"
     with st.status(f"{title} · {mode}", state="running" if animate else "complete", expanded=animate) as box:
         if animate:
             working = st.empty()
-            working.caption("Recomputing from the provenance files…" if live else "Reading the recorded result…")
+            working.caption(("Recomputing from the provenance files…" if slot == "commitment" else
+                             "Fingerprinting the bundled weights…") if live else "Reading the recorded result…")
             time.sleep(0.6)
             working.empty()
         cols = st.columns([1, 1])
@@ -100,8 +130,11 @@ def _step(slot: str, check: dict, sources: al.AuditSources, animate: bool, progr
             st.badge("live" if live else "replayed", icon=":material/bolt:" if live else ":material/history:",
                      color="green" if live else "blue")
         cols[1].markdown(f":{color}-badge[{text}]")
-        st.caption(al.label_for(slot, sources) + (f" — {al.why_replayed(slot)}." if not live else "."))
-        _details(slot, check, sources)
+        st.caption(al.label_for(slot, sources, name) + (f" — {al.why_replayed(slot)}." if not live else "."))
+        if fingerprint is not None:
+            _fingerprint_details(fingerprint)
+        else:
+            _details(slot, check, sources)
         if live and status != check["status"]:
             st.error(f"The live result ({status}) differs from the recorded one ({check['status']}).")
         box.update(label=f"{title} · {text} · {mode}",
@@ -209,8 +242,9 @@ def render_audit(spec) -> None:
         ui.data_error(error)
         return
     st.info(f"**Replay mode.** The behavioral and weight checks need the owner's secret key, which is never on this "
-            f"host, so they are replayed from the committed audit `{sources.p9_2_path}`. The fingerprint and proof "
-            "checks are replayed too. The commitment check and the grade run live. Each step says which.",
+            f"host, so they are replayed from the committed audit `{sources.p9_2_path}`. The proof checks are "
+            "replayed too. The commitment check and the grade run live, and so does the fingerprint for the verbatim "
+            "copy, whose weights (the owner's own model) are the only ones bundled. Each step says which.",
             icon=":material/history:")
 
     by_prefix = {s.prefix: s for s in al.SUSPECTS}
@@ -232,7 +266,7 @@ def render_audit(spec) -> None:
     checks = al.checks_for_grading(sources, name)
     st.html('<h2 class="zk-section">Checks</h2>')
     for index, slot in enumerate(al.SLOTS):
-        _step(slot, checks[slot], sources, animate, progress, index)
+        _step(slot, checks[slot], sources, animate, progress, index, store=store, name=name)
 
     with st.status("Grading · live", state="running" if animate else "complete", expanded=False) as box:
         if animate:

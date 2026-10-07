@@ -58,7 +58,11 @@ def test_the_real_bundle_cannot_be_loaded(store, path):
 
 
 def test_no_bundle_is_listed_or_referenced(store):
-    assert not [name for name in store.files if name.endswith(".npz") or "bundle" in name]
+    from app.fingerprint_live import BUNDLE, BUNDLE_RECORD
+
+    listed = [name for name in store.files if name.endswith(".npz") or "bundle" in name]
+    assert [n for n in listed if n != BUNDLE and not n.startswith(BUNDLE_RECORD)] == []
+    assert store.recorded_sha256(BUNDLE) != REAL_BUNDLE_SHA256  # the model bundle (P9.15) is not the trigger set
     source = (APP / "triggers_page.py").read_text(encoding="utf-8")
     assert "trigger_bundle" not in source and "npz" not in source and "load_key" not in source
 
