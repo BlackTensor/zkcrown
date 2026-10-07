@@ -252,3 +252,13 @@
 .zk-bar-value { font: .8rem/1.4 "JetBrains Mono", monospace; color: var(--zk-ink); text-align: right; }
 @media (max-width: 1100px) { .zk-bar-row { grid-template-columns: 1fr; gap: .25rem; } .zk-bar-value { text-align: left; } }
 .zk-tile-value-sm { font-size: 1.55rem; }
+
+/* --- Honest limits (P9.14) ------------------------------------------------------------ */
+.zk-lim-head { margin-bottom: .45rem; }
+.zk-lim-title { font-size: 1.05rem; font-weight: 700; color: var(--zk-ink); margin-bottom: .35rem; }
+.zk-lim-fact { font-size: .92rem; line-height: 1.5; color: #f0bd7e; margin: 0 0 .45rem; font-variant-numeric: tabular-nums; }
+.zk-lim-detail { font-size: .85rem; line-height: 1.5; color: var(--zk-ink-2); margin: 0; }
+.zk-lim-end {
+  margin: 1.6rem 0 .4rem; padding: 1rem 1.2rem; border-radius: 12px; border: 1px solid #e3a14f;
+  background: rgba(227, 161, 79, .08); color: var(--zk-ink); font-weight: 600; text-align: center;
+}

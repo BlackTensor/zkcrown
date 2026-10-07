@@ -34,6 +34,11 @@ def render_page(slug: str) -> None:
 
         render_evidence(spec)
         return
+    if slug == "limits":
+        from app.limits_page import render_limits
+
+        render_limits(spec)
+        return
     if slug == "zk":
         from app.zk_page import render_zk
 

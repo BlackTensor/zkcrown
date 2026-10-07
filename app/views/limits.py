@@ -1,4 +1,4 @@
-"""Honest limits page. Placeholder until P9.14 builds the panel."""
+"""Honest limits page. Built by P9.14 (app/limits_page.py)."""
 
 from app.frame import render_page
 
