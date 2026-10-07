@@ -262,3 +262,4 @@
   margin: 1.6rem 0 .4rem; padding: 1rem 1.2rem; border-radius: 12px; border: 1px solid #e3a14f;
   background: rgba(227, 161, 79, .08); color: var(--zk-ink); font-weight: 600; text-align: center;
 }
+.zk-pv-gap { margin-top: 1rem; }

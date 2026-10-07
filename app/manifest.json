@@ -197,8 +197,8 @@
       "sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1"
     },
     "provenance/record.json.ots": {
-      "bytes": 689,
-      "sha256": "10ee26a1dd2f4392d9abee310b15f1fbec287b694a669915afb8090f2c5d2797"
+      "bytes": 3800,
+      "sha256": "ed5af9da84c8f6a1390f516215e0c80c612d891284c5f98ebdebb218ecd48882"
     },
     "results/ATTACK_FINDINGS.md": {
       "bytes": 12645,
@@ -847,6 +847,10 @@
     "results/p5.6_opening_verifier__seed1337__20261002T183741+0000.json": {
       "bytes": 2580,
       "sha256": "91d9996d7fb96cd9c2f2f777cf80a56230b19d282382b4894003e0fd2440451b"
+    },
+    "results/p6.2_record_timestamp__seed1337__20261007T131436+0000.json": {
+      "bytes": 7100,
+      "sha256": "8808c6cbecc654cae5b7a896f57f2e9e986903657301800867a1a236f39cefc2"
     },
     "results/p6.2_signed_provenance_record__seed1337__20261002T190547+0000.json": {
       "bytes": 3192,

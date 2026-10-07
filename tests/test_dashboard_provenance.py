@@ -49,9 +49,14 @@ def test_consistency_checks_catch_a_changed_record(sources, change):
 
 def test_open_points_are_read_from_the_records(sources):
     p = logic.open_points(sources)
-    status = sources.timestamp_status["metrics"]["proofs"]["record"]
-    assert p.record_proof_status == status["status"] == "pending"
-    assert p.record_bitcoin_attestations == 0 and p.record_proof_is_the_described_one
+    ots = sources.record_timestamp["metrics"]["opentimestamps"]
+    assert p.record_proof_status == ots["status"] and p.record_proof_is_the_described_one
+    assert p.record_time_verified is ots["independent_time_evidence"] is ots["chain_check"]["all_verified"]
+    if p.record_time_verified:
+        earliest = ots["chain_check"]["earliest_verified_block"]
+        assert (p.record_earliest_height, p.record_earliest_time) == (earliest["height"], earliest["header_time_utc"])
+        assert p.record_blocks_verified == p.record_blocks_attested == len(ots["chain_check"]["blocks"])
+        assert p.record_blocks_after_publication > 0
     assert p.tag_holds_current_proof is False and p.tag_pushed is False
     assert "same repository" in p.trusted_key_source and p.all_runs_used_that_key
     other = dataclasses.replace(sources, record_proof_sha256="0" * 64)
@@ -68,10 +73,12 @@ def test_bitcoin_blocks_come_from_the_chain_check(sources):
 
 def test_timeline_is_in_clock_order_with_the_backdated_claim_first(sources):
     events = logic.timeline(sources)
-    assert len(events) == len(sources.theft["metrics"]["timeline"])
+    added = int(logic.open_points(sources).record_time_verified)
+    assert len(events) == len(sources.theft["metrics"]["timeline"]) + added
     assert [logic.utc(e.utc) for e in events] == sorted(logic.utc(e.utc) for e in events)
     assert events[0].party == "thief" and events[0].kind == "self"
-    assert [e.kind for e in events].count("bitcoin") == 1
+    expected = 1 + logic.open_points(sources).record_time_verified
+    assert [e.kind for e in events].count("bitcoin") == expected
 
 
 def test_claim_rows_mark_what_is_not_symmetric(sources):
@@ -107,7 +114,11 @@ def test_page_renders_with_open_points_and_committed_values(sources):
     at.switch_page("views/provenance.py").run()
     assert not at.exception and not at.error, [e.value for e in at.error]
     warning = " ".join(w.value for w in at.warning)
-    assert "still pending" in warning and "holds the older, pending proof" in warning
+    assert "holds the older, pending proof" in warning
+    if logic.open_points(sources).record_time_verified:
+        assert "independent time, later than the commitment" in warning and "still pending" not in warning
+    else:
+        assert "did not check out" in warning
     assert "came from this repository" in warning and "does not show the key belongs to the owner" in warning
     body = " ".join(h.proto.body for h in at.get("html"))
     for value in (sources.publication["commitment"]["decimal"], sources.publication["model_fingerprint"]["sha256"],
@@ -117,3 +128,16 @@ def test_page_renders_with_open_points_and_committed_values(sources):
     assert "backdated claim" in body and "differs" in body
     text = (body + warning + " ".join(c.value for c in at.caption)).lower()
     assert not [w for w in BANNED if w in text]
+
+
+def test_record_wording_follows_the_chain_check(sources):
+    """If the record's chain check had failed, the page must say so instead of claiming independent time."""
+    failed = copy.deepcopy(sources.record_timestamp)
+    failed["metrics"]["opentimestamps"]["independent_time_evidence"] = False
+    for block in failed["metrics"]["opentimestamps"]["chain_check"]["blocks"]:
+        block["verified"] = False
+    failed["metrics"]["opentimestamps"]["chain_check"]["all_verified"] = False
+    failed["metrics"]["opentimestamps"]["chain_check"]["earliest_verified_block"] = None
+    p = logic.open_points(dataclasses.replace(sources, record_timestamp=failed))
+    assert not p.record_time_verified and p.record_blocks_verified == 0 and p.record_earliest_height is None
+    assert [e.kind for e in logic.timeline(dataclasses.replace(sources, record_timestamp=failed))].count("bitcoin") == 1

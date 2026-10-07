@@ -125,14 +125,27 @@ def crypto_limits(store) -> list[Limit]:
 def provenance_limits(store) -> list[Limit]:
     s = provenance_logic.load(store)
     p = provenance_logic.open_points(s)
-    status, timestamp, verifier = (s.paths[k] for k in ("timestamp_status", "timestamp", "verifier"))
+    record_ts, timestamp, verifier = (s.paths[k] for k in ("record_timestamp", "timestamp", "verifier"))
+    if p.record_time_verified:
+        record_limit = Limit(
+            "record_time", "Provenance", "The record's independent time is later than the commitment's",
+            f"record.json existed by Bitcoin block {p.record_earliest_height:,} "
+            f"({provenance_logic.show_time(p.record_earliest_time)}), {p.record_blocks_after_publication} blocks "
+            f"after the commitment publication's block ({p.record_blocks_verified} of {p.record_blocks_attested} "
+            "attested blocks verified on two explorers).",
+            "The trigger set commitment and the signing key the record names are timestamped from that later block. "
+            "The check trusts two explorers' view of the chain; it is not a full node.",
+            (record_ts, provenance_logic.RECORD_PROOF), "provenance", "Provenance")
+    else:
+        record_limit = Limit(
+            "record_time", "Provenance", "The provenance record has no independent time",
+            f"Its Bitcoin proof did not check against the chain: {p.record_blocks_verified} of "
+            f"{p.record_blocks_attested} attested blocks verified (status {p.record_proof_status}).",
+            "Only the commitment publication is Bitcoin-attested. The record, and the trigger set commitment and "
+            "signing key it names, rest on the owner's clock.",
+            (record_ts, provenance_logic.RECORD_PROOF), "provenance", "Provenance")
     return [
-        Limit("record_pending", "Provenance", "The provenance record has no independent time yet",
-              f"Its Bitcoin proof is {p.record_proof_status}: {p.record_calendars} calendar promises, "
-              f"{p.record_bitcoin_attestations} Bitcoin attestations.",
-              "Only the commitment publication is Bitcoin-attested. The record, and the trigger set commitment and "
-              "signing key it names, rest on the owner's clock.", (status, provenance_logic.RECORD_PROOF),
-              "provenance", "Provenance"),
+        record_limit,
         Limit("stale_tag", "Provenance", "The signed tag holds the older proof",
               f"Tag {p.tag_name}: proof inside is "
               + ("current." if p.tag_holds_current_proof else "the earlier, pending one, not the Bitcoin-checked upgrade.")

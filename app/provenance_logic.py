@@ -28,7 +28,7 @@ PUBLICATION_PROOF = "provenance/commitment.json.ots"
 RECORD_PROOF = "provenance/record.json.ots"
 GPG_PUBLIC_KEY = "provenance/owner_signing_key.asc"
 P5_5 = "results/p5.5_timestamp__"
-P5_5_STATUS = "results/p5.5_timestamp_status__"
+RECORD_TIMESTAMP = "results/p6.2_record_timestamp__"
 P6_2 = "results/p6.2_signed_provenance_record__"
 P6_3 = "results/p6.3_provenance_verifier__"
 P6_4 = "results/p6.4_theft_simulation__"
@@ -43,6 +43,7 @@ SUSPECT_LABELS = {
     "prune": "Channel pruning, then fine-tuning",
     "distill": "Distillation into a new model",
 }
+RECORD_SINCE_CONFIRMED = " when P6.4 ran; since confirmed in Bitcoin (below)"
 UNRELATED_LABEL = "Owner's clean model, never handed over"
 """Labels by the first word of the recorded attack name; the record's own keys carry digits."""
 DROP_FIELD_PREFIX = "accuracy_drop_vs_"
@@ -54,7 +55,7 @@ class Sources:
     publication: dict
     record: dict
     timestamp: dict
-    timestamp_status: dict
+    record_timestamp: dict
     signing: dict
     verifier: dict
     theft: dict
@@ -68,7 +69,7 @@ class Sources:
 def load(store) -> Sources:
     """Every file the panel uses, each verified by the data layer. Raises `DataIntegrityError`."""
     latest = {name: store.latest(prefix) for name, prefix in
-              (("timestamp", P5_5), ("timestamp_status", P5_5_STATUS), ("signing", P6_2), ("verifier", P6_3),
+              (("timestamp", P5_5), ("record_timestamp", RECORD_TIMESTAMP), ("signing", P6_2), ("verifier", P6_3),
                ("theft", P6_4))}
     raw = {path: store.read_bytes(path) for path in (PUBLICATION, RECORD, PUBLICATION_PROOF, RECORD_PROOF)}
     digest = {path: hashlib.sha256(data).hexdigest() for path, data in raw.items()}
@@ -93,8 +94,12 @@ def show_time(text: str) -> str:
 @dataclass(frozen=True)
 class OpenPoints:
     record_proof_status: str
-    record_bitcoin_attestations: int
-    record_calendars: int
+    record_time_verified: bool
+    record_blocks_verified: int
+    record_blocks_attested: int
+    record_earliest_height: int | None
+    record_earliest_time: str | None
+    record_blocks_after_publication: int | None
     record_proof_is_the_described_one: bool
     tag_name: str
     tag_holds_current_proof: bool
@@ -105,17 +110,24 @@ class OpenPoints:
 
 
 def open_points(s: Sources) -> OpenPoints:
-    status = s.timestamp_status["metrics"]["proofs"]["record"]
+    ots = s.record_timestamp["metrics"]["opentimestamps"]
+    chain = ots["chain_check"] or {"blocks": [], "earliest_verified_block": None}
+    earliest = chain["earliest_verified_block"]
+    publication_block = s.timestamp["metrics"]["opentimestamps"]["chain_check"]["earliest_verified_block"]
     tag = s.timestamp["metrics"]["gpg_tag"]
     record_key = s.record["owner"]["public_key"]["hex"]
     keys = {record_key, s.signing["metrics"]["public_key_hex"], s.verifier["metrics"]["trusted_public_key_hex"],
             s.theft["params"]["owner_trusted_public_key"]}
     return OpenPoints(
-        record_proof_status=status["status"],
-        record_bitcoin_attestations=len(status["bitcoin_attestations"]),
-        record_calendars=len(status["pending_calendars"]),
-        record_proof_is_the_described_one=(status["ots_sha256"] == s.record_proof_sha256
-                                           and status["file_sha256"] == s.record_sha256),
+        record_proof_status=ots["status"],
+        record_time_verified=ots["independent_time_evidence"],
+        record_blocks_verified=sum(b["verified"] for b in chain["blocks"]),
+        record_blocks_attested=len(chain["blocks"]),
+        record_earliest_height=earliest["height"] if earliest else None,
+        record_earliest_time=earliest["header_time_utc"] if earliest else None,
+        record_blocks_after_publication=(earliest["height"] - publication_block["height"]) if earliest else None,
+        record_proof_is_the_described_one=(ots["ots_sha256"] == s.record_proof_sha256
+                                           and s.record_timestamp["metrics"]["record_sha256"] == s.record_sha256),
         tag_name=tag["tag"],
         tag_holds_current_proof=s.timestamp["metrics"]["opentimestamps"]["proof_in_tag_is_current"],
         tag_pushed=tag["pushed_to_a_third_party"],
@@ -166,16 +178,19 @@ class Block:
     verified: bool
 
 
-def blocks(s: Sources) -> list[Block]:
-    ots = s.timestamp["metrics"]["opentimestamps"]
+def blocks(s: Sources, which: str = "publication") -> list[Block]:
+    """Chain-checked blocks of the publication's proof (P5.5) or the provenance record's proof (P6.2)."""
+    ots = (s.timestamp if which == "publication" else s.record_timestamp)["metrics"]["opentimestamps"]
+    if not ots["chain_check"]:
+        return []
     out = []
     for b in ots["chain_check"]["blocks"]:
         out.append(Block(
-            height=b["height"], block_hash=b["block_hash"], header_time=b["header_time_utc"],
+            height=b["height"], block_hash=b.get("block_hash"), header_time=b.get("header_time_utc"),
             calendars=sum(a["height"] == b["height"] for a in ots["bitcoin_attestations"]),
-            explorers=tuple(name.split("//", 1)[-1].split("/", 1)[0] for name in b["explorers"]),
-            verified=b["verified"] and all(e["header_hashes_to_block_hash"] and e["meets_target"]
-                                           and e["merkle_root_matches"] for e in b["explorers"].values())))
+            explorers=tuple(name.split("//", 1)[-1].split("/", 1)[0] for name in b.get("explorers", {})),
+            verified=b["verified"] and all(e.get("header_hashes_to_block_hash") and e.get("meets_target")
+                                           and e.get("merkle_root_matches") for e in b["explorers"].values())))
     return sorted(out, key=lambda b: b.height)
 
 
@@ -200,6 +215,12 @@ def timeline(s: Sources) -> list[Event]:
         party = ("bitcoin" if kind == "bitcoin" else "thief" if text.startswith("thief")
                  else "owner" if text.startswith("owner") else "simulation")
         events.append(Event(e["utc"], text, evidence, kind, party))
+    p = open_points(s)
+    if p.record_time_verified:
+        events = [Event(e.utc, e.text, e.evidence + RECORD_SINCE_CONFIRMED, e.kind, e.party)
+                  if e.text.startswith("owner signs") else e for e in events]
+        events.append(Event(p.record_earliest_time, "record.json in Bitcoin block",
+                            f"block {p.record_earliest_height}, checked later (P6.2 chain check)", "bitcoin", "bitcoin"))
     return sorted(events, key=lambda e: utc(e.utc))
 
 

@@ -15,7 +15,7 @@ APP = REPO_ROOT / "app"
 BANNED = ("stolen", "proves ownership", "prove ownership", "proof of ownership", "unremovable", "court", "legally",
           "immune to")
 REQUIRED = {"distillation", "channel_finetune", "layout", "single_runs", "single_contributor", "hermez",
-            "trigger_circuit", "record_pending", "stale_tag", "trusted_key", "not_zero_knowledge", "replayed",
+            "trigger_circuit", "record_time", "stale_tag", "trusted_key", "not_zero_knowledge", "replayed",
             "not_legal"}
 
 
@@ -58,7 +58,10 @@ def test_crypto_and_provenance_facts_reuse_their_panels(store, limits):
     assert f"{zk_logic.blocked(z).total:,}" in limits["trigger_circuit"].fact
     assert zk_logic.track_a(z).ptau_verify in limits["hermez"].fact
     p = provenance_logic.open_points(provenance_logic.load(store))
-    assert p.record_proof_status in limits["record_pending"].fact
+    if p.record_time_verified:
+        assert f"{p.record_earliest_height:,}" in limits["record_time"].fact
+    else:
+        assert "did not check against the chain" in limits["record_time"].fact
     assert p.trusted_key_source in limits["trusted_key"].fact
     assert "earlier, pending" in limits["stale_tag"].fact
 

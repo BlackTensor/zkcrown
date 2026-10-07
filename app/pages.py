@@ -77,8 +77,8 @@ PAGES: tuple[PageSpec, ...] = (
         "limits", "Honest limits", "Cryptography", ":material/report:", "P9.14",
         "Where the watermarks fail and what the cryptography does not cover, stated plainly.",
         ("Distillation, and channel pruning followed by fine-tuning.",
-         "The single-contributor setup, the blocked trigger circuit, the unfinished ceremony check, the pending "
-         "record timestamp."),
+         "The single-contributor setup, the blocked trigger circuit, the unfinished ceremony check, the record's "
+         "later timestamp."),
     ),
     PageSpec(
         "integrity", "Data integrity", "About", ":material/fact_check:", "P9.5",

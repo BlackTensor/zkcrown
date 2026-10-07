@@ -41,13 +41,20 @@ def _card(title: str, chip: str, body: str, tone: str = "") -> str:
 
 
 def _open_points(points: logic.OpenPoints) -> None:
-    proof = (f"**The provenance record's own Bitcoin proof is still {points.record_proof_status}.** "
-             f"Its OpenTimestamps proof holds {points.record_calendars} calendar promises and "
-             f"{points.record_bitcoin_attestations} Bitcoin attestations, so the record "
-             "(and the trigger set commitment and signing key it names) has no independent time yet. "
-             "Only the commitment publication is Bitcoin-attested.")
+    if points.record_time_verified:
+        proof = (f"**The provenance record has independent time, later than the commitment's.** Its own Bitcoin proof "
+                 f"checked against the chain ({points.record_blocks_verified} of {points.record_blocks_attested} "
+                 f"blocks verified): record.json existed by block {points.record_earliest_height:,} "
+                 f"({logic.show_time(points.record_earliest_time)}), {points.record_blocks_after_publication} blocks "
+                 "after the commitment publication's block. So the trigger set commitment and the signing key it names "
+                 "are time-stamped from that later block, not from the publication's.")
+    else:
+        proof = (f"**The provenance record's own Bitcoin proof did not check out** (status {points.record_proof_status}; "
+                 f"{points.record_blocks_verified} of {points.record_blocks_attested} attested blocks verified). The "
+                 "record, and the trigger set commitment and signing key it names, have no independent time. Only the "
+                 "commitment publication is Bitcoin-attested.")
     if not points.record_proof_is_the_described_one:
-        proof += " The committed proof file differs from the one the status record describes; its state is not known here."
+        proof += " The committed proof file differs from the one the chain check describes; its state is not known here."
     tag = (f"**The signed git tag `{points.tag_name}` holds the older, pending proof** of the commitment, not the "
            "upgraded one checked against Bitcoin. Both cover the same file. The tag's date is the signer's own clock, "
            + ("and the tag has not been pushed anywhere." if not points.tag_pushed else "and it has been pushed."))
@@ -92,26 +99,41 @@ def _commitment(s: logic.Sources, checks: list[logic.Check]) -> None:
                  icon=":material/gpp_bad:")
 
 
-def _bitcoin(s: logic.Sources, blocks: list[logic.Block]) -> None:
-    _section("Independent time: Bitcoin",
-             "The publication's SHA-256 was submitted to OpenTimestamps calendars and later anchored in Bitcoin. "
-             "Each block below was looked up on two block explorers and its header checked locally.")
-    first = blocks[0]
+def _block_tiles(s: logic.Sources, blocks: list[logic.Block], source: str) -> str:
+    first = next((b for b in blocks if b.verified), None)
     tiles = []
     for b in blocks:
         status = "header hashes to the block, meets its work target, Merkle root matches" if b.verified else "NOT verified"
+        when = f"Header time {_e(logic.show_time(b.header_time))}<br>" if b.header_time else ""
         tiles.append(
-            f'<article class="zk-tile{"" if b is first else " zk-tile-muted"}">'
+            f'<article class="zk-tile{"" if b is first else " zk-tile-muted"}{"" if b.verified else " zk-tile-limit"}">'
             f'<div class="zk-tile-label">{"Earliest attestation" if b is first else "Later attestation"} · '
             f'{b.calendars} calendar{"s" if b.calendars != 1 else ""}</div>'
             f'<div class="zk-tile-value">Block {b.height:,}</div>'
-            f'<p class="zk-tile-detail">Header time {_e(logic.show_time(b.header_time))}<br>'
-            f'<span class="zk-mono zk-wrap">{_e(b.block_hash)}</span><br>{_e(status)} on {_e(" and ".join(b.explorers))}.</p>'
-            f'<div class="zk-tile-source">{_e(s.paths["timestamp"].rsplit("/", 1)[-1].split("__")[0])}</div></article>')
-    st.html(f'<div class="zk-tiles zk-tiles-two">{"".join(tiles)}</div>')
-    st.caption(f"So the publication existed by block {first.height:,}, around {logic.show_time(first.header_time)}. "
-               "Header times are set by miners and are loose by hours. The check trusts the two explorers' view of "
-               "which block sits at each height; it is not a full node.")
+            f'<p class="zk-tile-detail">{when}<span class="zk-mono zk-wrap">{_e(b.block_hash or "")}</span><br>'
+            f'{_e(status)} on {_e(" and ".join(b.explorers))}.</p>'
+            f'<div class="zk-tile-source">{_e(s.paths[source].rsplit("/", 1)[-1].split("__")[0])}</div></article>')
+    return "".join(tiles)
+
+
+def _bitcoin(s: logic.Sources, points: logic.OpenPoints) -> None:
+    _section("Independent time: Bitcoin",
+             "Each file's SHA-256 was submitted to OpenTimestamps calendars and later anchored in Bitcoin. Each block "
+             "below was looked up on two block explorers and its header checked locally.")
+    publication = logic.blocks(s, "publication")
+    st.html('<div class="zk-pv-label">The commitment publication (commitment.json)</div>'
+            f'<div class="zk-tiles zk-tiles-two">{_block_tiles(s, publication, "timestamp")}</div>')
+    first = next(b for b in publication if b.verified)
+    record = logic.blocks(s, "record")
+    if record:
+        st.html('<div class="zk-pv-label zk-pv-gap">The provenance record (record.json)</div>'
+                f'<div class="zk-tiles">{_block_tiles(s, record, "record_timestamp")}</div>')
+    record_note = (f" The record existed by block {points.record_earliest_height:,}, around "
+                   f"{logic.show_time(points.record_earliest_time)}." if points.record_time_verified else
+                   " The record's own proof did not verify.")
+    st.caption(f"So the publication existed by block {first.height:,}, around {logic.show_time(first.header_time)}."
+               + record_note + " Header times are set by miners and are loose by hours. The check trusts the two "
+               "explorers' view of which block sits at each height; it is not a full node.")
 
 
 def _signatures(s: logic.Sources, points: logic.OpenPoints) -> None:
@@ -134,7 +156,11 @@ def _signatures(s: logic.Sources, points: logic.OpenPoints) -> None:
                f"{m3['signature_bit_flips_tried']:,} signature bit flips rejected", mono=False,
                note="Replayed from P6.2 and P6.3. The signature shows the record was not changed after signing; it "
                     "does not show who holds the key."),
-        _field("Independent time of the record", f"none yet: proof {points.record_proof_status}", mono=False),
+        _field("Independent time of the record",
+               f"Bitcoin block {points.record_earliest_height:,} ({logic.show_time(points.record_earliest_time)}), "
+               f"checked on {points.record_blocks_verified} of {points.record_blocks_attested} attested blocks"
+               if points.record_time_verified else "none: its proof did not check against the chain", mono=False,
+               note="Later than the commitment publication's block." if points.record_time_verified else ""),
     ))
     tag = s.timestamp["metrics"]["gpg_tag"]
     tag_body = "".join((
@@ -166,7 +192,7 @@ def _timeline(events: list[logic.Event]) -> None:
         + (f'<span class="zk-tl-ev">{_e(e.evidence)}</span>' if e.evidence != KIND_LABELS[e.kind].lower() else "")
         + '</div></div></li>' for e in events)
     st.html(f'<ol class="zk-tl">{items}</ol>')
-    st.caption("Only the green entry is backed by a third party. Self-asserted dates can be any date the writer "
+    st.caption("Only the green entries are backed by a third party. Self-asserted dates can be any date the writer "
                "chooses; the simulation clock is the time this run executed, after the fact.")
 
 
@@ -215,7 +241,7 @@ def render_provenance(spec) -> None:
     points = logic.open_points(s)
     _open_points(points)
     _commitment(s, logic.consistency_checks(s))
-    _bitcoin(s, logic.blocks(s))
+    _bitcoin(s, points)
     _signatures(s, points)
     _timeline(logic.timeline(s))
     _claims(logic.claim_rows(s))
