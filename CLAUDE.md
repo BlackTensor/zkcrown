@@ -1517,7 +1517,7 @@ Replanned 2026-10-05 at the owner's request: the single dashboard task became th
   - **Deployed (2026-10-07, by the owner).**
     - Live app: <https://zkcrown-akfez8euv8rfndkfhweeco.streamlit.app/> (Data integrity page: `/integrity`).
     - Repository: <https://github.com/BlackTensor/zkcrown>, public, default branch `master`. The deployed tree is commit `3e5259f`, which passed the pre-deploy check.
-    - Entry point `app/streamlit_app.py`. Python version: **awaiting owner confirmation** (`DEPLOY.md` recommended 3.11).
+    - Entry point `app/streamlit_app.py`. Python version on Streamlit Cloud: 3.11 (confirmed by the owner).
     - **No secrets configured on the host**; the app reads none.
   - **Not pushed:** the signed tag `provenance-commitment-v1`.
   - **The remote also has a branch `main` (`65f445b`)** that is not in local history. Its contents have not been inspected here.
