@@ -75,3 +75,9 @@ def test_requirements_must_pin_streamlit_only():
     assert pre.check_requirements("# c\nstreamlit==1.65.0\n")["passed"]
     assert not pre.check_requirements("streamlit==1.65.0\ntorch==2.0\n")["passed"]
     assert not pre.check_requirements("streamlit\n")["passed"]
+
+
+def test_the_check_script_does_not_match_its_own_markers():
+    source = (ROOT / "experiments" / "p9_15_predeploy_check.py").read_bytes()
+    assert pre.PRIVATE_KEY_ARMOR not in source
+    assert pre.scan({"script": source}, {"armor": pre.PRIVATE_KEY_ARMOR}) == {}

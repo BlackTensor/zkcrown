@@ -65,6 +65,8 @@ SECRET_NAME = re.compile(r"(^|/)(K\.bin|commitment_nonce\.bin|provenance_signing
 P5_1_PREFIX = "p5.1_model_fingerprint__"
 MUST_NOT_BUNDLE = ("behavioral_only_W_star", "clean_W")
 GPG_FINGERPRINT = "C7301BA7D92FC2A65257BFC2A759F8EC04BF66E7"
+PRIVATE_KEY_ARMOR = b"-----BEGIN PGP " + b"PRIVATE KEY BLOCK-----"
+"""Built from two parts so this file does not contain the header it searches for."""
 
 
 def git(*args: str, root: Path) -> bytes:
@@ -172,7 +174,7 @@ def owner_needles(root: Path) -> dict[str, bytes] | None:
             window = secret[i:i + 32]
             if window not in public:  # parts shared with the public key (user ID, public point) are not secret
                 needles[f"gpg secret window {i}"] = window
-    needles["PGP private key marker"] = b"PGP PRIVATE KEY BLOCK"
+    needles["PGP private key armor header"] = PRIVATE_KEY_ARMOR
     return needles
 
 
