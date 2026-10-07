@@ -204,6 +204,10 @@
       "bytes": 12645,
       "sha256": "64f786b5b7b8e4a287de6f998751683688e8b5e6265800eb8472c465eae45a18"
     },
+    "results/README.md": {
+      "bytes": 14438,
+      "sha256": "850a49cc62982d126a5b05da0283963cc3281cfc9eb29604911b27750461801c"
+    },
     "results/attacks/p4.1_none_0__seed1337__20260914T093619+0000.json": {
       "bytes": 5453,
       "sha256": "ec399d82045dd67366919e00f06ac38369530b5d4c41f0b2f56b34340d836f18"
