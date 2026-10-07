@@ -1465,7 +1465,27 @@ Replanned 2026-10-05 at the owner's request: the single dashboard task became th
   - **Numeric scan:** the allowlist gained field names ending in `_sha256`, with planted and allowed cases.
   - 15 new tests (`tests/test_dashboard_provenance.py`). They cover: the live checks pass, and fail on a changed `C`, fingerprint or publication hash; the open points; the block from the chain check; the timeline order; the asymmetric rows; the audit rows equal to the record; no file access outside the data layer; and the page rendering with its committed values and no banned wording.
   - App tests: 137 pass. The full suite was not run, by owner decision: it runs once before the GitHub push.
-- [ ] **P9.13** ZK panel: Track A (Circom/Groth16) and Track B (EZKL) stats from P7.5 to P7.8 and P8.3 to P8.6: sizes, times on this machine (not Colab), and the tampered proofs that were rejected (206 / 0 and 42 / 0). Each track says what it proves and what it does not (from `docs/ZK_STATEMENT.md` and `docs/ZKML_STATEMENT.md`).
+- [x] **P9.13** ZK panel: Track A (Circom/Groth16) and Track B (EZKL) stats from P7.5 to P7.8 and P8.3 to P8.6: sizes, times on this machine (not Colab), and the tampered proofs that were rejected (206 / 0 and 42 / 0). Each track says what it proves and what it does not (from `docs/ZK_STATEMENT.md` and `docs/ZKML_STATEMENT.md`).
+  - **Done.** `app/zk_page.py` (page) and `app/zk_logic.py` (stdlib-only logic). Checked in headless Edge at 1,440 px and 420 px.
+  - **Sources:** the newest P7.4 to P7.9 and P8.3 to P8.6 records, plus the committed Groth16 proof, public signals and verification key, the EZKL proof and verification key, and `provenance/commitment.json`. All of these were already in the manifest, so it is unchanged.
+    - Files whose paths carry task numbers are found through the records: by recorded path, or by matching the proof's recorded SHA-256 against the manifest.
+    - `docs/` is outside the data layer's roots, so the "proves / does not prove" text is written as prose on the page, from the two statement documents. It contains no numbers.
+  - **Measured live from the committed bytes:** Groth16 proof 806 bytes (equal to the record); its one public signal compared by value with the published `C`; EZKL proof 3,072 bytes from `hex_proof`, and its 794 public values.
+  - **Amber box of limits:**
+    - Track A proves knowledge of an opening of `C` and nothing about any model.
+    - Track B is plain inference on a public input and says nothing about watermarks.
+    - The setup had a single contributor (the contribution count is read from the P7.6 record).
+    - The Hermez powers-of-tau check did not finish (P7.4's own status string), so the file was accepted on its hash alone.
+    - P7.9 is blocked at 281,529,423 constraints, about 8,592 times what the power-15 file holds.
+  - **Other sections:**
+    - Two track cards: what each proves and does not prove, plus Track B's settings (rows, logrows, scales, `check_mode` UNSAFE).
+    - Four tiles per track. Track A: proof size, public signals, 0 of 206 accepted, verify median. Track B: proof size, verify median 0.215 s, 0 of 42 accepted, 10,000 / 10,000 top-class agreement.
+    - "A verifier error counts as a rejection" box: Track A had 1 snarkjs crash, counted as refused; Track B's 42 of 42 rejections were all errors and 0 returned False. Then the per-family tables for both tracks, with the malleability and by-value comparison notes.
+    - Cost table (Seconds and Peak memory columns, both headed "this machine, not Colab") and key sizes.
+    - P7.9 blocked tiles, with a bar per component.
+  - **Every timing is labelled "this machine, not Colab"** (`zk_logic.MACHINE`, which a test checks).
+  - **Numeric scan:** the allowlist gained `r1cs` and `Halo2` as names, with planted and allowed cases. Peak memory is shown in bytes, because converting units would need a typed constant.
+  - 11 new tests (`tests/test_dashboard_zk.py`). App tests: 148 pass. The full suite was not run.
 - [ ] **P9.14** Honest-limits tab. It covers distillation removing both watermarks (P4.7, P4.10), channel pruning plus fine-tuning, the single-contributor Groth16 setup, P7.9 blocked (with its constraint count), the unfinished Hermez verify, and the record's pending timestamp. It ends with the not-legal-evidence line.
 - [ ] **P9.15** Deploy free on Streamlit Community Cloud with a bundled demo model, so a reviewer can click through without setup (the old P9.7).
   - Before deploying, check that the deployed tree contains nothing from `secrets/` and that every page states replay versus live.
@@ -3365,3 +3385,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-07: P9.10. Attack-lab explorer: outcome tiles (34 / 39 / 0 / 11 of 84 settings run), one-click 'neither detected' filter, family and setting filters, heatmap and sortable table with 'not applicable' stated, channel-pruning note that re-alignment was never built, scatter of accuracy cost against P9.3 tier. Tiers recomputed live; all 85 equal the committed P9.4 grades. 1,392 tests pass. P9.11 not started.
 - 2026-10-07: P9.10 follow-up (channel caveat beside rows in table, heatmap, scatter). P9.11: demo-key trigger gallery, 12 triplets regenerated byte-identical to P1.3, metrics from the P1.3 record, real bundle unreachable (tested). Dashboard tests pass; full suite not re-run (usage limit). P9.12 not started.
 - 2026-10-07: Dashboard tests only (122 pass); full suite stopped by owner decision, to run once before the GitHub push. P9.12: provenance and theft-timeline page. Commitment, fingerprint, Bitcoin blocks 969627 and 969632, record and tag signatures (replayed), P6.4 timeline in clock order with the backdated claim first, two-claims table with the three asymmetries, audit table. Open points stated at the top: record proof pending, tag holds the older proof, trusted key from this repo. Six live consistency checks. 15 new tests; 137 app tests pass; manifest unchanged. P9.13 not started.
+- 2026-10-07: P9.13: zero-knowledge page. Limits box (Track A says nothing about a model, Track B nothing about watermarks, single contributor, Hermez verify unfinished, P7.9 blocked at 281.5M constraints); per-track proves/does-not cards; tiles (Groth16 806 bytes and public signal C measured live, 0 of 206; EZKL 3,072 bytes, verify 0.215 s, 0 of 42, 10,000/10,000 agreement); verifier errors count as rejections; cost table labelled this machine, not Colab; P7.9 bars. 11 new tests; 148 app tests pass; manifest unchanged. P9.14 not started.

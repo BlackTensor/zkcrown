@@ -51,6 +51,7 @@ DIGIT_ALLOWLIST = (
     (r"^[xy]2$", "Vega-Lite's x2 / y2 encoding channels, as a whole string"),
     (r"\bphase4_\w+", "record field names such as phase4_result_file (P9.4)"),
     (r"\b\w+_sha256\b", "record field names ending in _sha256, such as ots_sha256 (P9.12)"),
+    (r"\br1cs\b|\b[Hh]alo2\b", "circom's constraint-system format and EZKL's proof system, by name (P9.13)"),
 )
 """Digit patterns allowed inside app string literals. Everything else with a digit fails."""
 FORMAT_SPEC = r"%?[+,]?\.\d+[fFeEg%]"
@@ -203,6 +204,7 @@ def test_no_measured_numbers_typed_into_app_code():
     'st.write("phase4 grade 70 of 85")\n',
     'st.write("sha256 of 1215 bytes")\n',
     'key = "ots_sha256 69b9adbb"\n',
+    'st.write("r1cs has 1471 constraints")\n',
 ])
 def test_scanner_catches_planted_numbers(source):
     assert literal_violations(source, "planted.py")
@@ -221,6 +223,7 @@ def test_scanner_catches_planted_numbers(source):
     'row = audited["phase4_result_file"]\n',
     'time.sleep(0.6)\nflag = stat["groth16_verified"]\n',
     'digest = proof["ots_sha256"]\n',
+    'n = circuit["r1cs"]["constraints"]\ntitle = "Track B · EZKL (Halo2)"\n',
 ])
 def test_scanner_allows_the_documented_exceptions(source):
     assert literal_violations(source, "ok.py") == []

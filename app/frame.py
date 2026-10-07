@@ -34,6 +34,11 @@ def render_page(slug: str) -> None:
 
         render_evidence(spec)
         return
+    if slug == "zk":
+        from app.zk_page import render_zk
+
+        render_zk(spec)
+        return
     if slug == "provenance":
         from app.provenance_page import render_provenance
 

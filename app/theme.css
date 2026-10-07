@@ -242,3 +242,13 @@
   .zk-tiles-two, .zk-pv-checks ul { grid-template-columns: 1fr; }
   .zk-tl li { grid-template-columns: 1fr; gap: .2rem; }
 }
+
+/* --- Zero-knowledge (P9.13) ----------------------------------------------------------- */
+.zk-bars { margin: 1rem 0 .4rem; padding: .9rem 1.1rem; border-radius: 12px; background: var(--zk-surface); border: 1px solid var(--zk-border); }
+.zk-bar-row { display: grid; grid-template-columns: 19rem 1fr 8.5rem; gap: .8rem; align-items: center; padding: .3rem 0; font-size: .84rem; }
+.zk-bar-label { color: var(--zk-ink-2); }
+.zk-bar-track { height: .7rem; border-radius: 999px; background: var(--zk-surface-2); overflow: hidden; }
+.zk-bar-fill { height: 100%; min-width: 2px; border-radius: 999px; background: #e3a14f; }
+.zk-bar-value { font: .8rem/1.4 "JetBrains Mono", monospace; color: var(--zk-ink); text-align: right; }
+@media (max-width: 1100px) { .zk-bar-row { grid-template-columns: 1fr; gap: .25rem; } .zk-bar-value { text-align: left; } }
+.zk-tile-value-sm { font-size: 1.55rem; }
