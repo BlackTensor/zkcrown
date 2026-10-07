@@ -31,7 +31,7 @@ This is the procedure for P9.15. Nothing in it has been run yet: no remote exist
    .venv/Scripts/python.exe experiments/p9_15_predeploy_check.py
    ```
 
-   It must end with every check `PASS`. It checks the committed tree, then writes `results/p9.15_predeploy_check__*.json`; commit that record. It checks:
+   It must end with every check `PASS`. It checks the committed tree, then writes `results/p9.15_predeploy_check__*.json`. Commit that record, then regenerate the manifest (`python app/build_manifest.py`) and commit it: a new tracked results file always makes the manifest stale. Those two files are the only changes after the check. It checks:
 
    - a clean tree;
    - nothing tracked under `secrets/` except the empty `secrets/.gitkeep`;
