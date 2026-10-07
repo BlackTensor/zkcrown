@@ -147,7 +147,7 @@ EZKL is beta software under rapid development and its API changes between releas
 # 3. REPOSITORY STRUCTURE
 
 ```
-zk-crown/
+zkcrown/
   CLAUDE.md
   README.md
   requirements.txt
@@ -1513,8 +1513,15 @@ Replanned 2026-10-05 at the owner's request: the single dashboard task became th
   - **Data layer and errors:** everything is read through the data layer. The limits are built in four groups (attack results, proof setup, provenance files, audit records). A group whose file fails its hash check shows an error naming the file, and the other groups still render (tested with a store that refuses the P4.9 record).
   - **Manifest:** no new data files, so it is unchanged and current.
   - **Tests:** 8 new (`tests/test_dashboard_limits.py`). They cover: all 13 limits present; every source verified and every link to an existing page; the facts equal the P4.9, P5.6, zk and provenance values; the page renders 13 links with no banned wording; a failing source hides only its own group; no file access outside the data layer. App tests: 156 pass. The full suite was not run.
-- [~] **P9.15** Deploy free on Streamlit Community Cloud with a bundled demo model, so a reviewer can click through without setup (the old P9.7).
-  - **Prepared, not deployed.** No remote exists and nothing has been pushed (owner instruction). The owner decides whether the repository is public. The checkbox is `[~]` until the app is live.
+- [x] **P9.15** Deploy free on Streamlit Community Cloud with a bundled demo model, so a reviewer can click through without setup (the old P9.7).
+  - **Deployed (2026-10-07, by the owner).**
+    - Live app: <https://zkcrown-akfez8euv8rfndkfhweeco.streamlit.app/> (Data integrity page: `/integrity`).
+    - Repository: <https://github.com/BlackTensor/zkcrown>, public, default branch `master`. The deployed tree is commit `3e5259f`, which passed the pre-deploy check.
+    - Entry point `app/streamlit_app.py`. Python version: **awaiting owner confirmation** (`DEPLOY.md` recommended 3.11).
+    - **No secrets configured on the host**; the app reads none.
+  - **Not pushed:** the signed tag `provenance-commitment-v1`.
+  - **The remote also has a branch `main` (`65f445b`)** that is not in local history. Its contents have not been inspected here.
+  - Before deployment (kept for the record): prepared with no remote and nothing pushed (owner instruction); the owner chose to make the repository public.
   - **Owner decisions (2026-10-07):**
     - Bundle the dual W* only, as `.npz`, so the fingerprint check runs live for the verbatim copy.
     - The zero-knowledge checks stay replayed.
@@ -3442,3 +3449,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-07: P9.14: honest-limits page. 13 limits in 5 sections (watermarks, evidence scope, cryptography, provenance, this demo), each with its measured fact from committed records, an explanation, a link to the evidence page and its source files; built in four groups so a failing file hides only its own group; closing not-legal banner. Reuses zk_logic, provenance_logic and audit_logic. 8 new tests; 156 app tests pass; manifest unchanged. P9.15 not started.
 - 2026-10-07: Record proof: `upgrade --target record` merged 3 of 3 calendars (committed `d65df13`). New `record --target record` chain check (`5ffa233`) verified blocks 969708, 969709 and 969736 on both explorers: record.json existed by block 969708 (2026-10-03T09:31:40Z), 81 blocks after the publication's. Ledger 8.6 updated. Provenance and Honest limits pages rewritten from the new result (no longer "pending"); manifest regenerated (251 files). Pre-check before P9.15: secrets scan of all 803 blobs in history found no secret (one public GPG User ID match); full suite 1437 passed. No re-tag.
 - 2026-10-07: P9.15 prepared, not deployed (`[~]`). Dual W* bundled as a deterministic .npz (fingerprint c0995109… = published); live fingerprint for the verbatim copy; "On this page" live/replayed line on every page; pre-deploy check (9 checks, all pass after fixing a self-match on its own marker); DEPLOY.md. Owner decision needed on the already-committed zk_model ONNX. Nothing pushed, no remote. P9.16 not started.
+- 2026-10-07: P9.15 ticked: deployed by the owner at https://zkcrown-akfez8euv8rfndkfhweeco.streamlit.app/ from https://github.com/BlackTensor/zkcrown (public, master, commit 3e5259f), entry point app/streamlit_app.py, no host secrets; Python version awaiting owner confirmation. DEPLOY.md records the deployment. Repo-name references fixed: CLAUDE.md tree root and the 00_setup notebook clone example now say zkcrown with the real URL. Not pushed yet; tag not pushed; remote branch main (65f445b) noted, not touched. P9.16 not started.

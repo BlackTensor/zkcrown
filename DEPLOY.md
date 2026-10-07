@@ -1,6 +1,13 @@
 # Deploying the zk-Crown dashboard (Streamlit Community Cloud, free tier)
 
-This is the procedure for P9.15. Nothing in it has been run yet: no remote exists and nothing has been pushed. The owner decides whether the GitHub repository is public or private.
+This is the procedure for P9.15, and the record of the deployment.
+
+## Deployment (P9.15, 2026-10-07)
+
+- **Live app:** <https://zkcrown-akfez8euv8rfndkfhweeco.streamlit.app/>. The Data integrity page is at <https://zkcrown-akfez8euv8rfndkfhweeco.streamlit.app/integrity>.
+- **Repository:** <https://github.com/BlackTensor/zkcrown>, public, default branch `master`. The deployed tree is commit `3e5259f`, which passed the pre-deploy check.
+- **Host settings:** Streamlit Community Cloud, free tier. Entry point `app/streamlit_app.py`, Python version as chosen at deploy time (see CLAUDE.md, P9.15), **no secrets configured**.
+- The deploy itself was done by the owner. The signed tag `provenance-commitment-v1` has not been pushed.
 
 ## What the hosted app is
 
@@ -63,13 +70,13 @@ Secrets are not tracked and are not published. A private repository can also be 
 2. Push from this machine. The commands below are an example; the owner runs them:
 
    ```
-   git remote add origin https://github.com/<owner>/<repo>.git
+   git remote add origin https://github.com/BlackTensor/zkcrown.git
    git push -u origin master
    ```
 
    The tag `provenance-commitment-v1` is pushed only with `git push origin provenance-commitment-v1`. Pushing it gives the tag third-party time evidence (the host records the push). It still holds the older, pending proof.
 3. On share.streamlit.io, sign in with GitHub and create a new app:
-   - repository `<owner>/<repo>`, branch `master`;
+   - repository `BlackTensor/zkcrown`, branch `master`;
    - main file path `app/streamlit_app.py`;
    - in Advanced settings, choose Python 3.11 (the version the app and its tests run on locally) if offered, and add **no secrets**. The app reads no secrets.
 4. Deploy, then check the live app:
