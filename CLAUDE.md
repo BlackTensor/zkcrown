@@ -1513,7 +1513,33 @@ Replanned 2026-10-05 at the owner's request: the single dashboard task became th
   - **Data layer and errors:** everything is read through the data layer. The limits are built in four groups (attack results, proof setup, provenance files, audit records). A group whose file fails its hash check shows an error naming the file, and the other groups still render (tested with a store that refuses the P4.9 record).
   - **Manifest:** no new data files, so it is unchanged and current.
   - **Tests:** 8 new (`tests/test_dashboard_limits.py`). They cover: all 13 limits present; every source verified and every link to an existing page; the facts equal the P4.9, P5.6, zk and provenance values; the page renders 13 links with no banned wording; a failing source hides only its own group; no file access outside the data layer. App tests: 156 pass. The full suite was not run.
-- [ ] **P9.15** Deploy free on Streamlit Community Cloud with a bundled demo model, so a reviewer can click through without setup (the old P9.7).
+- [~] **P9.15** Deploy free on Streamlit Community Cloud with a bundled demo model, so a reviewer can click through without setup (the old P9.7).
+  - **Prepared, not deployed.** No remote exists and nothing has been pushed (owner instruction). The owner decides whether the repository is public. The checkbox is `[~]` until the app is live.
+  - **Owner decisions (2026-10-07):**
+    - Bundle the dual W* only, as `.npz`, so the fingerprint check runs live for the verbatim copy.
+    - The zero-knowledge checks stay replayed.
+    - No other model may be bundled.
+    - numpy is allowed in the import test for that one check only.
+  - **Bundle** (`experiments/p9_15_bundle_dual_w_star.py`, clean tree):
+    - File `results/p9.15_dual_W_star.npz`, 1,245,090 bytes, SHA-256 `2b65a791…5d94010`. It is a deterministic zip (sorted members, stored, fixed timestamps) and loads with `allow_pickle=False`.
+    - Every array is bit-identical to the P3.6 `.pt`, loaded by hash. The P5.1 fingerprint equals the published `c0995109…`, and is checked not to equal the behavioral-only P2.3 model or clean `W`.
+    - A test caught `np.ascontiguousarray` turning 0-d arrays into 1-d before the run.
+  - **Live fingerprint:**
+    - `app/fingerprint_live.py` (the only app module importing numpy) reads the bundle through the data layer and fingerprints it with `src/crypto/fingerprint.py`, loaded by path.
+    - On the Live audit page the verbatim copy's fingerprint step is now "live" and "Passed". It shows the computed fingerprint, equal to the record's and to the recorded audit's. The other suspects stay replayed.
+    - A bundle that fails its hash check shows a data error and the step is not "Passed" (tested).
+  - **Every page** now has an "On this page" line stating what is live and what is replayed (`PageSpec.mode`, rendered by `ui.header` and on the overview).
+  - **Pre-deploy check** (`experiments/p9_15_predeploy_check.py`, 19 tests). It checks:
+    - a clean tree, and only the `secrets/.gitkeep` placeholder under `secrets/`;
+    - no secret-looking file names;
+    - model weights: only the approved bundle;
+    - the bundle's identity;
+    - secret values (K, its halves, S, nonce and signing seed in five encodings, trigger-bundle windows, and the GPG secret-key windows that are not also in the public key; NOT RUN counts as failure);
+    - page mode lines, minimal requirements, and the manifest.
+  - **Run:** the first run failed `secret_values` on a self-match: the script contained the private-key armor marker it searches for. The record was discarded uncommitted, the literal was split, and a test was added. The second run, from a clean tree, passed all 9 checks over 541 tracked files and 52 needles: `{R}`.
+  - **Owner decision needed:** `results/zk/p8.1/zk_model.onnx` (the 6,138-parameter MNIST model's weights, committed in P8.1) is tracked and would be deployed. The app never reads it. The check lists it under "owner decision needed" rather than failing.
+  - **`DEPLOY.md`** covers: what is on the host and what is not; the pre-deploy steps; what a public repository publishes; the GitHub and share.streamlit.io steps (entry point `app/streamlit_app.py`, Python 3.11, no secrets); and the post-deploy checks.
+  - App tests 160 and the P9.15 tests pass. The full suite was not re-run after these changes.
   - Before deploying, check that the deployed tree contains nothing from `secrets/` and that every page states replay versus live.
   - Owner decision needed at this task: which model files, if any, are bundled, and whether the ZK toolchain is installed on the host or the ZK checks are replayed.
 - [ ] **P9.16** Record a short demo GIF for the README (the old P9.8).
@@ -3415,3 +3441,4 @@ Append one line per session: date, tasks touched, key outcome.
 - 2026-10-07: P9.13: zero-knowledge page. Limits box (Track A says nothing about a model, Track B nothing about watermarks, single contributor, Hermez verify unfinished, P7.9 blocked at 281.5M constraints); per-track proves/does-not cards; tiles (Groth16 806 bytes and public signal C measured live, 0 of 206; EZKL 3,072 bytes, verify 0.215 s, 0 of 42, 10,000/10,000 agreement); verifier errors count as rejections; cost table labelled this machine, not Colab; P7.9 bars. 11 new tests; 148 app tests pass; manifest unchanged. P9.14 not started.
 - 2026-10-07: P9.14: honest-limits page. 13 limits in 5 sections (watermarks, evidence scope, cryptography, provenance, this demo), each with its measured fact from committed records, an explanation, a link to the evidence page and its source files; built in four groups so a failing file hides only its own group; closing not-legal banner. Reuses zk_logic, provenance_logic and audit_logic. 8 new tests; 156 app tests pass; manifest unchanged. P9.15 not started.
 - 2026-10-07: Record proof: `upgrade --target record` merged 3 of 3 calendars (committed `d65df13`). New `record --target record` chain check (`5ffa233`) verified blocks 969708, 969709 and 969736 on both explorers: record.json existed by block 969708 (2026-10-03T09:31:40Z), 81 blocks after the publication's. Ledger 8.6 updated. Provenance and Honest limits pages rewritten from the new result (no longer "pending"); manifest regenerated (251 files). Pre-check before P9.15: secrets scan of all 803 blobs in history found no secret (one public GPG User ID match); full suite 1437 passed. No re-tag.
+- 2026-10-07: P9.15 prepared, not deployed (`[~]`). Dual W* bundled as a deterministic .npz (fingerprint c0995109… = published); live fingerprint for the verbatim copy; "On this page" live/replayed line on every page; pre-deploy check (9 checks, all pass after fixing a self-match on its own marker); DEPLOY.md. Owner decision needed on the already-committed zk_model ONNX. Nothing pushed, no remote. P9.16 not started.
