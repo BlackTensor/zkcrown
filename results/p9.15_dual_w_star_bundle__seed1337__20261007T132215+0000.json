@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "name": "p9.15_dual_w_star_bundle",
+  "task": "P9.15",
+  "timestamp_utc": "2026-10-07T13:22:15+00:00",
+  "git": {
+    "commit": "ece412333a9792bb37af9424d93f117aa2582c83",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "source": "results/p3.6_dual_wm_W_star.pt",
+    "source_sha256": "7a9a9f141b55c7894b208c1f338f4c7385362f969b82b319ce5893fb4bb434c4",
+    "bundle": "results/p9.15_dual_W_star.npz",
+    "format": "numpy .npz: one .npy per state-dict entry, sorted, stored, fixed 1980-01-01 timestamps, allow_pickle=False",
+    "publication": "provenance/commitment.json",
+    "p5_1_result": "results/p5.1_model_fingerprint__seed1337__20261002T173049+0000.json",
+    "must_not_equal": [
+      "behavioral_only_W_star",
+      "clean_W"
+    ]
+  },
+  "metrics": {
+    "bundle_sha256": "2b65a7918a5c913a8ed08b9ede71124defd7cf458d98c71e6635d17565d94010",
+    "bundle_bytes": 1245090,
+    "entries": 38,
+    "fingerprint": {
+      "sha256": "c0995109f484a7d753863177e91bd441229e5877eaa4651ce6995ecf5b064a07",
+      "version": "zk-crown/model-fingerprint/v1",
+      "tensors": 38,
+      "elements": 308848,
+      "data_bytes": 1235416
+    },
+    "equals_published_fingerprint": true,
+    "round_trip_bit_identical": true,
+    "deterministic": true,
+    "differs_from": {
+      "behavioral_only_W_star": true,
+      "clean_W": true
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 0.06904439999925671,
+  "notes": "The only model bundled for the hosted dashboard. Its fingerprint is the one the published commitment names. No owner secret was read."
+}
