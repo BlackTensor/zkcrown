@@ -43,7 +43,7 @@ This is the procedure for P9.15. Nothing in it has been run yet: no remote exist
    - minimal requirements;
    - the manifest is current.
 
-   Listed under "owner decision needed", not failing: `results/zk/p8.1/zk_model.onnx`, the small MNIST model's weights, committed in P8.1 before this rule existed. Decide whether it stays in the repository.
+   Listed under "kept by owner decision", not failing: `results/zk/p8.1/zk_model.onnx`, the small MNIST model's weights, committed in P8.1 before this rule existed. The owner decided on 2026-10-07 to keep it in the repository.
 3. Optionally run the app tests (`pytest tests/test_dashboard*.py`) and look at the app locally with `streamlit run app/streamlit_app.py`.
 
 ## Publishing a repository makes all of it public

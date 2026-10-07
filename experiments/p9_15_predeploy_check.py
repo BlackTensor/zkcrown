@@ -11,9 +11,10 @@ tracked files on disk equal the commit):
    (``K.bin``, nonce, signing key, trigger bundle, GPG keyrings, ``.env``,
    ``secrets.toml``).
 4. ``model_weights``: the only tracked model-weight file is the approved bundle
-   ``results/p9.15_dual_W_star.npz`` (owner decision, 2026-10-07). Files that
-   were committed before P9.15 are listed under ``owner_decision_needed``
-   rather than allowed silently.
+   ``results/p9.15_dual_W_star.npz`` (owner decision, 2026-10-07). The one file
+   committed before P9.15, the P8.1 ``zk_model`` ONNX, is kept by owner decision
+   (2026-10-07) and listed under ``kept_by_owner_decision``, never allowed
+   silently.
 5. ``bundle_identity``: the bundle's P5.1 fingerprint is the one the published
    commitment names, and is not the behavioral-only P2.3 model or clean ``W``.
    Bundling P2.3 next to the dual model would publish the owner's weight
@@ -55,8 +56,9 @@ from src.utils.seeding import DEFAULT_SEED
 APPROVED_BUNDLE = "results/p9.15_dual_W_star.npz"
 COMMITTED_BEFORE_P9_15 = {
     "results/zk/p8.1/zk_model.onnx": "zk_model (6,138-parameter MNIST model) as ONNX, committed in P8.1 for the "
-                                     "Track B proof; not read by the app",
+                                     "Track B proof; not read by the app; kept by owner decision (2026-10-07)",
 }
+"""Weight files committed before P9.15 that the owner has decided to keep. Anything else fails."""
 WEIGHT_SUFFIXES = (".pt", ".pth", ".ckpt", ".npz", ".npy", ".onnx", ".safetensors", ".h5", ".hdf5", ".pkl",
                    ".pickle", ".joblib", ".bin", ".tflite", ".pb", ".zkey", ".ptau", ".srs")
 SECRET_NAME = re.compile(r"(^|/)(K\.bin|commitment_nonce\.bin|provenance_signing_key\.bin|trigger_bundle\.npz|"
@@ -96,7 +98,7 @@ def check_model_weights(paths: list[str]) -> dict:
     unexpected = [p for p in weights if p != APPROVED_BUNDLE and p not in COMMITTED_BEFORE_P9_15]
     return {"passed": APPROVED_BUNDLE in weights and not unexpected, "approved_bundle_present": APPROVED_BUNDLE in weights,
             "unexpected": unexpected,
-            "owner_decision_needed": {p: COMMITTED_BEFORE_P9_15[p] for p in weights if p in COMMITTED_BEFORE_P9_15}}
+            "kept_by_owner_decision": {p: COMMITTED_BEFORE_P9_15[p] for p in weights if p in COMMITTED_BEFORE_P9_15}}
 
 
 def check_bundle_identity(bundle_fingerprint: str, published: str, forbidden: dict[str, str]) -> dict:
@@ -239,8 +241,8 @@ def main(argv: list[str] | None = None) -> dict:
               "in memory and never written; only counts are recorded.")
     for name, c in checks.items():
         print(f"{'PASS' if c['passed'] else 'NOT RUN' if c['passed'] is None else 'FAIL':7s} {name}")
-    if checks["model_weights"]["owner_decision_needed"]:
-        print("owner decision needed:", ", ".join(checks["model_weights"]["owner_decision_needed"]))
+    if checks["model_weights"]["kept_by_owner_decision"]:
+        print("kept by owner decision:", ", ".join(checks["model_weights"]["kept_by_owner_decision"]))
     print("wrote", path)
     if failed or not_run:
         raise SystemExit(f"pre-deploy check did not pass: failed {failed}, not run {not_run}")

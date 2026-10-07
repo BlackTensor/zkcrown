@@ -1537,7 +1537,7 @@ Replanned 2026-10-05 at the owner's request: the single dashboard task became th
     - secret values (K, its halves, S, nonce and signing seed in five encodings, trigger-bundle windows, and the GPG secret-key windows that are not also in the public key; NOT RUN counts as failure);
     - page mode lines, minimal requirements, and the manifest.
   - **Run:** the first run failed `secret_values` on a self-match: the script contained the private-key armor marker it searches for. The record was discarded uncommitted, the literal was split, and a test was added. The second run, from a clean tree, passed all 9 checks over 541 tracked files and 52 needles: `{R}`.
-  - **Owner decision needed:** `results/zk/p8.1/zk_model.onnx` (the 6,138-parameter MNIST model's weights, committed in P8.1) is tracked and would be deployed. The app never reads it. The check lists it under "owner decision needed" rather than failing.
+  - **Owner decision (2026-10-07): keep `results/zk/p8.1/zk_model.onnx` in the repository.** It is the 6,138-parameter MNIST model's weights, committed in P8.1, and the app never reads it. The check lists it under "kept by owner decision"; any other weight file still fails.
   - **`DEPLOY.md`** covers: what is on the host and what is not; the pre-deploy steps; what a public repository publishes; the GitHub and share.streamlit.io steps (entry point `app/streamlit_app.py`, Python 3.11, no secrets); and the post-deploy checks.
   - App tests 160 and the P9.15 tests pass. The full suite was not re-run after these changes.
   - Before deploying, check that the deployed tree contains nothing from `secrets/` and that every page states replay versus live.

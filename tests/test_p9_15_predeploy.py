@@ -38,11 +38,11 @@ def test_any_model_weights_besides_the_bundle_fail(extra):
     assert not result["passed"] and result["unexpected"] == [extra]
 
 
-def test_the_bundle_alone_passes_and_older_files_need_a_decision():
+def test_the_bundle_alone_passes_and_the_kept_older_file_is_listed():
     assert pre.check_model_weights([pre.APPROVED_BUNDLE, "results/a.json"])["passed"]
     older = next(iter(pre.COMMITTED_BEFORE_P9_15))
     result = pre.check_model_weights([pre.APPROVED_BUNDLE, older])
-    assert result["passed"] and older in result["owner_decision_needed"]
+    assert result["passed"] and older in result["kept_by_owner_decision"]
     assert not pre.check_model_weights(["results/a.json"])["passed"]
 
 
