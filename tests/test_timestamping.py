@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import importlib
 from pathlib import Path
 
@@ -213,11 +214,33 @@ def test_committed_proof_is_for_the_committed_artifact():
 
 
 def test_script_record_target(script):
-    """The record gets its own proof next to it; the record command stays on the commitment publication."""
+    """The record gets its own proof next to it."""
     assert script.TARGETS["record"] == ("provenance/record.json", "provenance/record.json.ots")
     assert script.TARGETS["commitment"] == (script.ARTIFACT_PATH, script.OTS_PATH)
-    with pytest.raises(SystemExit):
-        script.main(["record", "--target", "record"])
+
+
+@pytest.mark.skipif(not (REPO_ROOT / "provenance" / "record.json.ots").exists(), reason="no record proof")
+@pytest.mark.parametrize("verified", [True, False])
+def test_record_target_chain_check_is_recorded_pass_or_fail(script, monkeypatch, tmp_path, verified):
+    """`record --target record` chain-checks the record's proof and writes a result even when a block fails."""
+    proof = describe_proof(REPO_ROOT / "provenance" / "record.json.ots", REPO_ROOT / "provenance" / "record.json")
+    if not proof["bitcoin_attestations"]:
+        pytest.skip("the record proof has no Bitcoin attestation yet")
+    seen = {}
+
+    def fake(attestations, explorers=(), **_):
+        seen["heights"] = sorted({a["height"] for a in attestations})
+        blocks = [{"height": h, "verified": verified} for h in seen["heights"]]
+        return {"explorers": list(explorers), "blocks": blocks, "all_verified": verified,
+                "earliest_verified_block": None}
+
+    monkeypatch.setattr(script, "check_bitcoin_attestations", fake)
+    out = script.main(["record", "--target", "record", "--out-dir", str(tmp_path)])
+    record = json.loads(open(out["path"], encoding="utf-8").read())
+    ots = record["metrics"]["opentimestamps"]
+    assert seen["heights"] == sorted({a["height"] for a in proof["bitcoin_attestations"]})
+    assert ots["independent_time_evidence"] is verified and ots["chain_check"]["all_verified"] is verified
+    assert record["task"] == "P6.2" and record["metrics"]["record_sha256"] == script.P6_2_RECORD_SHA256
 
 
 @pytest.mark.skipif(not (REPO_ROOT / "provenance" / "record.json").exists(), reason="no committed record")

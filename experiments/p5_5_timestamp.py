@@ -4,6 +4,7 @@
     python experiments/p5_5_timestamp.py upgrade    # hours later: fetch the Bitcoin attestation into the proof
     python experiments/p5_5_timestamp.py record     # verify the signed tag and the proof offline, write a result
     python experiments/p5_5_timestamp.py status     # describe both proofs offline, write a result
+    python experiments/p5_5_timestamp.py record --target record   # chain-check the provenance record's own proof
 
 ``stamp`` and ``upgrade`` act on ``provenance/commitment.json`` by default.
 With ``--target record`` they act on the signed provenance record
@@ -264,6 +265,70 @@ def record(args) -> dict:
     return {"path": path, "metrics": metrics}
 
 
+def record_proof(args) -> dict:
+    """Check the provenance record's own proof against the chain and write a result, pass or fail.
+
+    The record's proof (``provenance/record.json.ots``, P6.2) gets the same chain
+    check as the commitment publication: each attested block's header is fetched
+    from the explorers, hashed here, checked for work, and its Merkle root
+    compared with the proof's. Unlike ``record`` for the commitment, a failed
+    check does not stop the run: the result says which blocks were and were not
+    verified, so the dashboard can state it. There is no tag for the record.
+    """
+    git_snapshot = git_info()
+    started = time.perf_counter()
+    root = repo_root()
+    digest = read_target("record")
+    proof = describe_proof(root / RECORD_OTS_PATH, root / RECORD_PATH)
+    if not proof["matches_file"] or proof["file_digest"] != digest:
+        raise SystemExit(f"{RECORD_OTS_PATH} is not a proof for {RECORD_PATH}")
+    chain = None
+    if proof["bitcoin_attestations"]:
+        chain = check_bitcoin_attestations(proof["bitcoin_attestations"], explorers=args.explorers)
+    verified = chain is not None and chain["all_verified"]
+    metrics = {
+        "record_path": RECORD_PATH,
+        "record_sha256": digest,
+        "opentimestamps": {
+            **proof,
+            "proof_path": RECORD_OTS_PATH,
+            "chain_check": chain,
+            "independent_time_evidence": verified,
+        },
+    }
+    path = write_result(
+        name="p6.2_record_timestamp",
+        seed=args.seed,
+        task="P6.2",
+        params={
+            "record": RECORD_PATH,
+            "proof": RECORD_OTS_PATH,
+            "calendars_submitted_to": list(DEFAULT_CALENDARS),
+            "ots_client": "opentimestamps library (the ots CLI does not start on this machine)",
+            "bitcoin_attestation_checked_against_chain": chain is not None,
+            "explorers": list(args.explorers),
+            "tag": "none: the record has no signed tag, and none was made",
+        },
+        metrics=metrics,
+        duration_seconds=time.perf_counter() - started,
+        out_dir=args.out_dir,
+        git=git_snapshot,
+        notes=(
+            "Same chain check as the commitment publication (P5.5): two explorers, header hashed locally, work "
+            "checked, Merkle root compared. Not a full node. Recorded whether or not every block verified; "
+            "independent_time_evidence is true only if all did."
+        ),
+    )
+    print(f"record SHA-256        {digest}")
+    print(f"OpenTimestamps        {proof['status']}; Bitcoin attestations {[a['height'] for a in proof['bitcoin_attestations']]}")
+    for block in (chain or {}).get("blocks", []):
+        print(f"block {block['height']}  verified {block['verified']}  {block.get('block_hash')}  "
+              f"header time {block.get('header_time_utc')}")
+    print(f"independent time evidence: {verified}")
+    print("wrote", path)
+    return {"path": path, "metrics": metrics}
+
+
 def main(argv: list[str] | None = None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("command", choices=("stamp", "upgrade", "record", "status"))
@@ -286,8 +351,8 @@ def main(argv: list[str] | None = None):
         return outcome
     if args.command == "status":
         return status(args)
-    if args.target != "commitment":
-        raise SystemExit("record checks the commitment publication and its signed tag only")
+    if args.target == "record":
+        return record_proof(args)
     return record(args)
 
 
