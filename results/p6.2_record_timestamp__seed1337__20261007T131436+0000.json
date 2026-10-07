@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "name": "p6.2_record_timestamp",
+  "task": "P6.2",
+  "timestamp_utc": "2026-10-07T13:14:36+00:00",
+  "git": {
+    "commit": "5ffa233b324f2fe656c52a74f173a2382c8e97b2",
+    "branch": "master",
+    "dirty": false,
+    "available": true,
+    "source": "git"
+  },
+  "seed": 1337,
+  "seeded_backends": null,
+  "params": {
+    "record": "provenance/record.json",
+    "proof": "provenance/record.json.ots",
+    "calendars_submitted_to": [
+      "https://a.pool.opentimestamps.org",
+      "https://b.pool.opentimestamps.org",
+      "https://a.pool.eternitywall.com"
+    ],
+    "ots_client": "opentimestamps library (the ots CLI does not start on this machine)",
+    "bitcoin_attestation_checked_against_chain": true,
+    "explorers": [
+      "https://blockstream.info/api",
+      "https://mempool.space/api"
+    ],
+    "tag": "none: the record has no signed tag, and none was made"
+  },
+  "metrics": {
+    "record_path": "provenance/record.json",
+    "record_sha256": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+    "opentimestamps": {
+      "hash_op": "OpSHA256",
+      "file_digest": "28a3ad667ebb6690bae46b7efcfacb0d3ac16cba1c29e340e25a34e4576169c1",
+      "matches_file": true,
+      "pending_calendars": [
+        "https://alice.btc.calendar.opentimestamps.org",
+        "https://bob.btc.calendar.opentimestamps.org",
+        "https://finney.calendar.eternitywall.com"
+      ],
+      "bitcoin_attestations": [
+        {
+          "height": 969708,
+          "merkle_root": "33ecfe4dfa4bb7cd58bf743fb6c55a5af385c5717e96090b143f4cbf2185e803"
+        },
+        {
+          "height": 969709,
+          "merkle_root": "5d246461fadbd4155d5b2d2bf10f43608dd13d31b910705ae95b605f77173ef9"
+        },
+        {
+          "height": 969736,
+          "merkle_root": "4b0547575c2433cc2f99477f87eb7f44f19d6162f741b32a2110c473c511b917"
+        }
+      ],
+      "other_attestations": [],
+      "status": "bitcoin-attested (unverified)",
+      "ots_sha256": "ed5af9da84c8f6a1390f516215e0c80c612d891284c5f98ebdebb218ecd48882",
+      "ots_bytes": 3800,
+      "proof_path": "provenance/record.json.ots",
+      "chain_check": {
+        "explorers": [
+          "https://blockstream.info/api",
+          "https://mempool.space/api"
+        ],
+        "min_explorers": 2,
+        "blocks": [
+          {
+            "height": 969708,
+            "expected_merkle_root": "33ecfe4dfa4bb7cd58bf743fb6c55a5af385c5717e96090b143f4cbf2185e803",
+            "verified": true,
+            "block_hash": "000000000000000000011795507d143f2f7f1e0299a7da757ebd46cdd631ef4a",
+            "header_time_utc": "2026-10-03T09:31:40+00:00",
+            "explorers": {
+              "https://blockstream.info/api": {
+                "block_hash": "000000000000000000011795507d143f2f7f1e0299a7da757ebd46cdd631ef4a",
+                "header_hashes_to_block_hash": true,
+                "meets_target": true,
+                "merkle_root": "33ecfe4dfa4bb7cd58bf743fb6c55a5af385c5717e96090b143f4cbf2185e803",
+                "merkle_root_matches": true,
+                "header_time": 1791019900
+              },
+              "https://mempool.space/api": {
+                "block_hash": "000000000000000000011795507d143f2f7f1e0299a7da757ebd46cdd631ef4a",
+                "header_hashes_to_block_hash": true,
+                "meets_target": true,
+                "merkle_root": "33ecfe4dfa4bb7cd58bf743fb6c55a5af385c5717e96090b143f4cbf2185e803",
+                "merkle_root_matches": true,
+                "header_time": 1791019900
+              }
+            }
+          },
+          {
+            "height": 969709,
+            "expected_merkle_root": "5d246461fadbd4155d5b2d2bf10f43608dd13d31b910705ae95b605f77173ef9",
+            "verified": true,
+            "block_hash": "00000000000000000001b341217da0292136018838698ef0a8f54c00eb62f642",
+            "header_time_utc": "2026-10-03T09:34:13+00:00",
+            "explorers": {
+              "https://blockstream.info/api": {
+                "block_hash": "00000000000000000001b341217da0292136018838698ef0a8f54c00eb62f642",
+                "header_hashes_to_block_hash": true,
+                "meets_target": true,
+                "merkle_root": "5d246461fadbd4155d5b2d2bf10f43608dd13d31b910705ae95b605f77173ef9",
+                "merkle_root_matches": true,
+                "header_time": 1791020053
+              },
+              "https://mempool.space/api": {
+                "block_hash": "00000000000000000001b341217da0292136018838698ef0a8f54c00eb62f642",
+                "header_hashes_to_block_hash": true,
+                "meets_target": true,
+                "merkle_root": "5d246461fadbd4155d5b2d2bf10f43608dd13d31b910705ae95b605f77173ef9",
+                "merkle_root_matches": true,
+                "header_time": 1791020053
+              }
+            }
+          },
+          {
+            "height": 969736,
+            "expected_merkle_root": "4b0547575c2433cc2f99477f87eb7f44f19d6162f741b32a2110c473c511b917",
+            "verified": true,
+            "block_hash": "000000000000000000004664df069a86895f76b45dc8fab3b3255d585f5c1b78",
+            "header_time_utc": "2026-10-03T13:37:54+00:00",
+            "explorers": {
+              "https://blockstream.info/api": {
+                "block_hash": "000000000000000000004664df069a86895f76b45dc8fab3b3255d585f5c1b78",
+                "header_hashes_to_block_hash": true,
+                "meets_target": true,
+                "merkle_root": "4b0547575c2433cc2f99477f87eb7f44f19d6162f741b32a2110c473c511b917",
+                "merkle_root_matches": true,
+                "header_time": 1791034674
+              },
+              "https://mempool.space/api": {
+                "block_hash": "000000000000000000004664df069a86895f76b45dc8fab3b3255d585f5c1b78",
+                "header_hashes_to_block_hash": true,
+                "meets_target": true,
+                "merkle_root": "4b0547575c2433cc2f99477f87eb7f44f19d6162f741b32a2110c473c511b917",
+                "merkle_root_matches": true,
+                "header_time": 1791034674
+              }
+            }
+          }
+        ],
+        "all_verified": true,
+        "earliest_verified_block": {
+          "height": 969708,
+          "block_hash": "000000000000000000011795507d143f2f7f1e0299a7da757ebd46cdd631ef4a",
+          "header_time_utc": "2026-10-03T09:31:40+00:00"
+        }
+      },
+      "independent_time_evidence": true
+    }
+  },
+  "environment": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "accelerator": "cpu",
+    "cuda": null,
+    "system_ram_gb": null
+  },
+  "duration_seconds": 13.111317099999724,
+  "notes": "Same chain check as the commitment publication (P5.5): two explorers, header hashed locally, work checked, Merkle root compared. Not a full node. Recorded whether or not every block verified; independent_time_evidence is true only if all did."
+}
